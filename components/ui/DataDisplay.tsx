@@ -58,7 +58,7 @@ export const Badge: React.FC<BadgeProps> = ({ label, icon, variant = 'primary', 
       onClick={onClick}
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-2xs font-bold uppercase border transition-all ${variants[variant]} ${className} ${onClick ? 'cursor-pointer hover:opacity-80 active:scale-95' : ''}`}
     >
-      {icon && React.cloneElement(icon as React.ReactElement<any>, { className: "w-3.5 h-3.5" })}
+      {icon && React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: "w-3.5 h-3.5" })}
       {label}
     </span>
   );
@@ -265,7 +265,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description
   return (
     <div className={`h-full flex flex-col items-center justify-center animate-fade-in px-4 text-center ${className}`}>
       <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 bg-surface dark:bg-surface-dark border border-outline dark:border-outline-dark rounded-3xl flex items-center justify-center mb-6 shadow-sm">
-        {React.cloneElement(icon as React.ReactElement<any>, { className: "w-8 h-8 md:w-10 md:h-10 text-content-tertiary dark:text-content-tertiary-dark" })}
+        {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: "w-8 h-8 md:w-10 md:h-10 text-content-tertiary dark:text-content-tertiary-dark" })}
       </div>
       <h3 className="text-lg md:text-xl font-bold text-content dark:text-content-dark google-sans">{title}</h3>
       <p className="text-sm text-content-secondary dark:text-content-secondary-dark mt-2 max-w-xs leading-relaxed">

@@ -33,7 +33,7 @@ export const Card: React.FC<CardProps> = ({
           className={`h-10 px-4 border-b flex items-center justify-between shrink-0 transition-colors ${processStyles[variant]} ${onClickHeader ? 'cursor-pointer hover:opacity-90' : ''}`}
         >
            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider truncate">
-              {icon && React.cloneElement(icon as React.ReactElement<any>, { className: "w-3.5 h-3.5" })}
+              {icon && React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: "w-3.5 h-3.5" })}
               <span>{title}</span>
            </div>
            <div className="flex items-center gap-2">

@@ -55,7 +55,7 @@ export const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       {loading ? <Loader2 className={`animate-spin ${size.includes('sm') ? 'w-3 h-3' : 'w-4 h-4'}`} /> : 
-       icon ? React.cloneElement(icon as React.ReactElement<any>, { className: size.includes('sm') ? 'w-3.5 h-3.5' : 'w-4 h-4' }) : null}
+       icon ? React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: size.includes('sm') ? 'w-3.5 h-3.5' : 'w-4 h-4' }) : null}
       {label && <span className="hidden sm:inline">{label}</span>}
       {children}
     </button>
