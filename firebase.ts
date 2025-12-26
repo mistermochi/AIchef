@@ -4,7 +4,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: process.env.API_KEY,
+  apiKey: "AIzaSyBzpBV8owQ5VbHmaOasDXzn1fbnfzG7fU8",
   authDomain: "chefai-dd91e.firebaseapp.com",
   projectId: "chefai-dd91e",
   storageBucket: "chefai-dd91e.firebasestorage.app",

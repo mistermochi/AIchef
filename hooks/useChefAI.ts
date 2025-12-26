@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   signInAnonymously, 
@@ -44,6 +43,7 @@ export function useChefAI() {
 
   const [activeRecipe, setActiveRecipe] = useState<Recipe | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isHandsFree, setIsHandsFree] = useState(false);
   const [scalingFactor, setScalingFactor] = useState(1);
   const [refining, setRefining] = useState(false);
   const [refinePrompt, setRefinePrompt] = useState('');
@@ -52,6 +52,7 @@ export function useChefAI() {
   const [saveError, setSaveError] = useState('');
   
   const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
+  const [recipesLoading, setRecipesLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   const [shoppingCart, setShoppingCart] = useState<ShoppingListItem[]>(() => {
@@ -73,6 +74,8 @@ export function useChefAI() {
       return new Set();
     }
   });
+
+  // --- Effects ---
 
   useEffect(() => {
     if (darkMode) {
@@ -131,6 +134,7 @@ export function useChefAI() {
         const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Recipe));
         docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
         setSavedRecipes(docs);
+        setRecipesLoading(false);
       }
     );
 
@@ -139,6 +143,8 @@ export function useChefAI() {
       recipesUnsub();
     };
   }, [user]);
+
+  // --- Actions ---
 
   const savePreferences = async () => {
     if (!user) return;
@@ -153,7 +159,6 @@ export function useChefAI() {
   };
 
   const processRecipeAction = async (input?: string | any) => {
-    // Fix: input might be a React MouseEvent if passed directly to onClick
     const finalInput = (typeof input === 'string' ? input : recipeInput) || '';
     if (!finalInput.trim()) return;
     
@@ -161,6 +166,7 @@ export function useChefAI() {
     setError('');
     setActiveRecipe(null);
     setScalingFactor(1);
+    setIsHandsFree(false);
     
     try {
       const result = await gemini.processRecipe(finalInput, preferences);
@@ -174,8 +180,8 @@ export function useChefAI() {
         aiSuggestions: result.aiSuggestions || []
       } as Recipe);
       setIsEditing(true);
-    } catch (err) {
-      setError('AI extraction failed. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'AI extraction failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -185,11 +191,12 @@ export function useChefAI() {
     if (!genieInput.trim()) return;
     setGenieLoading(true);
     setError('');
+    setGenieIdeas([]); 
     try {
       const ideas = await gemini.generateGenieIdeas(genieInput, preferences);
       setGenieIdeas(ideas);
-    } catch (err) {
-      setError('Genie failed to conjure ideas. Try again.');
+    } catch (err: any) {
+      setError(err.message || 'Genie failed to conjure ideas. Try again.');
     } finally {
       setGenieLoading(false);
     }
@@ -212,8 +219,8 @@ export function useChefAI() {
       }
       const plan = await gemini.generateOrchestrationPlan(recipes);
       setOrchestrationPlan(plan);
-    } catch (err) {
-      setError("Failed to orchestrate workspace.");
+    } catch (err: any) {
+      setError(err.message || "Failed to orchestrate workspace.");
     } finally {
       setOrchestrationLoading(false);
     }
@@ -232,8 +239,8 @@ export function useChefAI() {
         lastRefinement: refinePrompt
       }) : null);
       setRefinePrompt('');
-    } catch (err) {
-      setRefineError('Failed to refine.');
+    } catch (err: any) {
+      setRefineError(err.message || 'Failed to refine.');
     } finally {
       setRefining(false);
     }
@@ -321,6 +328,17 @@ export function useChefAI() {
     setOrchestrationPlan(null);
   }, []);
 
+  const toggleIngredientCheck = useCallback((key: string) => {
+    setCheckedIngredients(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  // --- Derived State ---
+
   const consolidatedList = useMemo(() => {
     const list: { [key: string]: Ingredient } = {};
     shoppingCart.forEach(item => {
@@ -340,10 +358,7 @@ export function useChefAI() {
       const keyB = `${b.name.toLowerCase()}|${b.unit.toLowerCase()}`;
       const checkedA = checkedIngredients.has(keyA);
       const checkedB = checkedIngredients.has(keyB);
-
-      if (checkedA === checkedB) {
-        return a.name.localeCompare(b.name);
-      }
+      if (checkedA === checkedB) return a.name.localeCompare(b.name);
       return checkedA ? 1 : -1;
     });
   }, [shoppingCart, checkedIngredients]);
@@ -353,23 +368,10 @@ export function useChefAI() {
     let done = 0;
     consolidatedList.forEach(ing => {
       const key = `${ing.name.toLowerCase()}|${ing.unit.toLowerCase()}`;
-      if (checkedIngredients.has(key)) {
-        done++;
-      } else {
-        toBuy++;
-      }
+      if (checkedIngredients.has(key)) done++; else toBuy++;
     });
     return { toBuyCount: toBuy, doneCount: done };
   }, [consolidatedList, checkedIngredients]);
-
-  const toggleIngredientCheck = useCallback((key: string) => {
-    setCheckedIngredients(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }, []);
 
   const filteredRecipes = useMemo(() => {
     const term = searchTerm.toLowerCase();
@@ -381,60 +383,47 @@ export function useChefAI() {
   }, [savedRecipes, searchTerm]);
 
   return {
+    // Auth & View
     user,
-    view,
-    setView,
-    preferences,
-    setPreferences,
-    recipeInput,
-    setRecipeInput,
-    genieInput,
-    setGenieInput,
-    genieIdeas,
+    view, setView,
+    loading, error,
+    darkMode, setDarkMode,
+
+    // Home / Processing
+    recipeInput, setRecipeInput,
+    processRecipeAction,
+
+    // Genie
+    genieInput, setGenieInput,
+    genieIdeas, setGenieIdeas,
     genieLoading,
     generateGenieIdeasAction,
     selectGenieIdea,
-    orchestrationPlan,
-    orchestrationLoading,
-    generateOrchestrationAction,
-    setOrchestrationPlan,
-    loading,
-    error,
-    activeRecipe,
-    setActiveRecipe,
-    isEditing,
-    setIsEditing,
-    scalingFactor,
-    setScalingFactor,
-    refining,
-    refinePrompt,
-    setRefinePrompt,
-    refineError,
-    saving,
-    saveError,
-    savedRecipes,
-    searchTerm,
-    setSearchTerm,
-    shoppingCart,
-    setShoppingCart,
-    checkedIngredients,
-    setCheckedIngredients,
-    savePreferences,
-    processRecipeAction,
-    handleRefineAction,
-    handleSaveRecipeAction,
-    handleUpdateRecipeAction,
-    handleDeleteRecipeAction,
-    addToCart,
-    removeFromCart,
-    updateCartItemFactor,
-    clearCart,
-    consolidatedList,
-    toBuyCount,
-    doneCount,
-    toggleIngredientCheck,
+
+    // Cookbook
+    savedRecipes, recipesLoading,
+    searchTerm, setSearchTerm,
     filteredRecipes,
-    darkMode,
-    setDarkMode
+    handleDeleteRecipeAction,
+
+    // Editor (Active Recipe)
+    activeRecipe, setActiveRecipe,
+    isEditing, setIsEditing,
+    isHandsFree, setIsHandsFree,
+    scalingFactor, setScalingFactor,
+    refining, refinePrompt, setRefinePrompt, refineError, handleRefineAction,
+    saving, saveError, handleSaveRecipeAction, handleUpdateRecipeAction,
+
+    // Shopping Cart
+    shoppingCart, addToCart, removeFromCart, updateCartItemFactor,
+    clearCart, checkedIngredients, toggleIngredientCheck,
+    consolidatedList, toBuyCount, doneCount,
+
+    // Orchestration
+    orchestrationPlan, setOrchestrationPlan,
+    orchestrationLoading, generateOrchestrationAction,
+
+    // Profile
+    preferences, setPreferences, savePreferences
   };
 }

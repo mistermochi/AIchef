@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,9 +22,88 @@
         darkMode: 'class',
         theme: {
           extend: {
+            fontSize: {
+              '2xs': '10px',
+            },
+            colors: {
+              // Semantic Color Palette
+              primary: {
+                DEFAULT: '#0b57d0', // Google Blue
+                dark: '#8ab4f8',
+                hover: '#0842a0',
+                'hover-dark': '#aecbfa',
+                container: '#e8f0fe',
+                'container-dark': '#2d2e30',
+                'on-container': '#1967d2', // Darker blue for text on light container
+                'on-container-dark': '#d2e3fc',
+              },
+              surface: {
+                DEFAULT: '#ffffff',
+                dark: '#1b1b1b', // Card bg
+                variant: '#f8f9fa', // App bg
+                'variant-dark': '#0f1114',
+              },
+              outline: {
+                DEFAULT: '#dadce0',
+                dark: '#3c4043',
+                focus: '#0b57d0',
+              },
+              content: {
+                DEFAULT: '#1f1f1f', // Primary text
+                dark: '#e3e3e3',
+                secondary: '#444746',
+                'secondary-dark': '#c4c7c5',
+                tertiary: '#8e918f',
+                'tertiary-dark': '#5f6368',
+              },
+              danger: {
+                DEFAULT: '#ba1a1a',
+                dark: '#ffb4ab',
+                container: '#ffdad6',
+                'container-dark': '#93000a',
+                'on-container': '#410002',
+                'on-container-dark': '#ffdad6',
+              },
+              success: {
+                DEFAULT: '#137333',
+                dark: '#81c995',
+                container: '#ceead6',
+                'container-dark': '#0c3b20',
+              },
+              warning: {
+                DEFAULT: '#e37400', // Orange/Amber
+                dark: '#fcad70',
+                container: '#feefc3',
+                'container-dark': '#4a2800', // Darker orange/brown
+                'on-container': '#bf5000',
+                'on-container-dark': '#ffdcbe',
+              },
+              accent: {
+                 DEFAULT: '#9334e6', // Purple
+                 dark: '#d0bcff',
+                 container: '#f3e8ff',
+                 'container-dark': '#4a0072',
+                 'on-container': '#6b21a8',
+                 'on-container-dark': '#eaddff',
+              }
+            },
             fontFamily: {
               sans: ['Roboto', 'sans-serif'],
               google: ['Google Sans', 'sans-serif'],
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.3s ease-in-out',
+              'slide-up': 'slideUp 0.3s ease-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              slideUp: {
+                '0%': { transform: 'translateY(10px)', opacity: '0' },
+                '100%': { transform: 'translateY(0)', opacity: '1' },
+              }
             }
           }
         }
@@ -33,10 +113,7 @@
     <style>
         :root {
             --studio-bg: #f8f9fa;
-            --studio-sidebar: #ffffff;
             --studio-border: #dadce0;
-            --google-blue: #0b57d0;
-            --google-blue-hover: #0842a0;
         }
         body {
             font-family: 'Roboto', sans-serif;
@@ -71,31 +148,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #bdc1c6;
         }
-        .studio-card {
-            background: white;
-            border: 1px solid var(--studio-border);
-            border-radius: 12px;
-            transition: all 0.2s ease;
-        }
-        .dark .studio-card {
-            background: #1b1b1b;
-            border-color: #3c4043;
-        }
-        .sidebar-active {
-            background-color: #e8f0fe;
-            color: var(--google-blue);
-        }
-        .dark .sidebar-active {
-            background-color: #0b57d0;
-            color: white;
-        }
-        .sidebar-item:hover:not(.sidebar-active) {
-            background-color: #f1f3f4;
-        }
-        .dark .sidebar-item:hover:not(.sidebar-active) {
-            background-color: #2d2e30;
-        }
-
+        
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -131,13 +184,8 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          if (window.origin === 'null' || window.location.protocol === 'blob:') {
-            console.info('ChefAI Studio: Running in restricted environment.');
-            return;
-          }
-          navigator.serviceWorker.register('sw.js')
-            .then(reg => console.log('ChefAI Studio: Service Worker active'))
-            .catch(err => console.warn('ChefAI Studio: Service Worker registration skipped:', err.message));
+          if (window.origin === 'null' || window.location.protocol === 'blob:') return;
+          navigator.serviceWorker.register('sw.js').catch(err => console.warn(err));
         });
       }
     </script>
