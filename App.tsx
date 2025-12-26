@@ -79,7 +79,7 @@ export default function ChefAIApp() {
 
   const getBreadcrumb = () => {
     const views = {
-      home: 'New Adapter',
+      home: 'New recipe',
       genie: 'Kitchen Genie',
       cookbook: 'Cookbook',
       shopping: 'Shopping List',
@@ -87,6 +87,8 @@ export default function ChefAIApp() {
     };
     return views[view] || view;
   };
+
+  const isFullHeightView = ['home', 'genie', 'shopping'].includes(view);
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#f8f9fa] dark:bg-[#0f1114] transition-colors">
@@ -106,14 +108,11 @@ export default function ChefAIApp() {
 
         {/* Scrollable Workspace */}
         <main className="flex-1 overflow-y-auto custom-scrollbar p-6">
-          <div className="max-w-6xl mx-auto h-full">
+          <div className={`max-w-6xl mx-auto ${isFullHeightView ? 'h-full' : 'min-h-full'}`}>
             {view === 'home' && (
               <HomeView 
                 recipeInput={recipeInput}
                 setRecipeInput={setRecipeInput}
-                preferences={preferences}
-                setPreferences={setPreferences}
-                savePreferences={savePreferences}
                 processRecipeAction={processRecipeAction}
                 loading={loading}
                 error={error}

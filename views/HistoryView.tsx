@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Search, ShoppingCart, Check, BookOpen, Clock, CookingPot } from 'lucide-react';
 import { Recipe, ShoppingListItem } from '../types';
@@ -21,7 +22,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   shoppingCart, addToCart, removeFromCart
 }) => {
   return (
-    <div className="h-full flex flex-col gap-6 animate-in fade-in duration-300">
+    <div className="flex flex-col gap-6 animate-in fade-in duration-300 pb-24 md:pb-4">
       {/* Refined Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
@@ -40,7 +41,7 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
       </div>
 
       {/* Grid Content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar pb-24 md:pb-6">
+      <div className="flex-1">
         {filteredRecipes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredRecipes.map(recipe => {

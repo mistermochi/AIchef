@@ -1,56 +1,21 @@
-import React, { useState } from 'react';
-import { Sparkles, Loader2, Settings2, Terminal, ChevronDown, ChevronUp, Info, Zap } from 'lucide-react';
+
+import React from 'react';
+import { Sparkles, Loader2, Terminal, Info, Zap } from 'lucide-react';
 
 interface HomeViewProps {
   recipeInput: string;
   setRecipeInput: (val: string) => void;
-  preferences: string;
-  setPreferences: (val: string) => void;
-  savePreferences: () => void;
   processRecipeAction: () => void;
   loading: boolean;
   error: string;
 }
 
 export const HomeView: React.FC<HomeViewProps> = ({
-  recipeInput, setRecipeInput, preferences, setPreferences,
-  savePreferences, processRecipeAction, loading, error
+  recipeInput, setRecipeInput, processRecipeAction, loading, error
 }) => {
-  const [showSystem, setShowSystem] = useState(false);
-
   return (
-    <div className="h-full flex flex-col animate-in fade-in duration-500 max-w-5xl mx-auto pb-6">
+    <div className="h-full flex flex-col animate-in fade-in duration-500 max-w-5xl mx-auto pb-20 md:pb-6">
       
-      {/* System Instruction Header */}
-      <div className="mb-3 md:mb-4 studio-card bg-white dark:bg-[#1b1b1b] overflow-hidden shadow-sm border-[#dadce0] dark:border-[#3c4043] transition-colors">
-        <button 
-          onClick={() => setShowSystem(!showSystem)}
-          className="w-full h-11 px-4 flex items-center justify-between hover:bg-[#f8f9fa] dark:hover:bg-[#2d2e30] transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-lg bg-[#e8f0fe] dark:bg-[#2d2e30] flex items-center justify-center">
-              <Settings2 className="w-3.5 h-3.5 text-[#0b57d0] dark:text-[#8ab4f8]" />
-            </div>
-            <div className="text-left">
-              <span className="block text-[12px] font-bold text-[#1f1f1f] dark:text-[#e3e3e3] google-sans leading-none">System Instruction</span>
-            </div>
-          </div>
-          {showSystem ? <ChevronUp className="w-4 h-4 text-[#444746] dark:text-[#8e918f]" /> : <ChevronDown className="w-4 h-4 text-[#444746] dark:text-[#8e918f]" />}
-        </button>
-        
-        {showSystem && (
-          <div className="p-4 pt-0 animate-in slide-in-from-top-1 duration-200">
-            <textarea 
-              className="w-full h-24 text-[13px] bg-[#f8f9fa] dark:bg-[#0f1114] border border-[#dadce0] dark:border-[#3c4043] rounded-xl p-3 outline-none focus:border-[#0b57d0] focus:ring-1 focus:ring-[#0b57d0] transition-all resize-none leading-relaxed text-[#444746] dark:text-[#c4c7c5] placeholder:text-[#bdc1c6] dark:placeholder:text-[#5f6368]"
-              placeholder="e.g., 'Always use metric units', 'Adapt for low carb'..."
-              value={preferences}
-              onChange={(e) => setPreferences(e.target.value)}
-              onBlur={savePreferences}
-            />
-          </div>
-        )}
-      </div>
-
       {/* Main Prompt Box */}
       <div className="flex-1 flex flex-col studio-card bg-white dark:bg-[#1b1b1b] overflow-hidden shadow-md border-[#dadce0] dark:border-[#3c4043] relative min-h-[300px] transition-colors">
         <div className="h-9 border-b border-[#dadce0] dark:border-[#3c4043] flex items-center px-4 bg-[#f8f9fa] dark:bg-[#0f1114] shrink-0 justify-between transition-colors">

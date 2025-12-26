@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ChefHat, Home, BookOpen, ShoppingCart, UserCircle, Wand2 } from 'lucide-react';
 import { View } from '../types';
@@ -36,7 +37,7 @@ export const Navigation: React.FC<NavigationProps> = ({ view, setView }) => {
         
         <div className="flex-1 px-3 space-y-1">
           <div className="px-3 pb-2 text-[11px] font-bold text-[#8e918f] dark:text-[#5f6368] uppercase tracking-wider">Workspace</div>
-          <NavButton active={view === 'home'} icon={<Home />} onClick={() => setView('home')} label="New Adapter" />
+          <NavButton active={view === 'home'} icon={<Home />} onClick={() => setView('home')} label="New recipe" />
           <NavButton active={view === 'genie'} icon={<Wand2 />} onClick={() => setView('genie')} label="Kitchen Genie" />
           <NavButton active={view === 'cookbook'} icon={<BookOpen />} onClick={() => setView('cookbook')} label="Cookbook" />
           <NavButton active={view === 'shopping'} icon={<ShoppingCart />} onClick={() => setView('shopping')} label="Shopping List" />
@@ -56,8 +57,8 @@ export const Navigation: React.FC<NavigationProps> = ({ view, setView }) => {
         </div>
       </nav>
 
-      {/* Mobile Navigation Bottom Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1b1b1b] border-t border-[#dadce0] dark:border-[#3c4043] flex justify-around items-center py-2 px-2 z-50 shadow-lg transition-colors">
+      {/* Mobile Navigation Bottom Bar - Added pb-safe or equivalent padding for fixed bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#1b1b1b] border-t border-[#dadce0] dark:border-[#3c4043] flex justify-around items-center py-2 px-2 pb-[calc(8px+env(safe-area-inset-bottom))] z-50 shadow-lg transition-colors">
         <button onClick={() => setView('home')} className={`p-2 rounded-xl transition-colors ${view === 'home' ? 'bg-[#e8f0fe] dark:bg-[#0b57d0] text-[#0b57d0] dark:text-white' : 'text-[#444746] dark:text-[#c4c7c5]'}`}>
           <Home className="w-6 h-6" />
         </button>

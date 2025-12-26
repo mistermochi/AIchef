@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect } from 'react';
 import { Wand2, Loader2, Sparkles, ChevronRight, CookingPot, Zap, Mic, Plus, ArrowUp } from 'lucide-react';
 import { GenieIdea } from '../types';
@@ -36,7 +37,7 @@ export const GenieView: React.FC<GenieViewProps> = ({
       <div className="px-2 mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-[#1f1f1f] dark:text-[#e3e3e3] google-sans">Kitchen Genie</h2>
-          <p className="text-[11px] text-[#8e918f] dark:text-[#5f6368] font-medium uppercase tracking-tighter">AI Ideation Assistant</p>
+          <p className="text-[11px] text-[#444746] dark:text-[#c4c7c5] font-medium uppercase tracking-tighter">AI Ideation Assistant</p>
         </div>
         <div className="flex items-center gap-2 text-[10px] font-bold text-[#0b57d0] dark:text-[#8ab4f8] bg-[#e8f0fe] dark:bg-[#2d2e30] px-2.5 py-1 rounded-lg border border-[#d2e3fc] dark:border-[#3c4043] uppercase transition-colors">
           < Zap className="w-3 h-3" />
@@ -95,7 +96,7 @@ export const GenieView: React.FC<GenieViewProps> = ({
       </div>
 
       {/* Bottom Section: Fixed Prompt Bar */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 bg-gradient-to-t from-[#f8f9fa] dark:from-[#0f1114] via-[#f8f9fa] dark:via-[#0f1114] to-transparent z-20">
+      <div className="absolute bottom-16 md:bottom-0 left-0 right-0 p-4 pb-8 bg-gradient-to-t from-[#f8f9fa] dark:from-[#0f1114] via-[#f8f9fa] dark:via-[#0f1114] to-transparent z-20 transition-all duration-300">
         <div className="max-w-3xl mx-auto flex flex-col gap-3">
           
           {error && (
@@ -158,9 +159,6 @@ export const GenieView: React.FC<GenieViewProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Floating Indicator for Mobile Bottom Nav Clearance */}
-      <div className="h-20 md:hidden shrink-0"></div>
     </div>
   );
 };
