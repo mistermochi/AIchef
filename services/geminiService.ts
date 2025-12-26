@@ -1,8 +1,20 @@
-
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { Recipe, GenieIdea, OrchestrationPlan } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Helper to get client with correct key
+const getClient = (customKey?: string) => {
+  // 1. Try custom key provided by user in UI
+  if (customKey) return new GoogleGenAI({ apiKey: customKey });
+  
+  // 2. Try environment key (embedded during build)
+  const envKey = process.env.API_KEY;
+  if (envKey && envKey !== "undefined" && envKey !== "") {
+    return new GoogleGenAI({ apiKey: envKey });
+  }
+
+  // 3. Fallback
+  throw new Error("Missing API Key. Please provide one in Settings.");
+};
 
 // --- Schemas ---
 
@@ -71,8 +83,9 @@ const ORCHESTRATION_SCHEMA: Schema = {
 
 // --- Helper ---
 
-async function generateJson<T>(model: string, contents: string, systemInstruction: string, responseSchema: Schema): Promise<T> {
+async function generateJson<T>(model: string, contents: string, systemInstruction: string, responseSchema: Schema, apiKey?: string): Promise<T> {
   try {
+    const ai = getClient(apiKey);
     const response = await ai.models.generateContent({
       model,
       contents,
@@ -87,13 +100,14 @@ async function generateJson<T>(model: string, contents: string, systemInstructio
     if (msg.includes('429') || msg.includes('quota')) throw new Error("Usage limit exceeded.");
     if (msg.includes('503')) throw new Error("AI service busy.");
     if (msg.includes('safety')) throw new Error("Content flagged by safety filters.");
+    if (msg.includes('api key')) throw new Error("Invalid API Key.");
     throw new Error("AI Service Error: " + (error.message || "Unknown error"));
   }
 }
 
 // --- Exports ---
 
-export async function processRecipe(recipeInput: string, preferences: string): Promise<Partial<Recipe>> {
+export async function processRecipe(recipeInput: string, preferences: string, apiKey?: string): Promise<Partial<Recipe>> {
   const systemInstruction = `
     You are a culinary AI. Process the source. Prefs: "${preferences || "Standard"}"
     Rules:
@@ -103,26 +117,26 @@ export async function processRecipe(recipeInput: string, preferences: string): P
     4. Non-English: Translate all to Trad. Chinese.
     5. Tips: Add 3 NEW AI Trad. Chinese suggestions.
   `;
-  return generateJson<Partial<Recipe>>("gemini-3-pro-preview", recipeInput, systemInstruction, RECIPE_SCHEMA);
+  return generateJson<Partial<Recipe>>("gemini-3-pro-preview", recipeInput, systemInstruction, RECIPE_SCHEMA, apiKey);
 }
 
-export async function generateGenieIdeas(ingredients: string, preferences: string): Promise<GenieIdea[]> {
+export async function generateGenieIdeas(ingredients: string, preferences: string, apiKey?: string): Promise<GenieIdea[]> {
   const systemInstruction = `
     Generate 5 creative recipe ideas for: "${ingredients}". Prefs: "${preferences}".
     Constraints: Titles in English. Summaries in Traditional Chinese. One emoji each.
   `;
-  return generateJson<GenieIdea[]>("gemini-3-flash-preview", "", systemInstruction, GENIE_SCHEMA);
+  return generateJson<GenieIdea[]>("gemini-3-flash-preview", "", systemInstruction, GENIE_SCHEMA, apiKey);
 }
 
-export async function refineRecipe(recipe: Recipe, refinePrompt: string): Promise<string[]> {
+export async function refineRecipe(recipe: Recipe, refinePrompt: string, apiKey?: string): Promise<string[]> {
   const systemInstruction = "Culinary expert. Generate 3 professional suggestions in Traditional Chinese based on the goal.";
   const schema = { type: Type.ARRAY, items: { type: Type.STRING } } as Schema;
   const content = `Recipe: ${JSON.stringify(recipe)}\nGoal: "${refinePrompt}"`;
   
-  return generateJson<string[]>("gemini-3-pro-preview", content, systemInstruction, schema);
+  return generateJson<string[]>("gemini-3-pro-preview", content, systemInstruction, schema, apiKey);
 }
 
-export async function generateOrchestrationPlan(recipes: Recipe[]): Promise<OrchestrationPlan> {
+export async function generateOrchestrationPlan(recipes: Recipe[], apiKey?: string): Promise<OrchestrationPlan> {
   const systemInstruction = `
     Master kitchen orchestrator. Combine recipes into ONE unified workflow.
     Rules: Group prep. Parallelize cooking. Order logically. OUTPUT: TRADITIONAL CHINESE.
@@ -133,6 +147,7 @@ export async function generateOrchestrationPlan(recipes: Recipe[]): Promise<Orch
     "gemini-3-pro-preview", 
     `Recipes: ${JSON.stringify(input)}`, 
     systemInstruction, 
-    ORCHESTRATION_SCHEMA
+    ORCHESTRATION_SCHEMA,
+    apiKey
   );
 }

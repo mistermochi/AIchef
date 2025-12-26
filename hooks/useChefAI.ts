@@ -24,6 +24,15 @@ export function useChefAI() {
   const [view, setView] = useState<View>('home');
   const [preferences, setPreferences] = useState('');
   
+  // AI Availability State
+  const [customApiKey, setCustomApiKey] = useState(() => localStorage.getItem('chefai_api_key') || '');
+  const isAIEnabled = useMemo(() => {
+    // Check if env key exists (via vite define) or custom key is set
+    // Note: process.env.API_KEY is replaced by string literal in build if present
+    const envKey = process.env.API_KEY; 
+    return (!!envKey && envKey !== "undefined" && envKey !== "") || !!customApiKey;
+  }, [customApiKey]);
+
   const [recipeInput, setRecipeInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -95,6 +104,15 @@ export function useChefAI() {
     localStorage.setItem('chefai_checked', JSON.stringify(Array.from(checkedIngredients)));
   }, [checkedIngredients]);
 
+  // Save custom key when changed
+  useEffect(() => {
+    if (customApiKey) {
+      localStorage.setItem('chefai_api_key', customApiKey);
+    } else {
+      localStorage.removeItem('chefai_api_key');
+    }
+  }, [customApiKey]);
+
   useEffect(() => {
     const initAuth = async () => {
       const initialToken = (window as any).__initial_auth_token;
@@ -161,6 +179,11 @@ export function useChefAI() {
   const processRecipeAction = async (input?: string | any) => {
     const finalInput = (typeof input === 'string' ? input : recipeInput) || '';
     if (!finalInput.trim()) return;
+
+    if (!isAIEnabled) {
+      setError("AI features are disabled. Please provide an API Key in Preferences.");
+      return;
+    }
     
     setLoading(true);
     setError('');
@@ -169,7 +192,7 @@ export function useChefAI() {
     setIsHandsFree(false);
     
     try {
-      const result = await gemini.processRecipe(finalInput, preferences);
+      const result = await gemini.processRecipe(finalInput, preferences, customApiKey);
       setActiveRecipe({ 
         ...result, 
         sourceUrl: '', 
@@ -189,11 +212,17 @@ export function useChefAI() {
 
   const generateGenieIdeasAction = async () => {
     if (!genieInput.trim()) return;
+    
+    if (!isAIEnabled) {
+      setError("AI features are disabled. Please provide an API Key in Preferences.");
+      return;
+    }
+
     setGenieLoading(true);
     setError('');
     setGenieIdeas([]); 
     try {
-      const ideas = await gemini.generateGenieIdeas(genieInput, preferences);
+      const ideas = await gemini.generateGenieIdeas(genieInput, preferences, customApiKey);
       setGenieIdeas(ideas);
     } catch (err: any) {
       setError(err.message || 'Genie failed to conjure ideas. Try again.');
@@ -209,6 +238,12 @@ export function useChefAI() {
 
   const generateOrchestrationAction = async () => {
     if (shoppingCart.length === 0) return;
+    
+    if (!isAIEnabled) {
+      setError("AI features are disabled. Please provide an API Key in Preferences.");
+      return;
+    }
+
     setOrchestrationLoading(true);
     setError('');
     try {
@@ -217,7 +252,7 @@ export function useChefAI() {
           setError("Limited recipe metadata for orchestration. Reload recipes to cart.");
           return;
       }
-      const plan = await gemini.generateOrchestrationPlan(recipes);
+      const plan = await gemini.generateOrchestrationPlan(recipes, customApiKey);
       setOrchestrationPlan(plan);
     } catch (err: any) {
       setError(err.message || "Failed to orchestrate workspace.");
@@ -228,11 +263,17 @@ export function useChefAI() {
 
   const handleRefineAction = async () => {
     if (!refinePrompt.trim() || !activeRecipe) return;
+
+    if (!isAIEnabled) {
+      setRefineError("AI features are disabled. Please provide an API Key in Preferences.");
+      return;
+    }
+
     setRefining(true);
     setRefineError('');
     
     try {
-      const suggestions = await gemini.refineRecipe(activeRecipe, refinePrompt);
+      const suggestions = await gemini.refineRecipe(activeRecipe, refinePrompt, customApiKey);
       setActiveRecipe(prev => prev ? ({
         ...prev,
         aiSuggestions: suggestions,
@@ -287,6 +328,21 @@ export function useChefAI() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Manual create action for non-AI mode
+  const handleManualCreateAction = () => {
+    setActiveRecipe({
+      title: 'New Recipe',
+      emoji: '🥘',
+      summary: '',
+      ingredients: [{ name: '', quantity: 1, unit: 'g' }],
+      instructions: [''],
+      extractedTips: [],
+      aiSuggestions: [],
+      sourceUrl: '',
+    });
+    setIsEditing(true);
   };
 
   const handleDeleteRecipeAction = useCallback((id: string, e: React.MouseEvent) => {
@@ -389,9 +445,14 @@ export function useChefAI() {
     loading, error,
     darkMode, setDarkMode,
 
+    // AI Config
+    isAIEnabled,
+    customApiKey, setCustomApiKey,
+
     // Home / Processing
     recipeInput, setRecipeInput,
     processRecipeAction,
+    handleManualCreateAction,
 
     // Genie
     genieInput, setGenieInput,

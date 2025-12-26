@@ -1,13 +1,13 @@
-
 import React, { useRef, useEffect } from 'react';
-import { Sparkles, ChevronRight, CookingPot, Zap, Mic, Plus } from 'lucide-react';
-import { ViewHeader, Badge, PromptInput, EmptyState, Card, GenieSkeleton, PageLayout } from '../components/UI';
+import { Sparkles, ChevronRight, CookingPot, Zap, Mic, Plus, AlertTriangle } from 'lucide-react';
+import { ViewHeader, Badge, PromptInput, EmptyState, Card, GenieSkeleton, PageLayout, Button } from '../components/UI';
 import { useChefContext } from '../context/ChefContext';
 
 export const GenieView: React.FC = () => {
   const { 
     genieInput, setGenieInput, genieIdeas, genieLoading,
-    generateGenieIdeasAction, selectGenieIdea, loading: loadingRecipe, error
+    generateGenieIdeasAction, selectGenieIdea, loading: loadingRecipe, error,
+    isAIEnabled, setView
   } = useChefContext();
   
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -23,6 +23,25 @@ export const GenieView: React.FC = () => {
   }, [genieLoading, genieIdeas]);
 
   const shouldShowHeader = genieLoading || genieIdeas.length > 0;
+
+  if (!isAIEnabled) {
+    return (
+      <PageLayout>
+         <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] max-w-md mx-auto text-center space-y-6">
+            <div className="w-20 h-20 bg-surface-variant dark:bg-surface-variant-dark rounded-full flex items-center justify-center">
+              <Sparkles className="w-10 h-10 text-content-tertiary dark:text-content-tertiary-dark opacity-50" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold text-content dark:text-content-dark">Kitchen Genie Sleeping</h3>
+              <p className="text-sm text-content-secondary dark:text-content-secondary-dark">
+                The Genie requires an AI connection to function. Please check your API settings.
+              </p>
+            </div>
+            <Button variant="secondary" onClick={() => setView('profile')}>Configure API Key</Button>
+         </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout contentClassName="flex flex-col" scrollRef={scrollRef}>

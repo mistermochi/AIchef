@@ -1,11 +1,16 @@
-
-import React from 'react';
-import { Save, Moon, Sun, Settings2, BrainCircuit } from 'lucide-react';
-import { ViewHeader, Switch, Textarea, SectionCard, Button, PageLayout } from '../components/UI';
+import React, { useState } from 'react';
+import { Save, Moon, Sun, Settings2, BrainCircuit, Key } from 'lucide-react';
+import { ViewHeader, Switch, Textarea, SectionCard, Button, PageLayout, Input } from '../components/UI';
 import { useChefContext } from '../context/ChefContext';
 
 export const ProfileView: React.FC = () => {
-  const { preferences, setPreferences, savePreferences, darkMode, setDarkMode } = useChefContext();
+  const { 
+    preferences, setPreferences, savePreferences, 
+    darkMode, setDarkMode, 
+    customApiKey, setCustomApiKey 
+  } = useChefContext();
+  
+  const [showKey, setShowKey] = useState(false);
 
   return (
     <PageLayout>
@@ -17,6 +22,39 @@ export const ProfileView: React.FC = () => {
         />
 
         <div className="space-y-6">
+          {/* API Key Section - Always visible to allow overriding or setting */}
+          <SectionCard 
+            title="Gemini API Key" 
+            icon={<Key />}
+            noPadding={false}
+          >
+             <div className="space-y-3">
+               <div className="space-y-1">
+                 <label className="text-sm font-bold text-content dark:text-content-dark">Custom API Key</label>
+                 <p className="text-xs text-content-tertiary dark:text-content-tertiary-dark leading-relaxed">
+                    Required if the app is not running in the Studio environment. The key is stored locally in your browser.
+                 </p>
+               </div>
+               <div className="flex gap-2">
+                 <Input 
+                   type={showKey ? "text" : "password"}
+                   value={customApiKey}
+                   onChange={(e) => setCustomApiKey(e.target.value)}
+                   placeholder="Enter your Gemini API Key..."
+                   className="font-mono"
+                 />
+                 <Button variant="secondary" onClick={() => setShowKey(!showKey)}>
+                   {showKey ? 'Hide' : 'Show'}
+                 </Button>
+               </div>
+               {!process.env.API_KEY && !customApiKey && (
+                 <p className="text-xs text-danger dark:text-danger-dark font-medium">
+                   ⚠️ No environment key detected. Please add a key to enable AI features.
+                 </p>
+               )}
+             </div>
+          </SectionCard>
+
           {/* Appearance Section */}
           <SectionCard 
             title="Appearance" 
