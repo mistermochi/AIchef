@@ -55,7 +55,7 @@ export const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       {loading ? <Loader2 className={`animate-spin ${size.includes('sm') ? 'w-3 h-3' : 'w-4 h-4'}`} /> : 
-       icon ? React.cloneElement(icon as React.ReactElement, { className: size.includes('sm') ? 'w-3.5 h-3.5' : 'w-4 h-4' }) : null}
+       icon ? React.cloneElement(icon as React.ReactElement<any>, { className: size.includes('sm') ? 'w-3.5 h-3.5' : 'w-4 h-4' }) : null}
       {label && <span className="hidden sm:inline">{label}</span>}
       {children}
     </button>
@@ -63,7 +63,7 @@ export const Button: React.FC<ButtonProps> = ({
 };
 
 export const IconButton: React.FC<ButtonProps> = (props) => <Button size="icon" variant="ghost" {...props} />;
-export const HeaderAction: React.FC<ButtonProps> = ({isActive, ...props}) => <Button variant="header" active={isActive} {...props} />;
+export const HeaderAction: React.FC<ButtonProps> = (props) => <Button variant="header" {...props} />;
 export const HeaderActionSeparator: React.FC = () => <div className="w-px h-6 bg-outline dark:bg-outline-dark mx-1" />;
 export const ActionBar: React.FC<{ children: React.ReactNode, className?: string }> = ({ children, className = '' }) => (
   <div className={`flex items-center gap-2 ${className}`}>{children}</div>

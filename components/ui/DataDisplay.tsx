@@ -58,7 +58,7 @@ export const Badge: React.FC<BadgeProps> = ({ label, icon, variant = 'primary', 
       onClick={onClick}
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-2xs font-bold uppercase border transition-all ${variants[variant]} ${className} ${onClick ? 'cursor-pointer hover:opacity-80 active:scale-95' : ''}`}
     >
-      {icon && React.cloneElement(icon as React.ReactElement, { className: "w-3.5 h-3.5" })}
+      {icon && React.cloneElement(icon as React.ReactElement<any>, { className: "w-3.5 h-3.5" })}
       {label}
     </span>
   );

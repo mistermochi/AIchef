@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   ShoppingCart, Trash2, Layers, 
@@ -72,7 +71,7 @@ export const ShoppingView: React.FC = () => {
                 <HeaderAction 
                   label={orchestrationLoading ? 'Processing' : orchestrationPlan ? 'Start Cooking' : 'Cook Plan'}
                   icon={orchestrationPlan ? <CookingPot /> : <Cpu />}
-                  isActive={!!orchestrationPlan}
+                  active={!!orchestrationPlan}
                   loading={orchestrationLoading}
                   onClick={orchestrationPlan ? () => setShowOrchestrator(true) : generateOrchestrationAction}
                 />
@@ -83,7 +82,7 @@ export const ShoppingView: React.FC = () => {
                 <HeaderAction 
                   label="Sources"
                   icon={<Settings2 />}
-                  isActive={showSources}
+                  active={showSources}
                   onClick={() => setShowSources(!showSources)}
                 />
                 

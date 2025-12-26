@@ -39,7 +39,7 @@ export const RecipeHeader: React.FC<{ close: () => void }> = ({ close }) => {
           <HeaderAction 
             label={isHandsFree ? 'Exit' : 'Make'}
             icon={isHandsFree ? <Minimize2 /> : <Play />}
-            isActive={isHandsFree}
+            active={isHandsFree}
             onClick={() => setIsHandsFree(!isHandsFree)}
           />
         )}
@@ -48,7 +48,7 @@ export const RecipeHeader: React.FC<{ close: () => void }> = ({ close }) => {
           <HeaderAction 
             label={isInCart ? 'In Cart' : 'Shop'}
             icon={isInCart ? <Check /> : <ShoppingCart />}
-            isActive={isInCart}
+            active={isInCart}
             activeColor="success"
             onClick={handleCartToggle}
           />
@@ -58,7 +58,7 @@ export const RecipeHeader: React.FC<{ close: () => void }> = ({ close }) => {
           <HeaderAction 
             label={isEditing ? 'Save' : 'Edit'}
             icon={isEditing ? <Check /> : <Edit3 />}
-            isActive={isEditing}
+            active={isEditing}
             onClick={() => isEditing ? onCommit() : setIsEditing(true)}
             loading={saving}
           />
