@@ -1,6 +1,7 @@
 
-import React from 'react';
-import { Loader2, ArrowUp } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+import { Loader2, ArrowUp, Sparkles } from 'lucide-react';
+import { useHaptics } from '../../hooks/useHaptics';
 
 // --- PROMPT INPUT ---
 
@@ -20,6 +21,29 @@ interface PromptInputProps {
 export const PromptInput: React.FC<PromptInputProps> = ({
   value, onChange, onSubmit, loading, placeholder, disabled, error, actions, className = '', autoFocus
 }) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize logic
+  useEffect(() => {
+    if (textareaRef.current) {
+      // Reset height to allow shrinking
+      textareaRef.current.style.height = 'auto';
+      // Set height based on content
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [value]);
+
+  const containerBaseClass = "rounded-xl p-4 flex flex-col gap-2 transition-all shadow-lg group";
+  
+  // Normal state: standard borders
+  const normalClass = "bg-surface dark:bg-surface-dark border border-outline dark:border-outline-dark focus-within:border-primary dark:focus-within:border-primary-dark focus-within:ring-1 focus-within:ring-primary/10 dark:focus-within:ring-primary-dark/10";
+  
+  // Loading state: transparent border to show gradient background
+  const loadingClass = "relative bg-surface dark:bg-surface-dark bg-clip-padding border border-transparent";
+  
+  // The gradient wrapper
+  const gradientWrapperClass = "absolute -inset-[1px] rounded-xl bg-gradient-to-r from-primary via-accent to-primary animate-gradient-xy -z-10";
+
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
       {error && (
@@ -27,33 +51,40 @@ export const PromptInput: React.FC<PromptInputProps> = ({
           {error}
         </p>
       )}
-      <div className="bg-surface dark:bg-surface-dark rounded-xl border border-outline dark:border-outline-dark p-4 flex flex-col gap-2 transition-all focus-within:border-primary dark:focus-within:border-primary-dark focus-within:ring-1 focus-within:ring-primary/10 dark:focus-within:ring-primary-dark/10 shadow-lg group">
-        <textarea
-          className="w-full bg-transparent border-none outline-none resize-none text-sm text-content dark:text-content-dark placeholder:text-content-tertiary dark:placeholder:text-content-tertiary-dark min-h-[50px] max-h-[120px] leading-relaxed custom-scrollbar font-normal"
-          placeholder={placeholder}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              if (value.trim() && !loading && !disabled) onSubmit();
-            }
-          }}
-          disabled={disabled || loading}
-          autoFocus={autoFocus}
-        />
+      
+      <div className="relative">
+        {loading && <div className={gradientWrapperClass} />}
         
-        <div className="flex items-center justify-end gap-1">
-          {actions}
-          {actions && <div className="w-2"></div>}
+        <div className={`${containerBaseClass} ${loading ? loadingClass : normalClass}`}>
+          <textarea
+            ref={textareaRef}
+            className="w-full bg-transparent border-none outline-none resize-none text-sm text-content dark:text-content-dark placeholder:text-content-tertiary dark:placeholder:text-content-tertiary-dark min-h-[50px] max-h-[240px] leading-relaxed custom-scrollbar font-normal"
+            placeholder={placeholder}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (value.trim() && !loading && !disabled) onSubmit();
+              }
+            }}
+            disabled={disabled || loading}
+            autoFocus={autoFocus}
+            rows={1}
+          />
           
-          <button
-            onClick={onSubmit}
-            disabled={disabled || loading || !value.trim()}
-            className="w-10 h-10 bg-primary dark:bg-primary-dark text-white rounded-lg flex items-center justify-center transition-all hover:bg-primary-hover dark:hover:bg-primary-hover-dark disabled:bg-surface-variant dark:disabled:bg-surface-variant-dark disabled:text-content-tertiary dark:disabled:text-content-tertiary-dark active:scale-95 shrink-0 shadow-sm"
-          >
-             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowUp className="w-5 h-5" />}
-          </button>
+          <div className="flex items-center justify-end gap-1">
+            {actions}
+            {actions && <div className="w-2"></div>}
+            
+            <button
+              onClick={onSubmit}
+              disabled={disabled || loading || !value.trim()}
+              className={`w-10 h-10 text-white rounded-lg flex items-center justify-center transition-all disabled:bg-surface-variant dark:disabled:bg-surface-variant-dark disabled:text-content-tertiary dark:disabled:text-content-tertiary-dark active:scale-95 shrink-0 shadow-sm ${loading ? 'bg-transparent text-primary dark:text-primary-dark' : 'bg-primary dark:bg-primary-dark hover:bg-primary-hover dark:hover:bg-primary-hover-dark'}`}
+            >
+               {loading ? <Sparkles className="w-5 h-5 animate-pulse" /> : <ArrowUp className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -108,10 +139,17 @@ interface SwitchProps {
 }
 
 export const Switch: React.FC<SwitchProps> = ({ checked, onChange, className = '' }) => {
+  const { trigger } = useHaptics();
+
+  const handleToggle = () => {
+    trigger('light');
+    onChange(!checked);
+  };
+
   return (
     <button 
       type="button"
-      onClick={() => onChange(!checked)}
+      onClick={handleToggle}
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${checked ? 'bg-primary dark:bg-primary-dark' : 'bg-outline dark:bg-outline-dark'} ${className}`}
     >
       <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'}`} />

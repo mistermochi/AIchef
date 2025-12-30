@@ -1,36 +1,48 @@
 
-import React from 'react';
-import { Search, ShoppingCart, Check, CookingPot } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Search, CookingPot, Loader2, Plus, PlusCircle, Key, ExternalLink, Info, Check, ShoppingCart, Bot } from 'lucide-react';
 import { Recipe } from '../types';
-import { ViewHeader, Input, EmptyState, Card, Badge, RecipeSkeleton, PageLayout, GridList } from '../components/UI';
-import { useChefContext } from '../context/ChefContext';
+import { ViewHeader, Input, EmptyState, RecipeSkeleton, PageLayout, GridList, Button, Modal, ModalHeader, ModalContent, PromptInput, Card, CardMedia, CardContent, CardTitle, CardDescription, CardFooter, CardFloatingAction, IngredientBadges } from '../components/UI';
+import { GlobalFAB } from '../components/GlobalFAB';
+import { useRecipeContext } from '../context/RecipeContext';
+import { useCartContext } from '../context/CartContext';
+import { useAuthContext } from '../context/AuthContext';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
+import { useUIContext } from '../context/UIContext';
+
+const PAGE_SIZE = 6;
 
 export const HistoryView: React.FC = () => {
   const { 
     searchTerm, setSearchTerm, filteredRecipes, recipesLoading: loading,
     setActiveRecipe, setIsEditing, setScalingFactor,
-    shoppingCart, addToCart, removeFromCart
-  } = useChefContext();
+    recipeInput, setRecipeInput, processRecipeAction, loading: aiLoading, error: aiError, 
+    handleManualCreateAction
+  } = useRecipeContext();
 
-  const [placeholder, setPlaceholder] = React.useState('Search recipes...');
+  const { cart: shoppingCart, addToCart, removeFromCart } = useCartContext();
+  const { isAIEnabled, openKeySelector, profile } = useAuthContext();
+  const { setView } = useUIContext();
 
-  React.useEffect(() => {
-    const updatePlaceholder = () => {
-      setPlaceholder(window.innerWidth < 640 ? 'Search' : 'Search recipes...');
-    };
+  const [placeholder, setPlaceholder] = useState('Search recipes...');
+  const [showAddModal, setShowAddModal] = useState(false);
+  
+  // Use generic infinite scroll hook
+  const { displayLimit, observerTarget } = useInfiniteScroll(filteredRecipes, PAGE_SIZE);
+
+  useEffect(() => {
+    const updatePlaceholder = () => setPlaceholder(window.innerWidth < 640 ? 'Search' : 'Search recipes...');
     updatePlaceholder();
     window.addEventListener('resize', updatePlaceholder);
     return () => window.removeEventListener('resize', updatePlaceholder);
   }, []);
 
+  const visibleRecipes = useMemo(() => filteredRecipes.slice(0, displayLimit), [filteredRecipes, displayLimit]);
+
   const handleCartClick = (e: React.MouseEvent, recipe: Recipe) => {
-    e.stopPropagation();
     const cartItem = shoppingCart.find(item => item.recipeId === recipe.id);
-    if (cartItem) {
-      removeFromCart(cartItem.id);
-    } else {
-      addToCart(recipe, 1);
-    }
+    if (cartItem) removeFromCart(cartItem.id);
+    else addToCart(recipe, 1);
   };
 
   const handleCardClick = (recipe: Recipe) => {
@@ -39,106 +51,201 @@ export const HistoryView: React.FC = () => {
     setScalingFactor(1);
   };
 
+  const handleCreate = async () => {
+    await processRecipeAction();
+    setShowAddModal(false);
+  };
+
+  const handleManual = () => {
+    handleManualCreateAction();
+    setShowAddModal(false);
+  };
+
   return (
     <PageLayout>
       <ViewHeader 
         title="Cookbook" 
         subtitle="Your personal recipe collection."
         actions={
-          <div className="relative w-32 sm:w-64 transition-all duration-300">
-            <Input 
-              startIcon={<Search className="w-4 h-4" />}
-              placeholder={placeholder}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative w-32 sm:w-64 transition-all duration-300">
+              <Input 
+                startIcon={<Search className="w-4 h-4" />}
+                placeholder={placeholder}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            {/* Desktop Add Button (optional, redundant with FAB but good for desktop UX) */}
+            <div className="hidden md:block">
+              <Button onClick={() => setShowAddModal(true)} icon={<Plus className="w-4 h-4" />}>
+                 Add Recipe
+              </Button>
+            </div>
           </div>
         }
       />
+
       {loading ? (
         <GridList>
-           {[...Array(8)].map((_, i) => <RecipeSkeleton key={i} />)}
+           {[...Array(PAGE_SIZE)].map((_, i) => <RecipeSkeleton key={i} />)}
         </GridList>
       ) : filteredRecipes.length > 0 ? (
-        <GridList>
-          {filteredRecipes.map(recipe => {
-            const isInCart = shoppingCart.some(item => item.recipeId === recipe.id);
-            
-            return (
-              <Card 
-                key={recipe.id}
-                noPadding
-                className="group cursor-pointer hover:ring-2 hover:ring-primary/50 dark:hover:ring-primary-dark/50 transition-all active:scale-[0.98] flex flex-col h-full overflow-hidden"
-                onClick={() => handleCardClick(recipe)}
-              >
-                {/* Image Section */}
-                <div className="relative aspect-[4/3] bg-surface-variant dark:bg-surface-variant-dark overflow-hidden">
-                  {recipe.coverImage ? (
-                    <img 
-                      src={recipe.coverImage} 
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      alt={recipe.title}
+        <>
+          <GridList>
+            {visibleRecipes.map((recipe, idx) => {
+              const isInCart = shoppingCart.some(item => item.recipeId === recipe.id);
+              
+              return (
+                <Card 
+                  key={recipe.id}
+                  onClick={() => handleCardClick(recipe)}
+                  className="animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both h-full"
+                  style={{ animationDelay: `${(idx % PAGE_SIZE) * 40}ms` }}
+                >
+                  <CardMedia src={recipe.coverImage} fallbackEmoji={recipe.emoji}>
+                    <CardFloatingAction 
+                      onClick={(e) => handleCartClick(e, recipe)}
+                      active={isInCart}
+                      icon={isInCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
                     />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-content-tertiary dark:text-content-tertiary-dark">
-                      <span className="text-6xl select-none">{recipe.emoji || '🥘'}</span>
+                  </CardMedia>
+                  
+                  <CardContent>
+                    <div className="space-y-1">
+                      <CardTitle>{recipe.title}</CardTitle>
+                      <CardDescription>{recipe.summary}</CardDescription>
                     </div>
-                  )}
+                  </CardContent>
 
-                  <button
-                    onClick={(e) => handleCartClick(e, recipe)}
-                    className={`absolute bottom-3 right-3 p-2.5 rounded-full shadow-lg transition-transform active:scale-90 flex items-center justify-center ${
-                      isInCart 
-                        ? 'bg-success text-white' 
-                        : 'bg-surface dark:bg-surface-dark text-primary dark:text-primary-dark hover:bg-primary-container dark:hover:bg-primary-container-dark'
-                    }`}
-                  >
-                    {isInCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
-                  </button>
-                </div>
+                  <CardFooter>
+                    <IngredientBadges ingredients={recipe.ingredients} limit={3} />
+                  </CardFooter>
+                </Card>
+              );
+            })}
+          </GridList>
 
-                {/* Content Section */}
-                <div className="p-4 flex flex-col flex-1 gap-3">
-                  <div className="space-y-1">
-                    <h3 className="font-bold text-lg text-content dark:text-content-dark google-sans line-clamp-1 group-hover:text-primary dark:group-hover:text-primary-dark transition-colors">
-                      {recipe.title}
-                    </h3>
-                    <p className="text-xs text-content-secondary dark:text-content-secondary-dark line-clamp-2 leading-relaxed">
-                      {recipe.summary}
-                    </p>
-                  </div>
-
-                  <div className="mt-auto pt-3 border-t border-outline/50 dark:border-outline-dark/50 relative">
-                    <div className="flex flex-nowrap items-center gap-1.5 overflow-hidden">
-                      {recipe.ingredients.slice(0, 3).map((ing, idx) => (
-                        <Badge 
-                          key={idx} 
-                          variant="neutral" 
-                          label={ing.name} 
-                          className="max-w-[100px] truncate shrink-0"
-                        />
-                      ))}
-                      {recipe.ingredients.length > 3 && (
-                        <span className="text-2xs font-bold text-content-tertiary dark:text-content-tertiary-dark self-center px-1 shrink-0">
-                          +{recipe.ingredients.length - 3}
-                        </span>
-                      )}
-                    </div>
-                    {/* Fade overlay for truncation */}
-                    <div className="absolute top-3 right-0 bottom-0 w-12 bg-gradient-to-l from-surface to-transparent dark:from-surface-dark pointer-events-none" />
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </GridList>
+          <div ref={observerTarget} className="p-12 flex justify-center items-center">
+            {displayLimit < filteredRecipes.length ? (
+              <div className="flex items-center gap-3 text-content-tertiary">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                <span className="text-xs font-bold uppercase tracking-widest animate-pulse">Scanning Cookbook...</span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2 opacity-30">
+                 <div className="w-8 h-1 bg-outline dark:bg-outline-dark rounded-full" />
+                 <span className="text-[10px] font-bold uppercase tracking-widest">End of Cookbook</span>
+              </div>
+            )}
+          </div>
+        </>
       ) : (
         <EmptyState 
           icon={<CookingPot />}
           title="Cookbook is Empty"
           description={searchTerm ? `No recipes found matching "${searchTerm}"` : "Add recipes to start building your cookbook."}
           className="py-12"
+          action={<Button onClick={() => setShowAddModal(true)} icon={<Plus className="w-4 h-4" />}>Add Your First Recipe</Button>}
         />
+      )}
+
+      {/* Global FAB for Add Recipe */}
+      <GlobalFAB 
+        icon={<Plus />} 
+        label="New Recipe" 
+        onClick={() => setShowAddModal(true)} 
+      />
+
+      {showAddModal && (
+        <Modal onClose={() => setShowAddModal(false)} size="lg">
+          <ModalHeader title="New Recipe" onClose={() => setShowAddModal(false)} />
+          
+          <ModalContent>
+             <div className="max-w-2xl mx-auto space-y-6 w-full">
+                {!isAIEnabled ? (
+                  profile.aiEnabled === false ? (
+                     <div className="p-8 bg-surface dark:bg-surface-dark border border-outline dark:border-outline-dark rounded-3xl flex flex-col items-center text-center gap-6 shadow-sm">
+                       <div className="w-16 h-16 bg-surface-variant dark:bg-surface-variant-dark rounded-full flex items-center justify-center text-content-tertiary">
+                         <Bot className="w-8 h-8 opacity-50" />
+                       </div>
+                       <div className="space-y-2">
+                         <h3 className="text-xl font-bold text-content dark:text-content-dark">Manual Mode Active</h3>
+                         <p className="text-sm text-content-secondary dark:text-content-secondary-dark max-w-sm">
+                           AI features are disabled. Create your recipe from scratch.
+                         </p>
+                       </div>
+                       <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+                         <Button fullWidth onClick={handleManual} icon={<PlusCircle className="w-4 h-4" />}>
+                           Create Manually
+                         </Button>
+                         <Button fullWidth variant="ghost" onClick={() => { setShowAddModal(false); setView('profile'); }} icon={<Bot className="w-4 h-4" />}>
+                           Enable AI
+                         </Button>
+                       </div>
+                     </div>
+                  ) : (
+                    <div className="p-8 bg-surface dark:bg-surface-dark border-2 border-dashed border-primary/20 dark:border-primary-dark/20 rounded-3xl flex flex-col items-center text-center gap-6 shadow-sm">
+                      <div className="w-16 h-16 bg-primary-container dark:bg-primary-container-dark rounded-full flex items-center justify-center text-primary dark:text-primary-dark">
+                        <Key className="w-8 h-8" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-xl font-bold text-content dark:text-content-dark">Bring Your Own AI Power</h3>
+                        <p className="text-sm text-content-secondary dark:text-content-secondary-dark max-w-sm">
+                          ChefAI uses your own Google Gemini API key to process recipes securely.
+                        </p>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+                        <Button fullWidth onClick={openKeySelector} icon={<Key className="w-4 h-4" />}>Select API Key</Button>
+                        <Button fullWidth variant="ghost" onClick={handleManual} icon={<PlusCircle className="w-4 h-4" />}>Manual Create</Button>
+                      </div>
+                      <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary dark:text-primary-dark hover:underline flex items-center gap-1.5">
+                        Learn about billing and project setup <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  )
+                ) : (
+                  <>
+                    <div className="space-y-4">
+                      <div className="text-center space-y-2 mb-6">
+                         <h3 className="text-xl font-bold text-content dark:text-content-dark google-sans">What are we cooking?</h3>
+                         <p className="text-sm text-content-secondary dark:text-content-secondary-dark">Turn any text or URL into a clear recipe.</p>
+                      </div>
+                      
+                      <PromptInput 
+                        autoFocus
+                        value={recipeInput} 
+                        onChange={setRecipeInput} 
+                        onSubmit={handleCreate}
+                        loading={aiLoading}
+                        error={aiError}
+                        placeholder="Paste a recipe URL, list ingredients, or describe a dish..."
+                        className="text-lg shadow-xl"
+                      />
+
+                      <div className="flex items-center justify-center gap-4 pt-4">
+                         <span className="text-xs font-bold text-content-tertiary uppercase tracking-widest">OR</span>
+                      </div>
+                      
+                      <Button fullWidth variant="secondary" onClick={handleManual} icon={<PlusCircle className="w-4 h-4" />}>Create Manually</Button>
+
+                      <div className="mt-4 p-4 bg-primary-container/30 dark:bg-primary-container-dark/10 rounded-xl border border-primary/10 dark:border-primary-dark/10 flex gap-4 items-start text-left">
+                          <div className="p-2 bg-surface dark:bg-surface-dark rounded-full shrink-0 text-primary dark:text-primary-dark shadow-sm">
+                              <Info className="w-4 h-4" />
+                          </div>
+                          <div>
+                              <h4 className="text-sm font-bold text-content dark:text-content-dark mb-1">How it works</h4>
+                              <p className="text-xs text-content-secondary dark:text-content-secondary-dark leading-relaxed">
+                                  ChefAI extracts ingredients and steps, then formats them to match your cooking style.
+                              </p>
+                          </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+             </div>
+          </ModalContent>
+        </Modal>
       )}
     </PageLayout>
   );

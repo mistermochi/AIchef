@@ -1,11 +1,10 @@
-
 export const compressImage = (base64Str: string): Promise<string> => {
   return new Promise((resolve) => {
     const img = new Image();
     img.src = base64Str;
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const MAX_WIDTH = 1200;
+      const MAX_WIDTH = 880;
       let width = img.width;
       let height = img.height;
       if (width > MAX_WIDTH) {

@@ -1,27 +1,24 @@
 
 import React from 'react';
-import { Loader2 } from 'lucide-react';
-import { useChefContext } from './context/ChefContext';
+import { useUIContext } from './context/UIContext';
+import { useRecipeContext } from './context/RecipeContext';
 import { Navigation } from './components/Navigation';
-import { HomeView } from './views/HomeView';
 import { HistoryView } from './views/HistoryView';
 import { ShoppingView } from './views/ShoppingView';
 import { ProfileView } from './views/ProfileView';
 import { GenieView } from './views/GenieView';
+import { TrackerView } from './views/TrackerView';
 import RecipeModal from './components/RecipeModal';
 import { PageHeader } from './components/UI';
 
 export default function ChefAIApp() {
-  const { user, view, setView, activeRecipe } = useChefContext();
-
-  if (!user) {
-    return (
-      <div className="h-screen w-full flex flex-col items-center justify-center bg-surface dark:bg-surface-variant-dark text-primary dark:text-primary-dark gap-4 transition-colors">
-        <Loader2 className="w-10 h-10 animate-spin" />
-        <p className="font-medium text-lg text-content dark:text-content-dark">Initializing ChefAI Studio...</p>
-      </div>
-    );
-  }
+  const { view } = useUIContext();
+  const { activeRecipe } = useRecipeContext();
+  
+  // NOTE: Automatic background health check has been removed to prevent 
+  // API blocking issues during the initial launch phase.
+  // Health checks will now occur lazily when the user interacts with specific features
+  // or visits the Profile/Settings page.
 
   const getBreadcrumb = () => {
     const views = {
@@ -29,7 +26,8 @@ export default function ChefAIApp() {
       genie: 'Kitchen Genie',
       cookbook: 'Cookbook',
       shopping: 'Shopping List',
-      profile: 'Preferences'
+      profile: 'Preferences',
+      tracker: 'Price Tracker'
     };
     return views[view] || view;
   };
@@ -43,13 +41,15 @@ export default function ChefAIApp() {
       <div className="flex-1 flex flex-col min-w-0 relative transition-colors">
         <PageHeader title="ChefAI Studio" breadcrumbs={[getBreadcrumb()]} />
 
-        {/* Workspace */}
+        {/* Workspace with Fluid Transition Wrapper */}
         <main className="flex-1 overflow-hidden relative">
-          {view === 'home' && <HomeView />}
-          {view === 'genie' && <GenieView />}
-          {view === 'cookbook' && <HistoryView />}
-          {view === 'shopping' && <ShoppingView />}
-          {view === 'profile' && <ProfileView />}
+          <div key={view} className="absolute inset-0 overflow-hidden flex flex-col animate-view-enter">
+            {view === 'genie' && <GenieView />}
+            {(view === 'cookbook' || view === 'home') && <HistoryView />}
+            {view === 'shopping' && <ShoppingView />}
+            {view === 'tracker' && <TrackerView />}
+            {view === 'profile' && <ProfileView />}
+          </div>
         </main>
       </div>
 

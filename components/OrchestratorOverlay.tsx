@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
 import { 
-  X, Clock, ChefHat, Utensils, 
+  Clock, ChefHat, Utensils, 
   Timer, AlertCircle, ChevronDown, ChevronUp, Scale
 } from 'lucide-react';
 import { OrchestrationPlan, OrchestrationStep, ShoppingListItem } from '../types';
-import { Modal, Card, Button, Badge, SummaryCard, ProcessCard } from './UI';
+import { Modal, ModalHeader, ModalContent, Badge, InsightCard, ProcessCard } from './UI';
 
 interface OrchestratorOverlayProps {
   plan: OrchestrationPlan;
@@ -43,30 +43,29 @@ export const OrchestratorOverlay: React.FC<OrchestratorOverlayProps> = ({ plan, 
     }
   };
 
+  const headerTitle = (
+    <div className="flex items-center gap-3">
+      <div className="w-10 h-10 bg-primary dark:bg-primary-dark rounded-xl flex items-center justify-center shadow-sm">
+        <Timer className="w-5 h-5 text-white" />
+      </div>
+      <div>
+        <h1 className="text-lg font-bold text-content dark:text-content-dark google-sans leading-none">Kitchen Orchestrator</h1>
+        <p className="text-xs font-medium text-content-secondary dark:text-content-secondary-dark mt-1 uppercase tracking-wide">
+          Unified Workflow Plan
+        </p>
+      </div>
+    </div>
+  );
+
   return (
     <Modal onClose={onClose} size="xl">
-        {/* Header */}
-        <div className="h-16 border-b border-outline dark:border-outline-dark bg-surface dark:bg-surface-dark flex items-center justify-between px-6 shrink-0 z-10 transition-colors">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary dark:bg-primary-dark rounded-xl flex items-center justify-center shadow-sm">
-              <Timer className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-content dark:text-content-dark google-sans leading-none">Kitchen Orchestrator</h1>
-              <p className="text-xs font-medium text-content-secondary dark:text-content-secondary-dark mt-1 uppercase tracking-wide">
-                Unified Workflow Plan
-              </p>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" onClick={onClose} icon={<X className="w-6 h-6" />} />
-        </div>
-
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 bg-surface-variant dark:bg-surface-variant-dark">
-           <div className="max-w-3xl mx-auto space-y-8">
+        <ModalHeader title={headerTitle} onClose={onClose} />
+        
+        <ModalContent>
+           <div className="max-w-3xl mx-auto space-y-8 w-full">
               
               {/* Summary Card */}
-              <SummaryCard 
+              <InsightCard 
                 title="Summary"
                 description={plan.optimizedSummary}
                 action={<Badge variant="primary" icon={<Clock />} label={`~${plan.totalEstimatedTime} Minutes`} className="px-4 py-2 text-sm" />}
@@ -74,8 +73,8 @@ export const OrchestratorOverlay: React.FC<OrchestratorOverlayProps> = ({ plan, 
 
               {/* Timeline */}
               <div className="relative pl-4 md:pl-8">
-                 {/* Vertical Line */}
-                 <div className="absolute left-[15px] md:left-[19px] top-4 bottom-4 w-0.5 bg-outline dark:bg-outline-dark"></div>
+                 {/* Vertical Line with Animation */}
+                 <div className="absolute left-[15px] md:left-[19px] top-4 bottom-4 w-0.5 bg-outline dark:border-outline-dark animate-grow-height origin-top"></div>
 
                  <div className="space-y-8">
                     {plan.steps.map((step, index) => {
@@ -85,7 +84,11 @@ export const OrchestratorOverlay: React.FC<OrchestratorOverlayProps> = ({ plan, 
                        const matchingItem = getIngredientsForStep(step.recipeContext);
                        
                        return (
-                          <div key={step.id} className="relative flex gap-4 md:gap-8 group transition-all duration-300">
+                          <div 
+                            key={step.id} 
+                            className="relative flex gap-4 md:gap-8 group transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
+                            style={{ animationDelay: `${index * 150}ms` }}
+                          >
                              
                              {/* Icon Node */}
                              <div 
@@ -100,39 +103,41 @@ export const OrchestratorOverlay: React.FC<OrchestratorOverlayProps> = ({ plan, 
                                title={`Step ${index + 1} • ${step.type}`}
                                subtitle={step.estimatedMinutes ? `${step.estimatedMinutes}m` : undefined}
                              >
-                                <div className="mb-2 flex items-center gap-2">
-                                  <Badge label={step.recipeContext} variant="neutral" />
-                                </div>
-                                <p className="text-sm leading-relaxed transition-colors text-content dark:text-content-dark">
-                                  {step.description}
-                                </p>
+                                <div className="p-4 md:p-5">
+                                    <div className="mb-2 flex items-center gap-2">
+                                      <Badge label={step.recipeContext} variant="neutral" />
+                                    </div>
+                                    <p className="text-sm leading-relaxed transition-colors text-content dark:text-content-dark">
+                                      {step.description}
+                                    </p>
 
-                                {/* Ingredient Dropdown */}
-                                {matchingItem && (
-                                  <div className="mt-4 pt-3 border-t border-outline dark:border-outline-dark">
-                                    <button 
-                                      onClick={(e) => toggleIngredients(e, step.id)}
-                                      className="flex items-center gap-2 text-xs font-bold uppercase text-primary dark:text-primary-dark hover:bg-primary-container dark:hover:bg-primary-container-dark px-2 py-1 -ml-2 rounded-lg transition-colors w-full sm:w-auto"
-                                    >
-                                        {isIngExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                                        {isIngExpanded ? 'Hide' : 'View'} Adjusted Ingredients
-                                        <Badge variant="primary" label={`${matchingItem.scalingFactor}x`} icon={<Scale />} className="ml-1" />
-                                    </button>
-                                    
-                                    {isIngExpanded && (
-                                      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 animate-slide-up">
-                                        {matchingItem.ingredients.map((ing, idx) => (
-                                          <div key={idx} className="flex justify-between items-center p-2 bg-surface-variant dark:bg-surface-variant-dark rounded-lg text-xs border border-outline dark:border-outline-dark">
-                                            <span className="font-medium text-content-secondary dark:text-content-secondary-dark truncate pr-2">{ing.name}</span>
-                                            <span className="font-mono font-bold text-content dark:text-content-dark shrink-0">
-                                              {Number((ing.quantity * matchingItem.scalingFactor).toFixed(2))} {ing.unit}
-                                            </span>
+                                    {/* Ingredient Dropdown */}
+                                    {matchingItem && (
+                                      <div className="mt-4 pt-4 border-t border-outline dark:border-outline-dark">
+                                        <button 
+                                          onClick={(e) => toggleIngredients(e, step.id)}
+                                          className="flex items-center gap-2 text-xs font-bold uppercase text-primary dark:text-primary-dark hover:bg-primary-container dark:hover:bg-primary-container-dark px-2 py-1.5 -ml-2 rounded-lg transition-colors w-full sm:w-auto"
+                                        >
+                                            {isIngExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                            {isIngExpanded ? 'Hide' : 'View'} Adjusted Ingredients
+                                            <Badge variant="primary" label={`${matchingItem.scalingFactor}x`} icon={<Scale />} className="ml-1" />
+                                        </button>
+                                        
+                                        {isIngExpanded && (
+                                          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 animate-slide-up">
+                                            {matchingItem.ingredients.map((ing, idx) => (
+                                              <div key={idx} className="flex justify-between items-center p-2.5 bg-surface-variant dark:bg-surface-variant-dark rounded-lg text-xs border border-outline dark:border-outline-dark shadow-sm">
+                                                <span className="font-medium text-content-secondary dark:text-content-secondary-dark truncate pr-2">{ing.name}</span>
+                                                <span className="font-mono font-bold text-content dark:text-content-dark shrink-0">
+                                                  {Number((ing.quantity * matchingItem.scalingFactor).toFixed(2))} {ing.unit}
+                                                </span>
+                                              </div>
+                                            ))}
                                           </div>
-                                        ))}
+                                        )}
                                       </div>
                                     )}
-                                  </div>
-                                )}
+                                </div>
                              </ProcessCard>
 
                           </div>
@@ -141,7 +146,7 @@ export const OrchestratorOverlay: React.FC<OrchestratorOverlayProps> = ({ plan, 
                  </div>
 
                  {/* Finish Line */}
-                 <div className="relative flex gap-4 md:gap-8 pt-8 opacity-40">
+                 <div className="relative flex gap-4 md:gap-8 pt-8 opacity-40 animate-in fade-in" style={{ animationDelay: `${plan.steps.length * 150}ms` }}>
                     <div className="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 z-10 bg-outline dark:bg-outline-dark ring-4 ring-surface-variant dark:ring-surface-variant-dark">
                        <div className="w-3 h-3 bg-surface rounded-full"></div>
                     </div>
@@ -152,7 +157,7 @@ export const OrchestratorOverlay: React.FC<OrchestratorOverlayProps> = ({ plan, 
 
               </div>
            </div>
-        </div>
+        </ModalContent>
     </Modal>
   );
 };

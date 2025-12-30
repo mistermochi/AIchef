@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { ChefHat } from 'lucide-react';
 import { SectionCard, ListRow, EditableList } from './UI';
-import { useChefContext } from '../context/ChefContext';
+import { useRecipeContext } from '../context/RecipeContext';
 
 export const InstructionsSection: React.FC = () => {
-  const { activeRecipe: recipe, setActiveRecipe: setRecipe, isEditing } = useChefContext();
+  const { activeRecipe: recipe, setActiveRecipe: setRecipe, isEditing } = useRecipeContext();
 
   if (!recipe) return null;
 
@@ -17,7 +18,7 @@ export const InstructionsSection: React.FC = () => {
   const addStep = () => setRecipe(p => p ? ({ ...p, instructions: [...p.instructions, ''] }) : null);
 
   return (
-    <SectionCard title="Steps" icon={<ChefHat />}>
+    <SectionCard title="Steps" icon={<ChefHat />} noPadding={true}>
       <EditableList
         items={recipe.instructions}
         isEditing={isEditing}

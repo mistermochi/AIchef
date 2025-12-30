@@ -2,11 +2,23 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import ChefAIApp from './App';
-import { ChefProvider } from './context/ChefContext';
+import { AuthProvider } from './context/AuthContext';
+import { UIProvider } from './context/UIContext';
+import { RecipeProvider } from './context/RecipeContext';
+import { CartProvider } from './context/CartContext';
+import { TrackerProvider } from './context/TrackerContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 root.render(
-  <ChefProvider>
-    <ChefAIApp />
-  </ChefProvider>
+  <AuthProvider>
+    <UIProvider>
+      <TrackerProvider>
+        <RecipeProvider>
+          <CartProvider>
+            <ChefAIApp />
+          </CartProvider>
+        </RecipeProvider>
+      </TrackerProvider>
+    </UIProvider>
+  </AuthProvider>
 );

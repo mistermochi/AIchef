@@ -1,41 +1,25 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-  ShoppingCart, Trash2, Layers, 
-  Cpu, X, CookingPot, Utensils, ListChecks, Settings2,
-  Minus, Plus
-} from 'lucide-react';
+
+import React, { useState } from 'react';
+import { ShoppingCart, Trash2, Layers, Cpu, X, ListChecks, Settings2, Minus, Plus, CookingPot, Utensils } from 'lucide-react';
 import { OrchestratorOverlay } from '../components/OrchestratorOverlay';
-import { Button, SectionCard, IconButton, ViewHeader, IngredientItem, EmptyState, HeaderAction, HeaderActionSeparator, ActionBar, PageLayout } from '../components/UI';
-import { useChefContext } from '../context/ChefContext';
+import { Button, SectionCard, IconButton, ViewHeader, CheckableIngredient, EmptyState, HeaderAction, HeaderActionSeparator, ActionBar, PageLayout, ConfirmButton } from '../components/UI';
+import { useCartContext } from '../context/CartContext';
+import { useUIContext } from '../context/UIContext';
+import { useAuthContext } from '../context/AuthContext';
 
 export const ShoppingView: React.FC = () => {
   const { 
-    shoppingCart, clearCart, removeFromCart,
+    cart: shoppingCart, clearCart, removeFromCart,
     updateCartItemFactor, toBuyCount, doneCount, consolidatedList,
-    toggleIngredientCheck, checkedIngredients, setView,
+    toggleIngredientCheck, checkedIngredients,
     orchestrationPlan, orchestrationLoading, generateOrchestrationAction
-  } = useChefContext();
+  } = useCartContext();
+  
+  const { setView } = useUIContext();
+  const { isAIEnabled } = useAuthContext();
 
-  const [isConfirming, setIsConfirming] = useState(false);
   const [showSources, setShowSources] = useState(false);
   const [showOrchestrator, setShowOrchestrator] = useState(false);
-  const clearBtnRef = useRef<HTMLDivElement>(null);
-
-  // Handle click outside to reset confirmation state
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (clearBtnRef.current && !clearBtnRef.current.contains(event.target as Node)) {
-        setIsConfirming(false);
-      }
-    };
-
-    if (isConfirming) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isConfirming]);
 
   if (shoppingCart.length === 0) {
     return (
@@ -53,7 +37,6 @@ export const ShoppingView: React.FC = () => {
   return (
     <>
       <PageLayout>
-        {/* Removed h-full here to allow the card to grow and page to scroll */}
         <div className="max-w-4xl mx-auto">
           <ViewHeader 
             title="Shopping List"
@@ -67,65 +50,53 @@ export const ShoppingView: React.FC = () => {
             }
             actions={
               <ActionBar>
-                {/* Orchestration Button */}
-                <HeaderAction 
-                  label={orchestrationLoading ? 'Processing' : orchestrationPlan ? 'Start Cooking' : 'Cook Plan'}
-                  icon={orchestrationPlan ? <CookingPot /> : <Cpu />}
-                  active={!!orchestrationPlan}
-                  loading={orchestrationLoading}
-                  onClick={orchestrationPlan ? () => setShowOrchestrator(true) : generateOrchestrationAction}
-                />
-                
-                <HeaderActionSeparator />
-                
-                {/* Sources Toggle */}
+                {isAIEnabled && (
+                  <>
+                    <HeaderAction 
+                      label={orchestrationLoading ? 'Processing' : orchestrationPlan ? 'Start Cooking' : 'Cook Plan'}
+                      icon={orchestrationPlan ? <CookingPot /> : <Cpu />}
+                      active={!!orchestrationPlan}
+                      loading={orchestrationLoading}
+                      onClick={orchestrationPlan ? () => setShowOrchestrator(true) : generateOrchestrationAction}
+                    />
+                    <HeaderActionSeparator />
+                  </>
+                )}
                 <HeaderAction 
                   label="Sources"
                   icon={<Settings2 />}
                   active={showSources}
                   onClick={() => setShowSources(!showSources)}
                 />
-                
-                {/* Clear Cart Button */}
-                <div ref={clearBtnRef} className="flex items-center transition-all duration-300">
-                  <HeaderAction 
-                    label={isConfirming ? "Confirm" : "Clear"}
-                    icon={<Trash2 />}
-                    variant="danger"
-                    className={isConfirming ? "!bg-danger !text-white hover:!bg-danger/90 border-danger animate-in zoom-in duration-200" : ""}
-                    onClick={() => {
-                      if (isConfirming) {
-                        clearCart();
-                        setIsConfirming(false);
-                      } else {
-                        setIsConfirming(true);
-                      }
-                    }}
-                  />
-                </div>
+                <ConfirmButton 
+                  isHeaderAction
+                  label="Clear"
+                  confirmLabel="Confirm"
+                  icon={<Trash2 />}
+                  onConfirm={clearCart}
+                  confirmVariant="danger"
+                />
               </ActionBar>
             }
           />
 
-          {/* 2. THE MAIN LIST - SCROLLS WITH HEADER */}
           <SectionCard
-            noPadding
+            noPadding={true}
             title={`Consolidated Ingredients (${consolidatedList.length})`}
             icon={<ListChecks />}
             className="flex flex-col min-h-0"
           >
             <div className="divide-y divide-outline dark:divide-outline-dark">
-              {consolidatedList.map((ing, idx) => {
+              {consolidatedList.map((ing) => {
                 const key = `${ing.name.toLowerCase()}|${ing.unit.toLowerCase()}`;
                 const isChecked = checkedIngredients.has(key);
                 return (
-                  <IngredientItem
-                    key={idx}
+                  <CheckableIngredient
+                    key={key}
                     name={ing.name}
                     quantity={ing.quantity}
                     unit={ing.unit}
                     isChecked={isChecked}
-                    onClick={() => toggleIngredientCheck(key)}
                     onToggle={() => toggleIngredientCheck(key)}
                   />
                 );
@@ -135,11 +106,10 @@ export const ShoppingView: React.FC = () => {
         </div>
       </PageLayout>
 
-      {/* 3. SOURCES DRAWER */}
       {showSources && (
         <div className="fixed inset-0 z-[100] bg-black/50 flex items-end lg:items-center justify-center p-0 lg:p-4" onClick={() => setShowSources(false)}>
           <SectionCard 
-            noPadding
+            noPadding={true}
             title="Selected Recipes"
             icon={<Layers />}
             action={<IconButton size="sm" icon={<X className="w-5 h-5"/>} onClick={() => setShowSources(false)} />}
@@ -171,7 +141,6 @@ export const ShoppingView: React.FC = () => {
         </div>
       )}
 
-      {/* 5. MODULAR ORCHESTRATOR OVERLAY */}
       {showOrchestrator && orchestrationPlan && (
         <OrchestratorOverlay 
           plan={orchestrationPlan}

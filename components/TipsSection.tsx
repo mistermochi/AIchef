@@ -1,13 +1,16 @@
+
 import React from 'react';
 import { Info, Sparkles } from 'lucide-react';
-import { PromptInput, SectionCard, ListRow, EditableList } from './UI';
-import { useChefContext } from '../context/ChefContext';
+import { PromptInput, SectionCard, ListRow, EditableList, Typewriter } from './UI';
+import { useRecipeContext } from '../context/RecipeContext';
+import { useAuthContext } from '../context/AuthContext';
 
 export const TipsSection: React.FC = () => {
   const { 
     activeRecipe: recipe, setActiveRecipe: setRecipe, isEditing, 
     refining, refinePrompt, setRefinePrompt, handleRefineAction: refine, refineError 
-  } = useChefContext();
+  } = useRecipeContext();
+  const { isAIEnabled } = useAuthContext();
 
   if (!recipe) return null;
 
@@ -22,7 +25,7 @@ export const TipsSection: React.FC = () => {
   return (
     <div className="space-y-6">
       {(isEditing || (recipe.extractedTips && recipe.extractedTips.length > 0)) && (
-        <SectionCard title="Tips" icon={<Info />}>
+        <SectionCard title="Tips" icon={<Info />} noPadding={true}>
           <EditableList
             items={recipe.extractedTips || []}
             isEditing={isEditing}
@@ -43,20 +46,22 @@ export const TipsSection: React.FC = () => {
         </SectionCard>
       )}
 
-      <SectionCard title="AI tips" icon={<Sparkles />}>
-        <div>
-          {(recipe.aiSuggestions || []).map((tip, idx) => (
-             <ListRow
-                key={idx}
-                leading={<Sparkles className="w-4 h-4 text-primary dark:text-primary-dark" />}
-                content={tip}
-                isEditing={false}
-             />
-          ))}
-        </div>
-      </SectionCard>
+      {(recipe.aiSuggestions && recipe.aiSuggestions.length > 0) && (
+        <SectionCard title="AI tips" icon={<Sparkles />} noPadding={true}>
+          <div>
+            {(recipe.aiSuggestions || []).map((tip, idx) => (
+               <ListRow 
+                  key={idx} 
+                  leading={<Sparkles className="w-4 h-4 text-primary dark:text-primary-dark" />} 
+                  content={<Typewriter text={tip} speed={20} animate={!recipe.id} />} 
+                  isEditing={false} 
+                />
+            ))}
+          </div>
+        </SectionCard>
+      )}
 
-      {!isEditing && (
+      {!isEditing && isAIEnabled && (
         <PromptInput 
            value={refinePrompt} 
            onChange={setRefinePrompt}
