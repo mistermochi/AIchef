@@ -6,7 +6,14 @@ import { SCHEMAS } from '../constants/schemas';
 
 // Helper to get a fresh client instance using the current environment key
 const getClient = () => {
-  return new GoogleGenAI({ apiKey: localStorage.getItem('chefai_pass') });
+	const key = localStorage.getItem('chefai_pass');
+  
+  // If the key is null or empty, stop immediately
+	if (!key) {
+	  throw new Error("API Key not found in localStorage");
+	}
+
+	return new GoogleGenAI({ apiKey: key });
 };
 
 // --- FACTORY ---
