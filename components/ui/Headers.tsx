@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface PageHeaderProps {
@@ -6,7 +7,7 @@ interface PageHeaderProps {
   action?: React.ReactNode;
 }
 
-export const PageHeader: React.FC<PageHeaderProps> = ({ title, breadcrumbs, action }) => (
+export const PageHeader: React.FC<PageHeaderProps> = ({ breadcrumbs, action }) => (
   <header className="h-14 border-b border-outline dark:border-outline-dark bg-surface dark:bg-surface-dark flex items-center justify-between px-6 shrink-0 sticky top-0 z-20 transition-colors">
     <div className="flex items-center gap-2 text-sm font-medium text-content-secondary dark:text-content-secondary-dark">
       <span>ChefAI Studio</span>

@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { useUIContext } from './context/UIContext';
 import { useRecipeContext } from './context/RecipeContext';
 import { Navigation } from './components/Navigation';

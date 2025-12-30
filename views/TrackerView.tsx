@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { Tag, History, LayoutGrid, Trash2, Save, Sparkles, TrendingUp, Search, ExternalLink, AlertTriangle, Camera, Plus, Calculator, Calendar, Store, TrendingDown, ArrowDownRight, Package } from 'lucide-react';
-import { PageLayout, ViewHeader, Button, ActionBar, HeaderAction, HeaderActionSeparator, Modal, ModalHeader, ModalContent, InsightCard, Badge, SectionCard, BaseCard, ConfirmButton, Input } from '../components/UI';
+import { History, LayoutGrid, Trash2, Save, Sparkles, TrendingDown, Calendar, Search, ExternalLink, AlertTriangle, Camera, Plus } from 'lucide-react';
+import { PageLayout, ViewHeader, Button, ActionBar, HeaderAction, HeaderActionSeparator, Modal, ModalHeader, ModalContent, Badge, SectionCard, BaseCard, ConfirmButton } from '../components/UI';
 import { GlobalFAB } from '../components/GlobalFAB';
 import { PriceEntryForm, PriceHistoryList, PriceCatalogList } from '../components/TrackerUI';
 import { MetaSection } from '../components/MetaSection';

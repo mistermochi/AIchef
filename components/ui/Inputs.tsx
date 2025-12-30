@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect } from 'react';
-import { Loader2, ArrowUp, Sparkles } from 'lucide-react';
+import { ArrowUp, Sparkles } from 'lucide-react';
 import { useHaptics } from '../../hooks/useHaptics';
 
 // --- PROMPT INPUT ---

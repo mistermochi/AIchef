@@ -1,5 +1,4 @@
 
-import React from 'react';
 import ReactDOM from 'react-dom/client';
 import ChefAIApp from './App';
 import { AuthProvider } from './context/AuthContext';

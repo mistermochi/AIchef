@@ -39,7 +39,7 @@ export const HistoryView: React.FC = () => {
 
   const visibleRecipes = useMemo(() => filteredRecipes.slice(0, displayLimit), [filteredRecipes, displayLimit]);
 
-  const handleCartClick = (e: React.MouseEvent, recipe: Recipe) => {
+  const handleCartClick = (_: React.MouseEvent, recipe: Recipe) => {
     const cartItem = shoppingCart.find(item => item.recipeId === recipe.id);
     if (cartItem) removeFromCart(cartItem.id);
     else addToCart(recipe, 1);

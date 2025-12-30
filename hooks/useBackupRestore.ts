@@ -1,10 +1,10 @@
 
 import { useState } from 'react';
-import { collection, getDocs, query, where, writeBatch, doc, Timestamp, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, writeBatch, doc, Timestamp, orderBy } from 'firebase/firestore';
 import { chefDb, trackerDb, CHEF_APP_ID, TRACKER_APP_ID } from '../firebase';
 import { useAuthContext } from '../context/AuthContext';
 import { downloadFile, readFileAsText, jsonToCSV, csvToJson } from '../utils/backup';
-import { Recipe, Purchase } from '../types';
+import { Recipe } from '../types';
 
 export function useBackupRestore() {
   const { chefUser, trackerUser } = useAuthContext();

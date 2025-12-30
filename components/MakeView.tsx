@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Camera, CameraOff, Lightbulb, ClipboardList, ChevronDown, ChevronUp, ArrowRightLeft, Waves, SunMedium } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Camera, CameraOff, Lightbulb, ClipboardList, ArrowRightLeft, Waves, SunMedium } from 'lucide-react';
 import { Badge } from './UI';
 import { useWakeLock, useAirGestures } from '../hooks/useDevice';
 import { useRecipeContext } from '../context/RecipeContext';
@@ -8,8 +8,7 @@ import { useRecipeContext } from '../context/RecipeContext';
 export const MakeView: React.FC = () => {
   const { activeRecipe: recipe } = useRecipeContext();
   const [currentStep, setCurrentStep] = useState(0);
-  const [showIngOverlay, setShowIngOverlay] = useState(false);
-  const [showTipsOverlay, setShowTipsOverlay] = useState(false);
+  
   const [airGesturesEnabled, setAirGesturesEnabled] = useState(false);
   const [gestureFeedback, setGestureFeedback] = useState<'left' | 'right' | null>(null);
 
@@ -63,7 +62,7 @@ export const MakeView: React.FC = () => {
          <canvas ref={canvasRef} width="160" height="120" className="hidden" />
       </div>
 
-      <button onClick={() => setShowTipsOverlay(true)} className="absolute top-0 left-1/2 -translate-x-1/2 px-6 py-2 bg-surface-variant dark:bg-surface-variant-dark border-x border-b border-outline dark:border-outline-dark rounded-b-2xl text-xs font-bold text-content-secondary dark:text-content-secondary-dark uppercase tracking-widest flex items-center gap-2 shadow-sm hover:bg-surface dark:hover:bg-surface-dark transition-colors"><Lightbulb className="w-3.5 h-3.5" /> Tips <ChevronDown className="w-3 h-3" /></button>
+      <button className="absolute top-0 left-1/2 -translate-x-1/2 px-6 py-2 bg-surface-variant dark:bg-surface-variant-dark border-x border-b border-outline dark:border-outline-dark rounded-b-2xl text-xs font-bold text-content-secondary dark:text-content-secondary-dark uppercase tracking-widest flex items-center gap-2 shadow-sm hover:bg-surface dark:hover:bg-surface-dark transition-colors opacity-50 cursor-not-allowed"><Lightbulb className="w-3.5 h-3.5" /> Tips</button>
 
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-12 w-full max-w-5xl mx-auto">
         
@@ -116,7 +115,7 @@ export const MakeView: React.FC = () => {
         </div>
       </div>
 
-      <button onClick={() => setShowIngOverlay(true)} className="absolute bottom-0 left-1/2 -translate-x-1/2 px-6 py-3 bg-surface dark:bg-surface-dark border-x border-t border-outline dark:border-outline-dark rounded-t-2xl text-xs font-bold text-primary dark:text-primary-dark uppercase tracking-widest flex items-center gap-2 shadow-lg hover:pb-4 transition-all"><ClipboardList className="w-3.5 h-3.5" /> Ingredients <ChevronUp className="w-3 h-3" /></button>
+      <button className="absolute bottom-0 left-1/2 -translate-x-1/2 px-6 py-3 bg-surface dark:bg-surface-dark border-x border-t border-outline dark:border-outline-dark rounded-t-2xl text-xs font-bold text-primary dark:text-primary-dark uppercase tracking-widest flex items-center gap-2 shadow-lg hover:pb-4 transition-all opacity-50 cursor-not-allowed"><ClipboardList className="w-3.5 h-3.5" /> Ingredients</button>
     </div>
   );
 };
