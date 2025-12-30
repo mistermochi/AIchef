@@ -111,7 +111,16 @@ const BaseRow: React.FC<BaseRowProps> = ({ leading, children, actions, onDelete,
 );
 
 // --- EDITABLE LIST ---
-export function EditableList<T>({ items, renderItem, onAdd, isEditing, addButtonLabel = "Add Item", className = '' }: any) {
+interface EditableListProps<T> {
+  items: T[];
+  renderItem: (item: T, index: number, isEditing: boolean) => React.ReactNode;
+  onAdd: () => void;
+  isEditing: boolean;
+  addButtonLabel?: string;
+  className?: string;
+}
+
+export function EditableList<T>({ items, renderItem, onAdd, isEditing, addButtonLabel = "Add Item", className = '' }: EditableListProps<T>) {
   return (
     <div className={className}>
       {items.map((it: T, i: number) => renderItem(it, i, isEditing))}
@@ -125,18 +134,40 @@ export function EditableList<T>({ items, renderItem, onAdd, isEditing, addButton
 }
 
 // --- LIST ROW (For Instructions/Tips) ---
-export const ListRow: React.FC<any> = ({ leading, content, isEditing, onChange, onDelete, onClick, placeholder }) => (
-  <BaseRow leading={leading} onClick={onClick} onDelete={isEditing ? onDelete : undefined}>
+interface ListRowProps {
+  leading?: React.ReactNode;
+  content: string | React.ReactNode;
+  isEditing?: boolean;
+  onChange?: (val: string) => void;
+  onDelete?: () => void;
+  onClick?: () => void;
+  placeholder?: string;
+  actions?: React.ReactNode;
+  className?: string;
+}
+
+export const ListRow: React.FC<ListRowProps> = ({ 
+  leading, 
+  content, 
+  isEditing = false, 
+  onChange, 
+  onDelete, 
+  onClick, 
+  placeholder,
+  actions,
+  className 
+}) => (
+  <BaseRow leading={leading} onClick={onClick} onDelete={isEditing ? onDelete : undefined} actions={actions} className={className}>
     {isEditing ? (
       <textarea
-        value={content}
+        value={typeof content === 'string' ? content : ''}
         onChange={(e) => onChange?.(e.target.value)}
         placeholder={placeholder}
         className="w-full bg-surface dark:bg-surface-dark border border-outline dark:border-outline-dark rounded-lg p-3 text-sm outline-none shadow-sm focus:border-primary transition-all resize-none"
-        rows={Math.max(2, Math.min(5, content.split('\n').length))}
+        rows={Math.max(2, Math.min(5, (typeof content === 'string' ? content : '').split('\n').length))}
       />
     ) : (
-      <p className="text-sm text-content-secondary dark:text-content-secondary-dark font-medium leading-relaxed whitespace-pre-wrap">{content}</p>
+      <div className="text-sm text-content-secondary dark:text-content-secondary-dark font-medium leading-relaxed whitespace-pre-wrap">{content}</div>
     )}
   </BaseRow>
 );

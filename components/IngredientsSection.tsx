@@ -48,7 +48,7 @@ export const IngredientsSection: React.FC = () => {
         isEditing={isEditing}
         onAdd={addIng}
         addButtonLabel="Add Line Item"
-        renderItem={(ing, idx, editing) => 
+        renderItem={(ing: Ingredient, idx: number, editing: boolean) => 
           editing ? (
             <IngredientInput
               key={idx}
@@ -77,3 +77,4 @@ export const IngredientsSection: React.FC = () => {
     </SectionCard>
   );
 };
+    

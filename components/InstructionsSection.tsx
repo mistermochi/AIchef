@@ -24,13 +24,13 @@ export const InstructionsSection: React.FC = () => {
         isEditing={isEditing}
         onAdd={addStep}
         addButtonLabel="Add Step"
-        renderItem={(step, i, editing) => (
+        renderItem={(step: string, i: number, editing: boolean) => (
           <ListRow
             key={i}
             leading={<span className="font-mono font-bold text-xs">{String(i + 1).padStart(2, '0')}</span>}
             content={step}
             isEditing={editing}
-            onChange={(val) => updateStep(i, val)}
+            onChange={(val: string) => updateStep(i, val)}
             onDelete={() => removeStep(i)}
             placeholder="Describe this step..."
           />
@@ -39,3 +39,4 @@ export const InstructionsSection: React.FC = () => {
     </SectionCard>
   );
 };
+    

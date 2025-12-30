@@ -31,13 +31,13 @@ export const TipsSection: React.FC = () => {
             isEditing={isEditing}
             onAdd={addTip}
             addButtonLabel="Add Tip"
-            renderItem={(tip, idx, editing) => (
+            renderItem={(tip: string, idx: number, editing: boolean) => (
               <ListRow
                 key={idx}
                 leading={<Info className="w-4 h-4 text-content-tertiary dark:text-content-tertiary-dark" />}
                 content={tip}
                 isEditing={editing}
-                onChange={(val) => updateTip(idx, val)}
+                onChange={(val: string) => updateTip(idx, val)}
                 onDelete={() => removeTip(idx)}
                 placeholder="Add a helpful tip..."
               />
@@ -74,3 +74,4 @@ export const TipsSection: React.FC = () => {
     </div>
   );
 };
+    

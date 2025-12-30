@@ -1,3 +1,4 @@
+
 {
   "name": "aichef-studio",
   "private": true,
@@ -6,7 +7,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "validate": "tsc --noEmit"
   },
   "dependencies": {
     "@google/genai": "^1.34.0",
