@@ -12,7 +12,15 @@ export const ProfileView: React.FC = () => {
   const { profile, updateProfile, saveProfile, isAIEnabled, openKeySelector, aiHealth, aiErrorMsg, checkHealth } = useAuthContext();
   const { darkMode, setDarkMode } = useUIContext();
   const { processing, status, exportCookbook, restoreCookbook, exportTracker, restoreTracker } = useBackupRestore();
-  const [passValue, setPassValue] = useLocalStorage('chefai_pass', '');
+
+  const [passValue, setPassValue] = React.useState(() => {
+    return localStorage.getItem('chefai_pass') || '';
+  });
+
+  // Update localStorage whenever passValue changes
+  useEffect(() => {
+    localStorage.setItem('chefai_pass', passValue);
+  }, [passValue]);
 
   const recipeFileRef = useRef<HTMLInputElement>(null);
   const trackerFileRef = useRef<HTMLInputElement>(null);
