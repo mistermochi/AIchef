@@ -5,7 +5,6 @@ import { ViewHeader, Switch, Textarea, SectionCard, Button, PageLayout, Badge, I
 import { useAuthContext } from '../context/AuthContext';
 import { useUIContext } from '../context/UIContext';
 import { useBackupRestore } from '../hooks/useBackupRestore';
-import { useLocalStorage } from '../hooks/useLocalStorage';
 import { APPLIANCE_LIST, DIETARY_LIST } from '../types';
 
 export const ProfileView: React.FC = () => {
