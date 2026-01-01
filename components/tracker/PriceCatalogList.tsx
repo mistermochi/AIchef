@@ -1,199 +1,374 @@
 
-import React, { useState, useMemo } from 'react';
-import { Search, Database, ShoppingCart, Check, ChevronDown, ChevronRight, Store } from 'lucide-react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
+import { Search, Database, ShoppingCart, Check, ChevronRight, Store, ArrowLeft, Tag, Package } from 'lucide-react';
 import { Purchase } from '../../types';
 import { CATEGORY_EMOJIS, fmtCurrency, getPerItemPrice, fmtDate } from '../../utils/tracker';
-import { Input, EmptyState, Button } from '../UI';
+import { Input, EmptyState, Button, Badge } from '../UI';
 import { useCartContext } from '../../context/CartContext';
+
+// --- Types for the Catalog Tree ---
+
+interface ProductSummary {
+  id: string; // normalized key
+  name: string; // display name
+  genericName: string;
+  category: string;
+  bestPrice: number;
+  bestUnitLabel: string;
+  bestStore: string;
+  bestDate: any;
+  bestPurchaseId: string;
+  variantCount: number; // how many purchases history
+}
+
+interface GenericGroup {
+  name: string;
+  products: ProductSummary[];
+  minPrice: number;
+  productCount: number;
+}
+
+// --- Component ---
 
 export const PriceCatalogList: React.FC<{ 
   purchases: Purchase[], 
   onOpenDetail: (pid: string, productName: string) => void 
 }> = ({ purchases, onOpenDetail }) => {
   const { cart, addToCart, removeFromCart } = useCartContext();
+  
+  // Navigation State
   const [search, setSearch] = useState('');
-  const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({});
+  const deferredSearch = useDeferredValue(search); // Defer search term for heavy filtering
 
-  const toggleCat = (cat: string) => setExpandedCats(prev => ({ ...prev, [cat]: !prev[cat] }));
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedGeneric, setSelectedGeneric] = useState<string | null>(null);
 
-  // Process Data
-  const catalogData = useMemo(() => {
-    if (!purchases.length) return {};
-    
-    // 1. Group purchases by Product Key (Normalized Name)
-    // Note: 'purchases' comes in sorted by Date DESC from the Context.
-    // Therefore, the arrays in groupedByItem will preserve that order (0 is always latest).
-    const groupedByItem: Record<string, Purchase[]> = {};
+  // --- Data Processing ---
+  const { tree, flatList, categories } = useMemo<{
+    tree: Record<string, Record<string, GenericGroup>>;
+    flatList: ProductSummary[];
+    categories: string[];
+  }>(() => {
+    // 1. Group raw purchases by unique product (Normalized Name)
+    const groupedByProduct: Record<string, Purchase[]> = {};
     purchases.forEach(p => {
       const key = p.productName?.trim()?.toLowerCase() || 'unknown';
-      if (!groupedByItem[key]) groupedByItem[key] = [];
-      groupedByItem[key].push(p);
+      if (!groupedByProduct[key]) groupedByProduct[key] = [];
+      groupedByProduct[key].push(p);
     });
-    
-    // 2. Aggregate into Categories -> Items
-    const groupedByCategory: Record<string, any[]> = {};
-    const query = search.toLowerCase().trim();
-    
-    Object.keys(groupedByItem).forEach(itemKey => {
-      const itemPurchases = groupedByItem[itemKey];
+
+    // 2. Create Product Summaries
+    const allProducts: ProductSummary[] = Object.keys(groupedByProduct).map(key => {
+      const history = groupedByProduct[key];
+      // history is sorted by date desc from parent (index 0 is latest)
+      const latest = history[0];
       
-      // Optimization: Input is already sorted by date, so index 0 is latest.
-      // No need to sortByDate.
-      const latest = itemPurchases[0];
-      
-      // Optimization: Use reduce O(N) instead of sort O(N log N) to find best price
-      const best = itemPurchases.reduce((min, curr) => 
+      // Find best price
+      const best = history.reduce((min, curr) => 
         (curr.normalizedPrice || Infinity) < (min.normalizedPrice || Infinity) ? curr : min
-      , itemPurchases[0]);
-      
-      if (!latest || !best) return;
+      , history[0]);
 
-      const pName = (latest.productName || '').toLowerCase();
-      const pStore = (best.store || '').toLowerCase();
-      const pCat = (latest.category || 'General').toLowerCase();
-
-      // Filter
-      if (query && !(pName.includes(query) || pStore.includes(query) || pCat.includes(query))) return;
-      
-      const category = latest.category || 'General';
-      
-      // Calculate Display Metrics
       const bestCtx = getPerItemPrice(best);
-      
-      if (!groupedByCategory[category]) groupedByCategory[category] = [];
-      
-      groupedByCategory[category].push({ 
-        id: itemKey,
-        name: latest.productName, 
-        category,
-        bestStats: {
-          id: best.id,
-          store: best.store,
-          date: best.date,
-          unitPrice: bestCtx.price,
-          unitLabel: bestCtx.label,
-        }
-      });
+
+      return {
+        id: key,
+        name: latest.productName,
+        genericName: latest.genericName || 'Unclassified',
+        category: latest.category || 'General',
+        bestPrice: bestCtx.price,
+        bestUnitLabel: bestCtx.label,
+        bestStore: best.store,
+        bestDate: best.date,
+        bestPurchaseId: best.id,
+        variantCount: history.length
+      };
     });
-    return groupedByCategory;
-  }, [purchases, search]);
 
-  const categories = Object.keys(catalogData).sort();
+    // 3. Build Tree: Category -> Generic -> Products
+    const treeData: Record<string, Record<string, GenericGroup>> = {};
+    
+    allProducts.forEach(prod => {
+      const cat = prod.category;
+      const gen = prod.genericName;
 
-  // Initialize all categories as expanded on first load or search change
-  useMemo(() => {
-    const allExpanded: Record<string, boolean> = {};
-    categories.forEach(c => allExpanded[c] = true);
-    setExpandedCats(allExpanded);
-  }, [categories.length]);
+      if (!treeData[cat]) treeData[cat] = {};
+      if (!treeData[cat][gen]) {
+        treeData[cat][gen] = {
+          name: gen,
+          products: [],
+          minPrice: Infinity,
+          productCount: 0
+        };
+      }
 
-  return (
-    <div className="space-y-4 animate-in fade-in duration-500 pb-20">
-      {/* Search Bar */}
-      <div className="sticky top-0 z-10 bg-surface-variant dark:bg-surface-variant-dark pt-1 pb-4">
-        <Input 
-          startIcon={<Search className="w-4 h-4" />} 
-          placeholder="Filter products..." 
-          value={search} 
-          onChange={(e) => setSearch(e.target.value)} 
-          className="shadow-sm"
-        />
+      const group = treeData[cat][gen];
+      group.products.push(prod);
+      group.productCount++;
+      if (prod.bestPrice < group.minPrice) group.minPrice = prod.bestPrice;
+    });
+
+    const sortedCategories = Object.keys(treeData).sort();
+
+    return { tree: treeData, flatList: allProducts, categories: sortedCategories };
+  }, [purchases]);
+
+  // --- Filtering for Search (Uses Deferred Value) ---
+  const searchResults = useMemo(() => {
+    if (!deferredSearch.trim()) return [];
+    const q = deferredSearch.toLowerCase();
+    return flatList.filter(p => 
+      p.name.toLowerCase().includes(q) || 
+      p.category.toLowerCase().includes(q) ||
+      p.genericName.toLowerCase().includes(q)
+    ).sort((a,b) => a.name.localeCompare(b.name));
+  }, [deferredSearch, flatList]);
+
+  // --- Handlers ---
+  const handleBack = () => {
+    if (selectedGeneric) setSelectedGeneric(null);
+    else if (selectedCategory) setSelectedCategory(null);
+  };
+
+  const toggleCart = (e: React.MouseEvent, prod: ProductSummary) => {
+    e.stopPropagation();
+    const isInCart = cart.some(i => i.title === prod.name);
+    if (isInCart) {
+      const existing = cart.find(i => i.title === prod.name);
+      if (existing) removeFromCart(existing.id);
+    } else {
+      // Mock recipe structure for cart
+      addToCart({ 
+        id: `tracker-${prod.id}`, 
+        title: prod.name, 
+        ingredients: [{ name: prod.name, quantity: 1, unit: 'pcs' }] 
+      } as any, 1);
+    }
+  };
+
+  // --- Renders ---
+
+  // 1. Search Overlay (Overrides Hierarchy)
+  if (search.trim()) {
+    return (
+      <div className="space-y-4 pb-20">
+        <div className="sticky top-0 z-10 bg-surface-variant dark:bg-surface-variant-dark pt-1 pb-4">
+          <Input 
+            startIcon={<Search className="w-4 h-4" />} 
+            placeholder="Filter products..." 
+            value={search} 
+            onChange={(e) => setSearch(e.target.value)} 
+            className="shadow-sm"
+            autoFocus
+          />
+        </div>
+        {searchResults.length === 0 ? (
+          <EmptyState icon={<Search />} title="No results" description={`No products match "${search}"`} />
+        ) : (
+          <div className="divide-y divide-outline/30 dark:divide-outline-dark/30 bg-surface dark:bg-surface-dark rounded-xl border border-outline dark:border-outline-dark">
+            {searchResults.map(prod => (
+              <ProductRow key={prod.id} product={prod} isInCart={cart.some(i => i.title === prod.name)} onToggleCart={(e) => toggleCart(e, prod)} onClick={() => onOpenDetail(prod.bestPurchaseId, prod.name)} />
+            ))}
+          </div>
+        )}
       </div>
+    );
+  }
 
-      {categories.length === 0 ? (
-        <EmptyState 
-          icon={<Database />} 
-          title="Catalog Empty" 
-          description={search ? "No matching products found." : "Log purchases to build your catalog."} 
-        />
-      ) : (
-        categories.map(cat => {
-          const isExpanded = expandedCats[cat];
-          const items = catalogData[cat].sort((a, b) => a.name.localeCompare(b.name));
-          
-          return (
-            <div key={cat} className="bg-surface dark:bg-surface-dark border border-outline dark:border-outline-dark rounded-xl overflow-hidden shadow-sm">
-              {/* Category Header */}
-              <button 
-                onClick={() => toggleCat(cat)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-surface-variant/30 dark:bg-surface-variant-dark/30 hover:bg-surface-variant/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="text-xl">{CATEGORY_EMOJIS[cat] || '🏷️'}</div>
-                  <div className="text-sm font-bold text-content dark:text-content-dark uppercase tracking-wider">
-                    {cat} <span className="text-content-tertiary ml-1">({items.length})</span>
-                  </div>
-                </div>
-                <div className="text-content-tertiary">
-                  {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-                </div>
-              </button>
-
-              {/* Items List */}
-              {isExpanded && (
-                <div className="divide-y divide-outline/30 dark:divide-outline-dark/30">
-                  {items.map(item => {
-                    const isInCart = cart.some(i => i.title === item.name);
-                    const best = item.bestStats;
-
-                    return (
-                      <div 
-                        key={item.id} 
-                        className="flex items-center justify-between p-3 pl-4 hover:bg-primary-container/5 dark:hover:bg-primary-container-dark/5 transition-colors group cursor-pointer"
-                        onClick={() => onOpenDetail(best.id, item.name)}
-                      >
-                        {/* Left: Product Info */}
-                        <div className="flex-1 min-w-0 pr-2">
-                          <div className="font-bold text-content dark:text-content-dark truncate text-sm sm:text-base">
-                            {item.name}
-                          </div>
-                          <div className="flex items-center gap-1.5 mt-1 text-xs text-content-secondary dark:text-content-secondary-dark truncate">
-                            <Store className="w-3 h-3 text-content-tertiary" />
-                            <span className="truncate max-w-[120px]">{best.store}</span>
-                            <span className="text-outline dark:text-outline-dark mx-0.5">•</span>
-                            <span className="text-content-tertiary">{fmtDate(best.date)}</span>
-                          </div>
-                        </div>
-
-                        {/* Middle: Best Price Only (Prominent) */}
-                        <div className="flex items-center justify-end mr-4 shrink-0">
-                           <div className="flex flex-col items-end">
-                              <div className="text-[9px] font-bold text-success uppercase tracking-wider mb-0.5">
-                                 Best Price
-                              </div>
-                              <div className="flex items-baseline gap-1">
-                                 <span className="text-lg sm:text-xl font-bold text-success-dark dark:text-success">{fmtCurrency(best.unitPrice)}</span>
-                                 <span className="text-xs font-bold text-content-tertiary uppercase opacity-80">/ {best.unitLabel}</span>
-                              </div>
-                           </div>
-                        </div>
-
-                        {/* Right: Action */}
-                        <div className="shrink-0" onClick={e => e.stopPropagation()}>
-                          <Button 
-                            size="icon-sm" 
-                            variant={isInCart ? 'primary' : 'ghost'} 
-                            className={isInCart ? '!bg-success text-white border-transparent shadow-sm' : 'text-content-tertiary hover:bg-surface-variant'}
-                            onClick={() => { 
-                              if (isInCart) {
-                                const existing = cart.find(i => i.title === item.name);
-                                if (existing) removeFromCart(existing.id);
-                              } else {
-                                addToCart({ id: `tracker-${item.id}`, title: item.name, ingredients: [{ name: item.name, quantity: 1, unit: 'pcs' }] } as any, 1);
-                              }
-                            }} 
-                            icon={isInCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />} 
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+  // Header Navigation (Breadcrumbs)
+  const headerNav = (
+    <div className="sticky top-0 z-10 bg-surface-variant dark:bg-surface-variant-dark pt-1 pb-4 space-y-2">
+      <Input 
+        startIcon={<Search className="w-4 h-4" />} 
+        placeholder="Find item..." 
+        value={search} 
+        onChange={(e) => setSearch(e.target.value)} 
+        className="shadow-sm"
+      />
+      {(selectedCategory || selectedGeneric) && (
+         <div className="flex items-center gap-2 animate-in slide-in-from-left-2 fade-in duration-300">
+            <Button size="icon-sm" variant="ghost" onClick={handleBack} icon={<ArrowLeft className="w-4 h-4" />} className="shrink-0" />
+            <div className="flex items-center gap-2 overflow-hidden">
+               <Badge variant="neutral" label={selectedCategory!} />
+               {selectedGeneric && (
+                 <>
+                   <ChevronRight className="w-3 h-3 text-content-tertiary" />
+                   <Badge variant="primary" label={selectedGeneric} />
+                 </>
+               )}
             </div>
-          );
-        })
+         </div>
       )}
     </div>
   );
+
+  // 2. Generic Item View (Tier 3: Comparison)
+  if (selectedCategory && selectedGeneric) {
+    const group = tree[selectedCategory]?.[selectedGeneric];
+    
+    if (!group) {
+        return <div className="p-8 text-center text-content-secondary">Item not found.</div>;
+    }
+
+    // Sort by Best Price ASC for easy comparison
+    const sortedProducts = [...group.products].sort((a, b) => a.bestPrice - b.bestPrice);
+
+    return (
+      <div className="pb-20">
+        {headerNav}
+        <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+           <div className="px-1">
+              <h3 className="text-lg font-bold text-content dark:text-content-dark flex items-center gap-2">
+                 <Tag className="w-5 h-5 text-primary" />
+                 {selectedGeneric} Options
+              </h3>
+              <p className="text-xs text-content-secondary dark:text-content-secondary-dark mt-1">
+                 Comparing {sortedProducts.length} brands by best price.
+              </p>
+           </div>
+           
+           <div className="divide-y divide-outline/30 dark:divide-outline-dark/30 bg-surface dark:bg-surface-dark rounded-xl border border-outline dark:border-outline-dark overflow-hidden">
+              {sortedProducts.map((prod, idx) => (
+                <div key={prod.id} className={idx === 0 ? "bg-success-container/10 relative" : ""}>
+                   {idx === 0 && (
+                     <div className="absolute top-0 right-0 bg-success text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg z-10">
+                       BEST VALUE
+                     </div>
+                   )}
+                   <ProductRow 
+                     product={prod} 
+                     isInCart={cart.some(i => i.title === prod.name)} 
+                     onToggleCart={(e) => toggleCart(e, prod)} 
+                     onClick={() => onOpenDetail(prod.bestPurchaseId, prod.name)} 
+                   />
+                </div>
+              ))}
+           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Category View (Tier 2: Generics List)
+  if (selectedCategory) {
+    const groupMap = tree[selectedCategory] || {};
+    // Ensure generics is typed correctly as GenericGroup[]
+    const generics = (Object.values(groupMap) as GenericGroup[]).sort((a, b) => a.name.localeCompare(b.name));
+
+    return (
+      <div className="pb-20">
+        {headerNav}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in slide-in-from-right-4 duration-300">
+           {generics.map(gen => (
+             <button 
+               key={gen.name}
+               onClick={() => setSelectedGeneric(gen.name)}
+               className="bg-surface dark:bg-surface-dark border border-outline dark:border-outline-dark p-4 rounded-xl flex items-center justify-between group hover:border-primary/50 transition-all active:scale-[0.98] text-left shadow-sm"
+             >
+                <div className="min-w-0">
+                   <div className="font-bold text-content dark:text-content-dark truncate">{gen.name}</div>
+                   <div className="text-xs text-content-tertiary mt-1 font-medium">
+                      {gen.productCount} variants
+                   </div>
+                </div>
+                <div className="text-right">
+                   <div className="text-xs font-bold text-content-tertiary uppercase mb-0.5">From</div>
+                   <div className="text-base font-bold text-success dark:text-success-dark">
+                      {fmtCurrency(gen.minPrice)}
+                   </div>
+                </div>
+             </button>
+           ))}
+           {generics.length === 0 && <EmptyState icon={<Package />} title="No items" description="This category is empty." />}
+        </div>
+      </div>
+    );
+  }
+
+  // 4. Root View (Tier 1: Categories)
+  return (
+    <div className="pb-20">
+      {headerNav}
+      <div className="grid grid-cols-1 gap-3 animate-in fade-in duration-300">
+         {categories.length === 0 ? (
+            <EmptyState icon={<Database />} title="Catalog Empty" description="Log purchases to build your catalog." />
+         ) : (
+            categories.map(cat => {
+              const groupMap = tree[cat] || {};
+              // Ensure generics is typed correctly as GenericGroup[]
+              const generics = Object.values(groupMap) as GenericGroup[];
+              const itemCount = generics.reduce((acc, g) => acc + g.productCount, 0);
+
+              return (
+                <button 
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className="bg-surface dark:bg-surface-dark border border-outline dark:border-outline-dark p-4 rounded-xl flex items-center justify-between group hover:border-primary/50 transition-all active:scale-[0.98] shadow-sm"
+                >
+                   <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-surface-variant dark:bg-surface-variant-dark rounded-full flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                         {CATEGORY_EMOJIS[cat] || '📦'}
+                      </div>
+                      <div className="text-left">
+                         <div className="font-bold text-lg text-content dark:text-content-dark">{cat}</div>
+                         <div className="text-xs text-content-secondary dark:text-content-secondary-dark font-medium">
+                            {generics.length} Item Types • {itemCount} Products
+                         </div>
+                      </div>
+                   </div>
+                   <ChevronRight className="w-5 h-5 text-content-tertiary group-hover:translate-x-1 transition-transform" />
+                </button>
+              );
+            })
+         )}
+      </div>
+    </div>
+  );
 };
+
+// --- Sub-Component: Product Row (Leaf Node) ---
+
+const ProductRow: React.FC<{ 
+  product: ProductSummary, 
+  isInCart: boolean, 
+  onToggleCart: (e: React.MouseEvent) => void,
+  onClick: () => void
+}> = ({ product, isInCart, onToggleCart, onClick }) => (
+  <div 
+    className="flex items-center justify-between p-3 pl-4 hover:bg-primary-container/5 dark:hover:bg-primary-container-dark/5 transition-colors group cursor-pointer"
+    onClick={onClick}
+  >
+    {/* Left: Product Info */}
+    <div className="flex-1 min-w-0 pr-2">
+      <div className="font-bold text-content dark:text-content-dark truncate text-sm sm:text-base">
+        {product.name}
+      </div>
+      <div className="flex items-center gap-1.5 mt-1 text-xs text-content-secondary dark:text-content-secondary-dark truncate">
+        <Store className="w-3 h-3 text-content-tertiary" />
+        <span className="truncate max-w-[120px]">{product.bestStore}</span>
+        <span className="text-outline dark:text-outline-dark mx-0.5">•</span>
+        <span className="text-content-tertiary">{fmtDate(product.bestDate)}</span>
+      </div>
+    </div>
+
+    {/* Middle: Best Price */}
+    <div className="flex items-center justify-end mr-4 shrink-0">
+       <div className="flex flex-col items-end">
+          <div className="flex items-baseline gap-1">
+             <span className="text-lg sm:text-xl font-bold text-success-dark dark:text-success">{fmtCurrency(product.bestPrice)}</span>
+             <span className="text-xs font-bold text-content-tertiary uppercase opacity-80">/ {product.bestUnitLabel}</span>
+          </div>
+       </div>
+    </div>
+
+    {/* Right: Action */}
+    <div className="shrink-0" onClick={e => e.stopPropagation()}>
+      <Button 
+        size="icon-sm" 
+        variant={isInCart ? 'primary' : 'ghost'} 
+        className={isInCart ? '!bg-success text-white border-transparent shadow-sm' : 'text-content-tertiary hover:bg-surface-variant'}
+        onClick={onToggleCart} 
+        icon={isInCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />} 
+      />
+    </div>
+  </div>
+);

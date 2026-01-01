@@ -1,8 +1,10 @@
+
 import { Product } from '../../types';
 
 export interface LineItem {
   id: string;
   name: string;
+  genericName?: string;
   category: string;
   price: string;
   unit: string;

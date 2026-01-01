@@ -25,8 +25,25 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     if (!trackerUser) return;
     const purcRef = collection(trackerDb, 'artifacts', TRACKER_APP_ID, 'public', 'data', 'purchases');
-    const unsub = onSnapshot(query(purcRef, orderBy('date', 'desc'), limit(500)), (s) => {
-      setPurchases(s.docs.map(d => ({ id: d.id, ...d.data() } as Purchase)));
+    // Increased limit to 1000 to better support the Catalog view
+    const unsub = onSnapshot(query(purcRef, orderBy('date', 'desc'), limit(1000)), { includeMetadataChanges: true }, (s) => {
+      const data = s.docs.map(d => {
+        const raw = d.data();
+        // Normalize date to JS Date object immediately to avoid repeated toDate calls
+        let dateObj = new Date();
+        if (raw.date?.toDate) dateObj = raw.date.toDate();
+        else if (raw.date) dateObj = new Date(raw.date);
+
+        return { 
+            id: d.id, 
+            ...raw,
+            date: dateObj // Normalized
+        } as Purchase;
+      });
+      
+      setPurchases(data);
+      
+      // Stop loading if data is available (even from cache)
       setLoading(false);
     });
     return () => unsub();
@@ -42,6 +59,7 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
         productMap[nameKey] = {
           id: nameKey, // The ID is now strictly the normalized name
           name: p.productName || 'Unknown Product',
+          genericName: p.genericName, // Include extracted generic name
           category: p.category || 'General',
           defaultUnit: p.unit
         };

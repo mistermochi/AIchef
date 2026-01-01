@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { getCategory, fmtDateInput, STORES } from '../../utils/tracker';
+import { getCategory, fmtDateInput, STORES, calcNormalizedPrice } from '../../utils/tracker';
 import { LineItem } from '../../components/tracker/types';
 import { Product } from '../../types';
 import { useReceiptScanner } from '../useReceiptScanner';
@@ -42,6 +42,7 @@ export function usePriceEntry({
       return [{
         id: initialData.id,
         name: initialData.productName || '',
+        genericName: initialData.genericName || '',
         category: initialData.category || 'General',
         price: initialData.price?.toString() || '',
         unit: initialData.unit || 'g',
@@ -50,7 +51,7 @@ export function usePriceEntry({
         comment: initialData.comment || ''
       }];
     }
-    return [{ id: Math.random().toString(36).substring(2, 9), name: '', category: 'General', price: '', unit: 'g', singleQty: '', count: '1', comment: '' }];
+    return [{ id: Math.random().toString(36).substring(2, 9), name: '', genericName: '', category: 'General', price: '', unit: 'g', singleQty: '', count: '1', comment: '' }];
   });
 
   // Validation
@@ -68,7 +69,10 @@ export function usePriceEntry({
       const sQty = parseFloat(it.singleQty) || 0;
       const cnt = parseFloat(it.count) || 1;
       const totalQty = sQty * cnt;
-      const normalizedPrice = totalQty > 0 ? p / totalQty : p; 
+      
+      // Use the new centralized logic to normalize price to base unit (e.g. price per ml)
+      // This ensures 1L and 1000ml are compared correctly.
+      const normalizedPrice = calcNormalizedPrice(p, totalQty, it.unit);
 
       const { id: _, ...rest } = it; 
 
@@ -81,7 +85,8 @@ export function usePriceEntry({
         count: cnt,
         normalizedPrice,
         store: finalStore,
-        productName: it.name
+        productName: it.name,
+        genericName: it.genericName
       };
     };
 
@@ -116,6 +121,7 @@ export function usePriceEntry({
       setItems(data.items.map((it: any) => ({ 
         id: Math.random().toString(36).substring(2, 9), 
         name: it.name || '', 
+        genericName: it.generic_name || '',
         category: it.category || getCategory(it.name), 
         price: it.price?.toString() || '', 
         unit: it.unit || 'pcs', 
@@ -138,6 +144,7 @@ export function usePriceEntry({
   const addItem = () => setItems(prev => [...prev, { 
     id: Math.random().toString(36).substring(2, 9), 
     name: '', 
+    genericName: '',
     category: 'General', 
     price: '', 
     unit: 'g', 

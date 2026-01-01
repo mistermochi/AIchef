@@ -4,6 +4,7 @@ import { ShoppingListItem, OrchestrationPlan, Ingredient } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import * as gemini from '../services/geminiService';
 import { useAuthContext } from './AuthContext';
+import { MULTIPLIERS, UNIT_TYPES } from '../utils/tracker';
 
 interface CartContextType {
   cart: ShoppingListItem[];
@@ -69,27 +70,74 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const consolidatedList = useMemo(() => {
     const list: Record<string, Ingredient> = {};
+    
     cart.forEach(item => {
       item.ingredients.forEach(ing => {
-        const key = `${ing.name.toLowerCase()}|${ing.unit.toLowerCase()}`;
+        const rawName = ing.name.toLowerCase().trim();
+        const rawUnit = ing.unit.toLowerCase().trim();
         const qty = (Number(ing.quantity) || 0) * (Number(item.scalingFactor) || 1);
-        if (list[key]) list[key].quantity += qty;
-        else list[key] = { ...ing, quantity: qty };
+
+        // Unit-Aware Normalization
+        let groupingKey = `${rawName}|${rawUnit}`;
+        let normalizedQty = qty;
+        let finalUnit = ing.unit;
+
+        const type = UNIT_TYPES[rawUnit];
+        const multiplier = MULTIPLIERS[rawUnit];
+
+        // If we know the type and multiplier, normalize to base unit for grouping
+        if (type && multiplier) {
+           const baseUnit = type === 'mass' ? 'g' : (type === 'volume' ? 'ml' : 'pcs');
+           // Key is now name + TYPE (e.g. "sugar|mass") so "kg" and "g" merge
+           groupingKey = `${rawName}|${type}`;
+           normalizedQty = qty * multiplier;
+           finalUnit = baseUnit; 
+        }
+
+        if (list[groupingKey]) {
+          list[groupingKey].quantity += normalizedQty;
+        } else {
+          list[groupingKey] = { 
+             name: ing.name, // Keep original casing of first item
+             quantity: normalizedQty, 
+             unit: finalUnit 
+          };
+        }
       });
     });
+
+    // Formatting Pass: Convert back to readable units if large
+    const finalItems = Object.values(list).map(item => {
+        // Simple heuristic: If > 1000g, show as kg. If > 1000ml, show as l.
+        if (item.unit === 'g' && item.quantity >= 1000) {
+            return { ...item, quantity: item.quantity / 1000, unit: 'kg' };
+        }
+        if (item.unit === 'ml' && item.quantity >= 1000) {
+            return { ...item, quantity: item.quantity / 1000, unit: 'l' };
+        }
+        return item;
+    });
+
     const s = new Set(checked);
-    return Object.values(list).sort((a, b) => {
-      const ka = `${a.name.toLowerCase()}|${a.unit.toLowerCase()}`;
-      const kb = `${b.name.toLowerCase()}|${b.unit.toLowerCase()}`;
-      if (s.has(ka) === s.has(kb)) return a.name.localeCompare(b.name);
-      return s.has(ka) ? 1 : -1;
+    return finalItems.sort((a, b) => {
+      // Re-generate key for check status because we normalized units
+      // We need a stable key for checklist state.
+      // This is a bit tricky: previous keys were "name|unit". Now units might change (g -> kg).
+      // We'll effectively rely on the *displayed* unit for the checklist key in the View.
+      // But for sorting here, we approximate.
+      const nameA = a.name.toLowerCase();
+      const nameB = b.name.toLowerCase();
+      return nameA.localeCompare(nameB);
     });
   }, [cart, checked]);
 
   const stats = useMemo(() => {
     const s = new Set(checked);
     let done = 0;
-    consolidatedList.forEach(i => { if (s.has(`${i.name.toLowerCase()}|${i.unit.toLowerCase()}`)) done++; });
+    consolidatedList.forEach(i => { 
+        const key = `${i.name.toLowerCase()}|${i.unit.toLowerCase()}`;
+        if (s.has(key)) done++; 
+    });
     return { doneCount: done, toBuyCount: consolidatedList.length - done };
   }, [consolidatedList, checked]);
 

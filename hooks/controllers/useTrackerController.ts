@@ -2,7 +2,9 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useTrackerContext } from '../../context/TrackerContext';
 import { useAuthContext } from '../../context/AuthContext';
+import { useRecipeContext } from '../../context/RecipeContext';
 import { searchDeals } from '../../services/geminiService';
+import { Recipe } from '../../types';
 
 export type TrackerModal = 
   | { type: 'none' }
@@ -13,6 +15,7 @@ export type TrackerModal =
 export function useTrackerController() {
   const { products, purchases, loading, savePurchase, savePurchasesBatch, deletePurchase } = useTrackerContext();
   const { isAIEnabled } = useAuthContext();
+  const { savedRecipes, setActiveRecipe } = useRecipeContext();
 
   const [activeTab, setActiveTab] = useState<'history' | 'catalog'>('catalog');
   const [modal, setModal] = useState<TrackerModal>({ type: 'none' });
@@ -103,6 +106,10 @@ export function useTrackerController() {
     } catch (e: any) { setDealError(e.message || 'AI search failed'); } finally { setSearchingDeals(false); }
   };
 
+  const openRecipe = (recipe: Recipe) => {
+    setActiveRecipe(recipe);
+  };
+
   // Computed
   const editFormData = useMemo(() => modal.type === 'edit' ? purchases.find(x => x.id === modal.id) : undefined, [modal, purchases]);
   
@@ -137,12 +144,19 @@ export function useTrackerController() {
        prod = { 
            id: normalizedTargetName, // ID is just the name key
            name: lastPurchase.productName, 
-           category: lastPurchase.category 
+           category: lastPurchase.category,
+           genericName: lastPurchase.genericName
        };
     }
 
-    return { lastPurchase, prod, history: sortedHistory };
-  }, [modal, purchases, products]);
+    // 6. Find Related Recipes using Golden Tag (Generic Name)
+    const searchTag = (prod?.genericName || prod?.name || '').trim().toLowerCase();
+    const relatedRecipes = searchTag ? savedRecipes.filter(r => 
+       r.ingredients?.some(ing => ing.name.toLowerCase().includes(searchTag))
+    ) : [];
+
+    return { lastPurchase, prod, history: sortedHistory, relatedRecipes };
+  }, [modal, purchases, products, savedRecipes]);
 
   return {
     state: {
@@ -155,6 +169,7 @@ export function useTrackerController() {
       setActiveTab, setModal, closeModal,
       handleScanClick, handleFileSelect,
       handleSave, handleDelete, fetchAIInsight,
+      openRecipe,
       setTriggerSubmit: () => setTriggerSubmit(p => p + 1),
       setIsFormValid
     },

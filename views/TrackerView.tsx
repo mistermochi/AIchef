@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { History, LayoutGrid, Trash2, Save, Sparkles, TrendingDown, Calendar, Search, ExternalLink, AlertTriangle, Camera, Plus } from 'lucide-react';
-import { PageLayout, ViewHeader, Button, ActionBar, HeaderAction, HeaderActionSeparator, Modal, ModalHeader, ModalContent, Badge, SectionCard, BaseCard, ConfirmButton } from '../components/UI';
+import { History, LayoutGrid, Trash2, Save, Sparkles, TrendingDown, Calendar, Search, ExternalLink, AlertTriangle, Camera, Plus, BookOpen } from 'lucide-react';
+import { PageLayout, ViewHeader, Button, ActionBar, HeaderAction, HeaderActionSeparator, Modal, ModalHeader, ModalContent, Badge, SectionCard, BaseCard, ConfirmButton, Card, CardMedia, CardContent, CardTitle } from '../components/UI';
 import { GlobalFAB } from '../components/GlobalFAB';
 import { PriceEntryForm, PriceHistoryList, PriceCatalogList } from '../components/TrackerUI';
 import { MetaSection } from '../components/MetaSection';
@@ -98,7 +98,7 @@ export const TrackerView: React.FC = () => {
               <PriceEntryForm key={`edit-${state.modal.id}`} products={state.products} mode="edit" initialData={computed.editFormData} onSubmit={actions.handleSave} externalSubmitTrigger={state.triggerSubmit} onValidationChange={actions.setIsFormValid} />
             )}
             {state.modal.type === 'detail' && computed.detailInfo && (() => {
-               const { prod, lastPurchase, history } = computed.detailInfo;
+               const { prod, lastPurchase, history, relatedRecipes } = computed.detailInfo;
                // Calculate Statistics
                const lowestPricePurchase = history.reduce((prev, curr) => (curr.normalizedPrice < prev.normalizedPrice ? curr : prev), history[0]);
                const isLatestBest = lastPurchase?.id === lowestPricePurchase?.id;
@@ -107,6 +107,8 @@ export const TrackerView: React.FC = () => {
                const bestCtx = lowestPricePurchase ? getPerItemPrice(lowestPricePurchase) : null;
                
                const category = prod?.category || 'General';
+               // Use Golden Tag (Generic Name) if available, otherwise fallback to Category
+               const displayTag = prod?.genericName || category;
 
                return (
                 <div className="space-y-6 max-w-4xl mx-auto w-full pb-12">
@@ -118,7 +120,7 @@ export const TrackerView: React.FC = () => {
                     overrideEmoji={CATEGORY_EMOJIS[category] || '📦'}
                     overrideSummary={
                       <div className="flex items-center gap-2 text-content-secondary dark:text-content-secondary-dark text-sm mt-1">
-                         <Badge variant="neutral" label={category} />
+                         <Badge variant="neutral" label={displayTag} />
                          <span>•</span>
                          <span>{history.length} purchases recorded</span>
                       </div>
@@ -164,6 +166,34 @@ export const TrackerView: React.FC = () => {
                     </div>
                   </BaseCard>
 
+                  {/* RELATED RECIPES */}
+                  {relatedRecipes.length > 0 && (
+                    <SectionCard title={`Used in ${relatedRecipes.length} Recipes`} icon={<BookOpen />}>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        {relatedRecipes.map(recipe => (
+                          <div 
+                            key={recipe.id} 
+                            onClick={() => actions.openRecipe(recipe)} 
+                            className="bg-surface-variant/30 dark:bg-surface-variant-dark/30 hover:bg-surface-variant/80 dark:hover:bg-surface-variant-dark/80 border border-outline/30 dark:border-outline-dark/30 rounded-xl overflow-hidden cursor-pointer transition-all group"
+                          >
+                             <div className="aspect-[4/3] bg-surface dark:bg-surface-dark relative flex items-center justify-center overflow-hidden">
+                                {recipe.coverImage ? (
+                                    <img src={recipe.coverImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                ) : (
+                                    <div className="text-3xl">{recipe.emoji}</div>
+                                )}
+                             </div>
+                             <div className="p-2.5">
+                                <div className="text-xs font-bold text-content dark:text-content-dark truncate group-hover:text-primary transition-colors leading-tight">
+                                  {recipe.title}
+                                </div>
+                             </div>
+                          </div>
+                        ))}
+                      </div>
+                    </SectionCard>
+                  )}
+
                   {/* HISTORY LIST */}
                   <SectionCard title="Price History" icon={<History />} className="divide-y divide-outline/30 dark:divide-outline-dark/30">
                      {history.map(h => {
@@ -171,7 +201,11 @@ export const TrackerView: React.FC = () => {
                        const isBest = h.id === lowestPricePurchase.id;
                        
                        return (
-                         <div key={h.id} className={`p-4 flex justify-between items-center transition-colors ${isBest ? 'bg-success-container/10' : 'hover:bg-surface-variant/50'}`}>
+                         <div 
+                           key={h.id} 
+                           onClick={() => actions.setModal({ type: 'edit', id: h.id })}
+                           className={`p-4 flex justify-between items-center transition-colors cursor-pointer ${isBest ? 'bg-success-container/10' : 'hover:bg-surface-variant/50'}`}
+                         >
                             <div className="space-y-1">
                                <div className="flex items-center gap-2">
                                   <div className="text-sm font-bold text-content dark:text-content-dark">{h.store}</div>

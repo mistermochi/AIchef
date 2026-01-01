@@ -58,16 +58,17 @@ export interface GenieIdea {
 export interface Product {
   id: string; // Derived from normalized name
   name: string;
+  genericName?: string; // Canonical name for recipe matching (e.g. "Milk" for "Meiji 4.3 Milk")
   category: string;
   defaultUnit?: string;
   appId?: string;
   userId?: string;
 }
 
-// Fix: Removed productId, strictly receipt-based now.
 export interface Purchase {
   id: string;
   productName: string;
+  genericName?: string; // Canonical name for recipe matching
   category: string;
   date: any; // Firestore Timestamp or Date
   price: number;
@@ -105,7 +106,6 @@ export interface UserProfile {
   skillLevel: 'beginner' | 'pro';
   haptics: boolean;
   autoWakeLock: boolean;
-  airGestures: boolean;
   currency: string;
   customInstructions: string;
   aiEnabled: boolean;
@@ -120,7 +120,6 @@ export const DEFAULT_PROFILE: UserProfile = {
   skillLevel: 'beginner',
   haptics: true,
   autoWakeLock: true,
-  airGestures: false,
   currency: 'USD',
   customInstructions: '',
   aiEnabled: true

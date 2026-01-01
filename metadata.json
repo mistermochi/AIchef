@@ -1,7 +1,9 @@
+
 {
   "name": "ChefAI - Smart Recipe Adaptor",
   "description": "An AI-powered culinary companion that translates, adapts, and personalizes recipes based on your dietary preferences.",
   "requestFramePermissions": [
+    "microphone",
     "camera"
   ]
 }

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
 import { Search, CookingPot, Loader2, Plus, PlusCircle, Key, ExternalLink, Info, Check, ShoppingCart, Bot } from 'lucide-react';
 import { Recipe } from '../types';
 import { ViewHeader, Input, EmptyState, RecipeSkeleton, PageLayout, GridList, Button, Modal, ModalHeader, ModalContent, PromptInput, Card, CardMedia, CardContent, CardTitle, CardDescription, CardFooter, CardFloatingAction, IngredientBadges } from '../components/UI';
@@ -14,11 +14,14 @@ const PAGE_SIZE = 6;
 
 export const HistoryView: React.FC = () => {
   const { 
-    searchTerm, setSearchTerm, filteredRecipes, recipesLoading: loading,
+    searchTerm, setSearchTerm, filteredRecipes: allFilteredRecipes, recipesLoading: loading,
     setActiveRecipe, setIsEditing, setScalingFactor,
     recipeInput, setRecipeInput, processRecipeAction, loading: aiLoading, error: aiError, 
     handleManualCreateAction
   } = useRecipeContext();
+
+  // Defer the filtered list updates to keep the UI (typing) responsive
+  const filteredRecipes = useDeferredValue(allFilteredRecipes);
 
   const { cart: shoppingCart, addToCart, removeFromCart } = useCartContext();
   const { isAIEnabled, openKeySelector, profile } = useAuthContext();
@@ -27,7 +30,7 @@ export const HistoryView: React.FC = () => {
   const [placeholder, setPlaceholder] = useState('Search recipes...');
   const [showAddModal, setShowAddModal] = useState(false);
   
-  // Use generic infinite scroll hook
+  // Use generic infinite scroll hook on the deferred list
   const { displayLimit, observerTarget } = useInfiniteScroll(filteredRecipes, PAGE_SIZE);
 
   useEffect(() => {
@@ -76,7 +79,7 @@ export const HistoryView: React.FC = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            {/* Desktop Add Button (optional, redundant with FAB but good for desktop UX) */}
+            {/* Desktop Add Button */}
             <div className="hidden md:block">
               <Button onClick={() => setShowAddModal(true)} icon={<Plus className="w-4 h-4" />}>
                  Add Recipe

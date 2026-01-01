@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, Timestamp, doc } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, serverTimestamp, doc, query, orderBy, Timestamp } from 'firebase/firestore';
 import { chefDb, CHEF_APP_ID } from '../../firebase';
 import { Recipe } from '../../types';
 import { User } from 'firebase/auth';
@@ -16,11 +17,27 @@ export function useRecipeRepository(user: User | null) {
     }
     setLoading(true);
     const recipeCol = collection(chefDb, 'artifacts', CHEF_APP_ID, 'public', 'data', 'recipes');
-    
-    // Subscribe to recipes, sorted by creation time
-    const unsub = onSnapshot(recipeCol, (s) => {
-      setRecipes(s.docs.map(d => ({ id: d.id, ...d.data() } as Recipe)).sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0)));
-      setLoading(false);
+    const q = query(recipeCol, orderBy('createdAt', 'desc'));
+
+    const unsub = onSnapshot(q, { includeMetadataChanges: true }, (s) => {
+      const data = s.docs.map(d => {
+        const raw = d.data();
+        return { 
+            id: d.id, 
+            ...raw,
+            // Pre-calculate/Normalize timestamp to number for faster client-side sorting if needed
+            // and to avoid serialization issues
+            createdAt: raw.createdAt 
+        } as Recipe;
+      });
+      
+      setRecipes(data);
+      
+      // If we have data from cache, we can stop loading immediately
+      // even if the server check is pending.
+      if (!s.metadata.hasPendingWrites) {
+         setLoading(false);
+      }
     });
     
     return () => unsub();
@@ -28,12 +45,10 @@ export function useRecipeRepository(user: User | null) {
 
   const addRecipe = async (recipe: Recipe) => {
     if (!user) throw new Error("User not authenticated");
-    
-    // Add authorId and timestamps
     return await addDoc(collection(chefDb, 'artifacts', CHEF_APP_ID, 'public', 'data', 'recipes'), { 
         ...recipe, 
         authorId: user.uid, 
-        createdAt: Timestamp.now() 
+        createdAt: serverTimestamp() 
     });
   };
 

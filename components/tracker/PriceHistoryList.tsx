@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { History, Loader2, CalendarDays } from 'lucide-react';
 import { Purchase, Product } from '../../types';
-import { CATEGORY_EMOJIS, getPriceByQuantity, getPriceDisplayContext, fmtCurrency, fmtDate } from '../../utils/tracker';
+import { CATEGORY_EMOJIS, getPerItemPrice, fmtCurrency, fmtDate } from '../../utils/tracker';
 import { SectionCard, EmptyState, ListRow } from '../UI';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 
@@ -89,9 +89,13 @@ export const PriceHistoryList: React.FC<PriceHistoryListProps> = ({ purchases, o
           >
             {group.items.map((p, idx) => {
               const globalIdx = group.globalStartIndex + idx;
-              const context = p.singleQty 
-                ? getPriceByQuantity(p.normalizedPrice, p.singleQty, p.unit)
-                : getPriceDisplayContext(p.normalizedPrice, p.unit);
+              
+              // Use getPerItemPrice to match Catalog View logic and fix multipack display issues
+              const perItemCtx = getPerItemPrice(p);
+              const context = {
+                 price: perItemCtx.price,
+                 unit: perItemCtx.label
+              };
               
               const qtyDesc = (p.count && p.count > 1) 
                 ? `${p.count} × ${p.singleQty}${p.unit}` 

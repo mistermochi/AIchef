@@ -1,16 +1,21 @@
 
 import React, { useEffect, useRef } from 'react';
-import { Save, Moon, Sun, Settings2, BrainCircuit, Key, CheckCircle, ExternalLink, ChefHat, Utensils, Database, Trash2, Smartphone, Hand, Eye, Bot, RefreshCw, AlertTriangle, Globe2, Download, Upload, FileJson, FileSpreadsheet, HardDrive } from 'lucide-react';
+import { Save, Moon, Sun, Settings2, BrainCircuit, Key, CheckCircle, ExternalLink, ChefHat, Utensils, Database, Trash2, Smartphone, Eye, Bot, RefreshCw, AlertTriangle, Globe2, Download, Upload, FileJson, FileSpreadsheet, HardDrive, Wand2, ArrowRight } from 'lucide-react';
 import { ViewHeader, Switch, Textarea, SectionCard, Button, PageLayout, Badge, Input, ConfirmButton } from '../components/UI';
 import { useAuthContext } from '../context/AuthContext';
 import { useUIContext } from '../context/UIContext';
 import { useBackupRestore } from '../hooks/useBackupRestore';
+import { useDataMigration } from '../hooks/useDataMigration';
 import { APPLIANCE_LIST, DIETARY_LIST } from '../types';
 
 export const ProfileView: React.FC = () => {
   const { profile, updateProfile, saveProfile, isAIEnabled, openKeySelector, aiHealth, aiErrorMsg, checkHealth } = useAuthContext();
   const { darkMode, setDarkMode } = useUIContext();
   const { processing, status, exportCookbook, restoreCookbook, exportTracker, restoreTracker } = useBackupRestore();
+  const { migrating, progress, total, status: migrationStatus, runMigration } = useDataMigration();
+
+  const recipeFileRef = useRef<HTMLInputElement>(null);
+  const trackerFileRef = useRef<HTMLInputElement>(null);
 
   const [passValue, setPassValue] = React.useState(() => {
     return localStorage.getItem('chefai_pass') || '';
@@ -21,12 +26,7 @@ export const ProfileView: React.FC = () => {
     localStorage.setItem('chefai_pass', passValue);
   }, [passValue]);
 
-  const recipeFileRef = useRef<HTMLInputElement>(null);
-  const trackerFileRef = useRef<HTMLInputElement>(null);
-
   // Lazy health check: Only validate connection if we don't know the status yet.
-  // This allows the background idle check in App.tsx to handle the primary validation,
-  // preventing double-checks when navigating here.
   useEffect(() => {
     if (aiHealth === 'unknown') {
       checkHealth();
@@ -229,19 +229,6 @@ export const ProfileView: React.FC = () => {
                   </div>
                   <Switch checked={profile.autoWakeLock} onChange={(v) => updateProfile({ autoWakeLock: v })} />
                 </div>
-
-                <div onClick={() => updateProfile({ airGestures: !profile.airGestures })} className="flex items-center justify-between py-3 cursor-pointer group">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-surface-variant dark:bg-surface-variant-dark text-content-secondary dark:text-content-secondary-dark">
-                       <Hand className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-bold text-content dark:text-content-dark">Air Gestures</div>
-                      <div className="text-xs text-content-secondary dark:text-content-secondary-dark">Enable camera gestures by default</div>
-                    </div>
-                  </div>
-                  <Switch checked={profile.airGestures} onChange={(v) => updateProfile({ airGestures: v })} />
-                </div>
               </div>
             </SectionCard>
 
@@ -252,10 +239,24 @@ export const ProfileView: React.FC = () => {
                 <input type="file" ref={recipeFileRef} onChange={handleRecipeImport} accept="application/json" className="hidden" />
                 <input type="file" ref={trackerFileRef} onChange={handleTrackerImport} accept=".csv" className="hidden" />
                 
+                {/* Status Banners */}
                 {status && (
                    <div className="p-3 bg-primary-container/20 text-primary text-xs font-bold rounded-lg border border-primary/20 flex items-center gap-2 animate-in fade-in">
                       {processing && <RefreshCw className="w-3 h-3 animate-spin" />}
                       {status}
+                   </div>
+                )}
+                {migrationStatus && (
+                   <div className="p-3 bg-accent-container/20 text-accent dark:text-accent-dark text-xs font-bold rounded-lg border border-accent/20 dark:border-accent-dark/20 flex flex-col gap-2 animate-in fade-in">
+                      <div className="flex items-center gap-2">
+                        {migrating && <Wand2 className="w-3 h-3 animate-pulse" />}
+                        {migrationStatus}
+                      </div>
+                      {migrating && total > 0 && (
+                        <div className="w-full h-1 bg-accent/20 rounded-full overflow-hidden">
+                           <div className="h-full bg-accent dark:bg-accent-dark transition-all duration-300" style={{ width: `${(progress / total) * 100}%` }} />
+                        </div>
+                      )}
                    </div>
                 )}
 
@@ -285,6 +286,27 @@ export const ProfileView: React.FC = () => {
                      <Button size="sm" variant="secondary" onClick={exportTracker} disabled={processing} icon={<Download className="w-3 h-3" />}>Export</Button>
                      <Button size="sm" variant="ghost" onClick={() => trackerFileRef.current?.click()} disabled={processing} icon={<Upload className="w-3 h-3" />}>Restore</Button>
                   </div>
+                </div>
+
+                {/* Legacy Data Migration */}
+                <div className="p-4 bg-surface-variant dark:bg-surface-variant-dark rounded-xl border border-outline dark:border-outline-dark space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                     <div className="p-2 bg-white dark:bg-surface-dark rounded-lg shadow-sm"><Database className="w-5 h-5 text-primary dark:text-primary-dark" /></div>
+                     <div>
+                       <div className="text-sm font-bold text-content dark:text-content-dark">Smart Data Remigration</div>
+                       <div className="text-xs text-content-secondary dark:text-content-secondary-dark">Fix legacy price data & re-classify names</div>
+                     </div>
+                  </div>
+                  <Button 
+                    fullWidth 
+                    size="sm" 
+                    variant="ghost" 
+                    onClick={runMigration} 
+                    disabled={migrating || !isAIEnabled} 
+                    icon={migrating ? <Wand2 className="w-3 h-3 animate-spin" /> : <ArrowRight className="w-3 h-3" />}
+                  >
+                    Scan & Remigrate All
+                  </Button>
                 </div>
 
               </div>

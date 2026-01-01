@@ -62,6 +62,7 @@ export const TrackerLogItem: React.FC<TrackerLogItemProps> = ({
   const selectProduct = (p: Product) => {
     onUpdate({ 
       name: p.name, 
+      genericName: p.genericName,
       category: p.category || item.category,
       unit: p.defaultUnit || item.unit 
     });

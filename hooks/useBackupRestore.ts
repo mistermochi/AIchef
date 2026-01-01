@@ -5,11 +5,15 @@ import { chefDb, trackerDb, CHEF_APP_ID, TRACKER_APP_ID } from '../firebase';
 import { useAuthContext } from '../context/AuthContext';
 import { downloadFile, readFileAsText, jsonToCSV, csvToJson } from '../utils/backup';
 import { Recipe } from '../types';
+import { calcNormalizedPrice } from '../utils/tracker';
 
 export function useBackupRestore() {
   const { chefUser, trackerUser } = useAuthContext();
   const [processing, setProcessing] = useState(false);
   const [status, setStatus] = useState('');
+
+  // Helper for consistent local date filenames (YYYY-MM-DD)
+  const getLocalDateString = () => new Date().toLocaleDateString('en-CA');
 
   // --- COOKBOOK (JSON) ---
 
@@ -18,9 +22,6 @@ export function useBackupRestore() {
     setProcessing(true);
     setStatus('Exporting recipes...');
     try {
-      // NOTE: For large datasets, this should be paginated.
-      // We remove the 'authorId' filter to match the app's display logic (useRecipeRepository),
-      // ensuring WYSIWYG backup.
       const ref = collection(chefDb, 'artifacts', CHEF_APP_ID, 'public', 'data', 'recipes');
       const q = query(ref, orderBy('createdAt', 'desc'));
       const snap = await getDocs(q);
@@ -28,11 +29,10 @@ export function useBackupRestore() {
       const recipes = snap.docs.map(d => ({
         ...d.data(),
         id: d.id,
-        // Convert Firestore Timestamps to strings for JSON
         createdAt: d.data().createdAt?.toDate?.()?.toISOString() || new Date().toISOString()
       }));
 
-      const filename = `chefai_cookbook_${new Date().toISOString().split('T')[0]}.json`;
+      const filename = `chefai_cookbook_${getLocalDateString()}.json`;
       downloadFile(JSON.stringify(recipes, null, 2), filename, 'json');
       setStatus('Export complete!');
     } catch (e: any) {
@@ -56,7 +56,6 @@ export function useBackupRestore() {
 
       setStatus(`Restoring ${recipes.length} recipes...`);
       
-      // Batch write (max 500 ops per batch)
       const ref = collection(chefDb, 'artifacts', CHEF_APP_ID, 'public', 'data', 'recipes');
       const chunks = [];
       
@@ -69,7 +68,6 @@ export function useBackupRestore() {
         chunk.forEach(r => {
           if (!r.id) return;
           const { id, ...data } = r;
-          // Ensure we take ownership of restored data
           const payload = {
             ...data,
             authorId: chefUser.uid,
@@ -81,8 +79,6 @@ export function useBackupRestore() {
       }
 
       setStatus('Restore complete!');
-      // Force reload page to refresh data context if necessary, 
-      // though real-time listeners should handle it.
     } catch (e: any) {
       console.error(e);
       setStatus(`Error: ${e.message}`);
@@ -100,8 +96,6 @@ export function useBackupRestore() {
     setStatus('Exporting purchases...');
     try {
       const ref = collection(trackerDb, 'artifacts', TRACKER_APP_ID, 'public', 'data', 'purchases');
-      // We remove 'userId' filter to match the TrackerContext display logic.
-      // This ensures all visible data is exported, regardless of legacy ownership fields.
       const q = query(ref, orderBy('date', 'desc'));
       const snap = await getDocs(q);
       
@@ -117,7 +111,7 @@ export function useBackupRestore() {
           singleQty: data.singleQty || 0,
           count: data.count || 1,
           store: data.store || '',
-          date: data.date?.toDate?.()?.toISOString().split('T')[0] || '', // YYYY-MM-DD
+          date: data.date?.toDate?.()?.toISOString().split('T')[0] || '',
           comment: data.comment || ''
         };
       });
@@ -125,7 +119,7 @@ export function useBackupRestore() {
       const cols = ['id', 'productName', 'category', 'price', 'unit', 'quantity', 'singleQty', 'count', 'store', 'date', 'comment'];
       const csv = jsonToCSV(items, cols);
       
-      const filename = `chefai_tracker_${new Date().toISOString().split('T')[0]}.csv`;
+      const filename = `chefai_tracker_${getLocalDateString()}.csv`;
       downloadFile(csv, filename, 'csv');
       setStatus('Export complete!');
     } catch (e: any) {
@@ -159,21 +153,26 @@ export function useBackupRestore() {
         chunk.forEach((item: any) => {
           if (!item.id || !item.productName) return;
           
-          // Data Transformation back to types
+          const p = parseFloat(item.price) || 0;
+          const q = parseFloat(item.quantity) || 0;
+          const u = item.unit || 'pcs';
+
+          // Critical: Apply the unit-aware normalization logic during restore
+          const normalizedPrice = calcNormalizedPrice(p, q, u);
+
           const payload = {
             userId: trackerUser.uid,
-            // Removed productId field assignment
             productName: item.productName,
             category: item.category || 'General',
-            price: parseFloat(item.price) || 0,
-            unit: item.unit || 'pcs',
-            quantity: parseFloat(item.quantity) || 0,
+            price: p,
+            unit: u,
+            quantity: q,
             singleQty: parseFloat(item.singleQty) || 0,
             count: parseFloat(item.count) || 1,
             store: item.store || '',
             date: item.date ? Timestamp.fromDate(new Date(item.date)) : Timestamp.now(),
             comment: item.comment || '',
-            normalizedPrice: (parseFloat(item.price)||0) / (parseFloat(item.quantity)||1), // Recalculate normalized
+            normalizedPrice: normalizedPrice,
             timestamp: Timestamp.now()
           };
           

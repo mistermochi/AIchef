@@ -25,12 +25,27 @@ export const CATEGORY_EMOJIS: Record<string, string> = {
 
 export const UNITS = ['ml', 'l', 'g', 'kg', 'lb', 'jin', 'pcs'];
 
+// Base Multipliers to convert TO the smallest common unit (ml, g, pcs)
 export const MULTIPLIERS: Record<string, number> = { 
-  'ml': 1, 'l': 1000, 'g': 1, 'kg': 1000, 
-  'lb': 453.592, 'jin': 604.8, 'pcs': 1 
+  'ml': 1, 
+  'l': 1000, 
+  'g': 1, 
+  'kg': 1000, 
+  'lb': 453.592, 
+  'jin': 604.8, 
+  'pcs': 1 
 };
 
-export const normalize = (qty: number, unit: string) => qty * (MULTIPLIERS[unit] || 1);
+// Unit Types for safe aggregation
+export const UNIT_TYPES: Record<string, 'volume' | 'mass' | 'count'> = {
+  'ml': 'volume',
+  'l': 'volume',
+  'g': 'mass',
+  'kg': 'mass',
+  'lb': 'mass',
+  'jin': 'mass',
+  'pcs': 'count'
+};
 
 export const fmtCurrency = (num: number) => 
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
@@ -41,43 +56,30 @@ export const fmtDate = (d: any) => {
   return isNaN(_d.getTime()) ? '?' : _d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-/**
- * Formats a date for <input type="date"> (YYYY-MM-DD).
- * Uses local timezone components to ensure the selected date doesn't shift due to UTC conversions.
- */
 export const fmtDateInput = (d: any) => {
   if (!d) return new Date().toISOString().split('T')[0];
-  
   const _d = d.toDate ? d.toDate() : new Date(d);
   if (isNaN(_d.getTime())) return new Date().toISOString().split('T')[0];
-  
   const year = _d.getFullYear();
   const month = String(_d.getMonth() + 1).padStart(2, '0');
   const day = String(_d.getDate()).padStart(2, '0');
-  
   return `${year}-${month}-${day}`;
 };
 
-const UNIT_DISPLAY_CONFIG: Record<string, { multiplier: number, label: string }> = {
-  'kg': { multiplier: 1000, label: 'kg' },
-  'l': { multiplier: 1000, label: 'l' },
-  'g': { multiplier: 100, label: '100g' },
-  'lb': { multiplier: 100, label: '100g' },
-  'jin': { multiplier: 100, label: '100g' },
-  'ml': { multiplier: 100, label: '100ml' },
-  'pcs': { multiplier: 1, label: 'pc' }
-};
-
-export const getPriceDisplayContext = (normalizedPrice: number, unit: string) => {
-  const config = UNIT_DISPLAY_CONFIG[unit] || { multiplier: 1, label: unit };
-  return {
-    price: normalizedPrice * config.multiplier,
-    unit: config.label
-  };
+/**
+ * CORE LOGIC: Calculates a comparable price score across different units.
+ * Converts input quantity to a Base Unit (g, ml, pcs) before dividing.
+ * Returns Price Per Base Unit.
+ */
+export const calcNormalizedPrice = (price: number, quantity: number, unit: string) => {
+  if (!price || !quantity) return 0;
+  const multiplier = MULTIPLIERS[unit.toLowerCase()] || 1;
+  const totalBaseUnits = quantity * multiplier;
+  return totalBaseUnits > 0 ? price / totalBaseUnits : 0;
 };
 
 /**
- * Calculates the price per single item in a purchase (e.g. one can in a 6-pack, or one bag).
+ * Calculates the price per single item in a purchase for UI Display.
  * Returns { price, label }.
  * Example: $60 for 6x500ml -> returns { price: 10, label: '500ml' }
  */
@@ -85,28 +87,14 @@ export const getPerItemPrice = (p: { price: number, count?: number, singleQty?: 
   const count = (p.count && p.count > 0) ? p.count : 1;
   const pricePerItem = p.price / count;
   
-  // Use singleQty if available. If not, try to derive from quantity/count.
-  // Fallback to 1 if missing.
   let size = p.singleQty;
   if (!size && p.quantity) {
      size = p.quantity / count;
   }
   if (!size) size = 1;
   
-  // Format number to remove unnecessary decimals (e.g. 52.0 -> 52)
   const label = `${Number(size)}${p.unit}`;
   return { price: pricePerItem, label };
-};
-
-/**
- * Calculates the price for a specific quantity based on the normalized price (price per 1 unit/ml/g)
- */
-export const getPriceByQuantity = (normalizedPrice: number, quantity: number, unit: string) => {
-  const baseQty = normalize(quantity, unit);
-  return {
-    price: normalizedPrice * baseQty,
-    unit: `${quantity}${unit}`
-  };
 };
 
 const KEYWORD_MAP: Record<string, string[]> = {

@@ -153,3 +153,12 @@ export const extractReceiptData = async (base64Image: string, mimeType: string) 
   });
   return JSON.parse(response.text || '{}');
 };
+
+export const batchClassifyProducts = async (productNames: string[]) => {
+  return callAI<{ original_name: string, generic_name: string }[]>({
+    model: 'gemini-flash-lite-latest',
+    schema: SCHEMAS.MIGRATION_MAP,
+    prompt: PROMPTS.BATCH_CLASSIFY(JSON.stringify(productNames)),
+    system: SYSTEM_INSTRUCTIONS.DATA_MIGRATION
+  });
+};

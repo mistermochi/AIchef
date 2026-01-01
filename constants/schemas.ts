@@ -1,3 +1,4 @@
+
 import { Type } from "@google/genai";
 
 export const SCHEMAS = {
@@ -89,6 +90,7 @@ export const SCHEMAS = {
           type: Type.OBJECT,
           properties: {
             name: { type: Type.STRING, description: "Product name only. Cleaned of any leading codes/SKUs. Original language preserved." },
+            generic_name: { type: Type.STRING, description: "The high-level product type in Traditional Chinese (e.g., '啤酒' for 'Asahi Beer', '沐浴露' for 'Shower Gel'). NO BRANDS." },
             category: { 
               type: Type.STRING, 
               description: "Select best fit: 'General', 'Alcohol', 'Dairy', 'Meat', 'Fruit', 'Vegetables', 'Pantry', 'Snacks', 'Beverages', 'Household', 'Frozen'.",
@@ -106,5 +108,16 @@ export const SCHEMAS = {
       subtotal_detected: { type: Type.NUMBER }
     },
     required: ['analysis_steps', 'store', 'date', 'items', 'subtotal_detected']
+  },
+  MIGRATION_MAP: {
+    type: Type.ARRAY,
+    items: {
+      type: Type.OBJECT,
+      properties: {
+        original_name: { type: Type.STRING },
+        generic_name: { type: Type.STRING }
+      },
+      required: ['original_name', 'generic_name']
+    }
   }
 };
