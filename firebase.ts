@@ -9,7 +9,7 @@ import {
 
 // Configuration for the ChefAI project
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_KEY,
+  apiKey: "AIzaSyBzpBV8owQ5VbHmaOasDXzn1fbnfzG7fU8",
   authDomain: "chefai-dd91e.firebaseapp.com",
   projectId: "chefai-dd91e",
   storageBucket: "chefai-dd91e.firebasestorage.app",
