@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ChevronLeft, ChevronRight, ClipboardList, Mic, MicOff, Volume2, FastForward, Rewind, VolumeX, Timer, Play, Pause, X, BellRing, ChevronDown, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ClipboardList, Mic, MicOff, Volume2, FastForward, Rewind, VolumeX, Timer, Play, Pause, X, ChevronDown, Sparkles } from 'lucide-react';
 import { Modal, ModalHeader, ModalContent } from './UI';
 import { useMakeController } from '../hooks/controllers/useMakeController';
 

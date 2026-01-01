@@ -118,13 +118,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return item;
     });
 
-    const s = new Set(checked);
     return finalItems.sort((a, b) => {
-      // Re-generate key for check status because we normalized units
-      // We need a stable key for checklist state.
-      // This is a bit tricky: previous keys were "name|unit". Now units might change (g -> kg).
-      // We'll effectively rely on the *displayed* unit for the checklist key in the View.
-      // But for sorting here, we approximate.
       const nameA = a.name.toLowerCase();
       const nameB = b.name.toLowerCase();
       return nameA.localeCompare(nameB);

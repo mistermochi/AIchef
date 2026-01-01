@@ -108,7 +108,7 @@ export function useMakeController() {
     }
   });
 
-  const handleVoiceCommand = useCallback((command: VoiceCommand, text: string) => {
+  const handleVoiceCommand = useCallback((command: VoiceCommand, _text: string) => {
     if (!recipe) return;
     switch (command) {
       case 'NEXT_STEP':
@@ -202,6 +202,7 @@ export function useMakeController() {
       const timer = setTimeout(() => speak(recipe.instructions[currentStep]), 300);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [currentStep, isListening, recipe, speak]);
 
   return {

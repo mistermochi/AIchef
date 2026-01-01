@@ -4,7 +4,7 @@ import {
   Clock, ChefHat, Utensils, 
   Timer, AlertCircle, ChevronDown, ChevronUp, Sparkles, CheckCircle2
 } from 'lucide-react';
-import { OrchestrationPlan, OrchestrationStep, ShoppingListItem, Ingredient } from '../types';
+import { OrchestrationPlan, OrchestrationStep, ShoppingListItem } from '../types';
 import { Modal, ModalHeader, ModalContent, Badge, InsightCard, ProcessCard } from './UI';
 import { CountUp } from './ui/DataDisplay';
 
