@@ -172,6 +172,8 @@ export function useCookingSession({ recipe, onClose }: CookingSessionProps) {
         return () => clearTimeout(timerId);
       }
     }
+    // Explicit return to satisfy TS7030
+    return undefined;
   }, [activeTimer?.status, activeTimer?.endsAt]);
 
   // Timer Announce
