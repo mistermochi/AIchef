@@ -73,7 +73,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [chefUser, setChefUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
-  const [profileLoading, setProfileLoading] = useState(true);
 
   // Homes
   const [currentHomeId, setCurrentHomeId] = useState<string | null>(null);
@@ -147,7 +146,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Anonymous login if no user
         signInAnonymously(chefAuth).catch(console.error);
       }
-      setProfileLoading(false);
     });
     return () => unsub();
   }, []);

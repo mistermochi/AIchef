@@ -5,7 +5,6 @@ import { PageLayout, ViewHeader, Button, Modal, ModalHeader, ModalContent, Empty
 import { PlanConfigForm } from '../components/plan/PlanUI';
 import { usePlanController } from '../hooks/controllers/usePlanController';
 import { useRecipeContext } from '../context/RecipeContext';
-import { useUIContext } from '../context/UIContext';
 import { Recipe, MealSlot, MealPlanEntry } from '../types';
 
 const SLOT_ORDER: MealSlot[] = ['breakfast', 'lunch', 'tea', 'dinner'];
@@ -25,7 +24,6 @@ const SLOT_LABELS: Record<MealSlot, string> = {
 export const PlanView: React.FC = () => {
   const { state, actions } = usePlanController();
   const { savedRecipes, setActiveRecipe } = useRecipeContext();
-  const { setView } = useUIContext();
 
   // State
   const [activeDate, setActiveDate] = useState<string | null>(null);

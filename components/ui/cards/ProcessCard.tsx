@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BaseCard, BaseCardProps } from './BaseCard';
+import { BaseCardProps } from './BaseCard';
 
 export interface ProcessCardProps extends BaseCardProps {
   type: 'prep' | 'cook' | 'wait';

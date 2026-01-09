@@ -26,7 +26,7 @@ export const ProfileView: React.FC = () => {
   
   const { restoreCookbook, restoreTracker, exportCookbook, exportTracker, processing, status } = useBackupRestore();
   const { runMigration, migrating, progress, total, status: migrationStatus } = useDataMigration();
-  const { setView, darkMode, setDarkMode } = useUIContext();
+  const { darkMode, setDarkMode } = useUIContext();
 
   const recipeFileRef = useRef<HTMLInputElement>(null);
   const trackerFileRef = useRef<HTMLInputElement>(null);

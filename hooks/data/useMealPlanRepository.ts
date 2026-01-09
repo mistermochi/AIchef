@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, query, where, doc, writeBatch } from 'firebase/firestore';
 import { chefDb, CHEF_APP_ID } from '../../firebase';
 import { MealPlanEntry } from '../../types';

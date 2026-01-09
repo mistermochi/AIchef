@@ -184,11 +184,9 @@ export function useCookingSession({ recipe, onClose }: CookingSessionProps) {
 
   // Auto-Read Step
   useEffect(() => {
-    if (isListening && recipe) {
-      const timer = setTimeout(() => speak(recipe.instructions[currentStep]), 300);
-      return () => clearTimeout(timer);
-    }
-    return undefined;
+    if (!isListening || !recipe) return;
+    const timer = setTimeout(() => speak(recipe.instructions[currentStep]), 300);
+    return () => clearTimeout(timer);
   }, [currentStep, isListening, recipe, speak]);
 
   return {

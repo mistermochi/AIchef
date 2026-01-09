@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Plus, Trash2, Minus, Users, Play, Clock, Check } from 'lucide-react';
-import { Recipe, MealPlanEntry, MealSlot } from '../../types';
+import { MealPlanEntry, MealSlot } from '../../types';
 import { BaseCard, Button } from '../UI';
 
 export const MealCard: React.FC<{ 

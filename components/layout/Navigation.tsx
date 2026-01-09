@@ -31,7 +31,7 @@ const NavButton = ({ active, icon, onClick, label }: { active: boolean, icon: Re
 
 export const Navigation: React.FC = () => {
   const { view, setView } = useUIContext();
-  const { chefUser, profile } = useAuthContext();
+  const { chefUser } = useAuthContext();
 
   const userInitial = chefUser?.email ? chefUser.email[0].toUpperCase() : 'G';
   const displayName = chefUser?.displayName || (chefUser?.isAnonymous ? 'Guest Chef' : 'Chef');

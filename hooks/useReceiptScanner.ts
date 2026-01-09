@@ -45,7 +45,7 @@ export function useReceiptScanner() {
       const base64 = await new Promise<string>((res, rej) => { 
         const r = new FileReader(); 
         r.onload = (ev) => res(ev.target?.result as string); 
-        r.onerror = (ev) => rej(new Error("File read failed"));
+        r.onerror = () => rej(new Error("File read failed"));
         r.readAsDataURL(imageFile); 
       });
       

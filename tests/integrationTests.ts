@@ -1,11 +1,11 @@
 
-import { expect, TestContext } from '../utils/testRunner';
+import { TestContext } from '../utils/testRunner';
 
 // We pass the actual hooks/contexts as arguments to these functions
 // so they can run inside the React Component scope of the TestDashboard
 export const runCartIntegration = async (cartContext: any) => {
   const ctx = new TestContext();
-  const { addToCart, removeFromCart, clearCart, cart } = cartContext;
+  const { addToCart, clearCart } = cartContext;
 
   await ctx.run('Cart: Add Item', async () => {
     const mockRecipe = { id: 'test-1', title: 'Test Recipe', ingredients: [] };

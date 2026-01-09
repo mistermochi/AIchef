@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { Badge } from './DataDisplay';
-import { BaseCard, BaseCardProps } from './cards/BaseCard';
-import { SectionCardProps } from './cards/SectionCard';
+import { BaseCard } from './cards/BaseCard';
 
 // Re-export new atomic cards
 export * from './cards/BaseCard';
