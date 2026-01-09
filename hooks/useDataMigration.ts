@@ -1,28 +1,29 @@
 
 import { useState } from 'react';
 import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
-import { trackerDb, TRACKER_APP_ID } from '../firebase';
+import { trackerDb, CHEF_APP_ID } from '../firebase';
 import { useAuthContext } from '../context/AuthContext';
 import { batchClassifyProducts } from '../services/geminiService';
 import { calcNormalizedPrice } from '../utils/tracker';
 
 export function useDataMigration() {
-  const { trackerUser, isAIEnabled } = useAuthContext();
+  const { trackerUser, isAIEnabled, currentHomeId } = useAuthContext();
   const [migrating, setMigrating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState<string>('');
 
+  // AI Cleanup Migration (Fixes legacy price data & re-classifies names)
   const runMigration = async () => {
-    if (!trackerUser || !isAIEnabled) return;
+    if (!trackerUser || !isAIEnabled || !currentHomeId) return;
     
     setMigrating(true);
     setProgress(0);
     setStatus('Scanning database...');
 
     try {
-      // 1. Fetch ALL purchases
-      const ref = collection(trackerDb, 'artifacts', TRACKER_APP_ID, 'public', 'data', 'purchases');
+      // Target the current home's purchase list
+      const ref = collection(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'purchases');
       const snap = await getDocs(ref);
       
       const legacyDocs = snap.docs;
@@ -35,7 +36,7 @@ export function useDataMigration() {
       setTotal(legacyDocs.length);
       setStatus(`Processing ${legacyDocs.length} items...`);
 
-      // 2. Identify Unique Product Names to save tokens
+      // Identify Unique Product Names to save tokens
       const uniqueNamesMap = new Map<string, any[]>();
       legacyDocs.forEach(d => {
         const data = d.data();
@@ -50,7 +51,7 @@ export function useDataMigration() {
       const BATCH_SIZE = 40; // Gemini limit per prompt roughly
       let processedCount = 0;
 
-      // 3. Process in chunks
+      // Process in chunks
       for (let i = 0; i < uniqueNames.length; i += BATCH_SIZE) {
         const chunk = uniqueNames.slice(i, i + BATCH_SIZE);
         
@@ -65,7 +66,6 @@ export function useDataMigration() {
           let opCount = 0;
 
           // For each mapped name, update all corresponding docs
-          // ALSO recalculate the normalizedPrice for valid sorting
           mappings.forEach(map => {
             const docsToUpdate = uniqueNamesMap.get(map.original_name);
             if (docsToUpdate) {
@@ -80,7 +80,7 @@ export function useDataMigration() {
 
                 dbBatch.update(doc(ref, docSnap.id), { 
                     genericName: map.generic_name,
-                    normalizedPrice: correctNormalized // Fix legacy pricing data
+                    normalizedPrice: correctNormalized 
                 });
                 
                 processedCount++;
@@ -100,7 +100,7 @@ export function useDataMigration() {
         }
       }
 
-      setStatus('Migration complete!');
+      setStatus('AI Cleanup complete!');
     } catch (e: any) {
       setStatus(`Error: ${e.message}`);
     } finally {

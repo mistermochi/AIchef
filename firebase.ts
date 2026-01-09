@@ -1,15 +1,11 @@
 
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { 
-  initializeFirestore, 
-  persistentLocalCache, 
-  persistentMultipleTabManager 
-} from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 
 // Configuration for the ChefAI project
 const firebaseConfig = {
-  apiKey: process.env.FIREBASE_KEY,
+  apiKey: process.env.FIREBASE_KEY || "AIzaSyBzpBV8owQ5VbHmaOasDXzn1fbnfzG7fU8",
   authDomain: "chefai-dd91e.firebaseapp.com",
   projectId: "chefai-dd91e",
   storageBucket: "chefai-dd91e.firebasestorage.app",
@@ -18,16 +14,14 @@ const firebaseConfig = {
 };
 
 // Initialize App
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 
 // ChefAI Resources
 export const chefAuth = getAuth(app);
 
-// Initialize Firestore with modern persistence settings (replaces enableMultiTabIndexedDbPersistence)
+// Initialize Firestore with Persistence (Modern Syntax)
 export const chefDb = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
+  localCache: persistentLocalCache()
 });
 
 export const CHEF_APP_ID = 'chef-ai-v1';

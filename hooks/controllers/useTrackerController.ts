@@ -13,8 +13,8 @@ export type TrackerModal =
   | { type: 'detail'; pid: string; productName: string };
 
 export function useTrackerController() {
-  const { products, purchases, loading, savePurchase, savePurchasesBatch, deletePurchase } = useTrackerContext();
-  const { isAIEnabled } = useAuthContext();
+  const { products, purchases, loading, error, savePurchase, savePurchasesBatch, deletePurchase, loadMorePurchases, hasMore } = useTrackerContext();
+  const { isAIEnabled, reportError } = useAuthContext();
   const { savedRecipes, setActiveRecipe } = useRecipeContext();
 
   const [activeTab, setActiveTab] = useState<'history' | 'catalog'>('catalog');
@@ -103,7 +103,16 @@ export function useTrackerController() {
       const result = await searchDeals(productName);
       setDealResults(result.items || []);
       setDealSources(result.sources || []);
-    } catch (e: any) { setDealError(e.message || 'AI search failed'); } finally { setSearchingDeals(false); }
+    } catch (e: any) { 
+        setDealError(e.message || 'AI search failed');
+        const msg = e.message.toLowerCase();
+        if (msg.includes('auth') || msg.includes('key')) reportError('auth_error', e.message);
+        else if (msg.includes('limit') || msg.includes('quota')) reportError('quota_error', e.message);
+        else if (msg.includes('region')) reportError('region_restricted', e.message);
+        else reportError('unhealthy', e.message);
+    } finally { 
+        setSearchingDeals(false); 
+    }
   };
 
   const openRecipe = (recipe: Recipe) => {
@@ -160,8 +169,8 @@ export function useTrackerController() {
 
   return {
     state: {
-      activeTab, modal, loading, products, purchases,
-      pendingScanFile, isAIEnabled,
+      activeTab, modal, loading, error, products, purchases,
+      pendingScanFile, isAIEnabled, hasMore,
       dealResults, dealSources, searchingDeals, dealError,
       isSaving, isFormValid, triggerSubmit
     },
@@ -169,7 +178,7 @@ export function useTrackerController() {
       setActiveTab, setModal, closeModal,
       handleScanClick, handleFileSelect,
       handleSave, handleDelete, fetchAIInsight,
-      openRecipe,
+      openRecipe, loadMorePurchases,
       setTriggerSubmit: () => setTriggerSubmit(p => p + 1),
       setIsFormValid
     },

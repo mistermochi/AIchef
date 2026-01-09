@@ -1,216 +1,341 @@
 
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { signInAnonymously, onAuthStateChanged, User } from 'firebase/auth';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
-import { chefAuth, trackerAuth, chefDb, CHEF_APP_ID } from '../firebase';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { 
+  onAuthStateChanged, 
+  signInAnonymously, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  User, 
+  updateProfile as updateFirebaseProfile 
+} from 'firebase/auth';
+import { 
+  doc, 
+  setDoc, 
+  getDoc, 
+  onSnapshot, 
+  addDoc, 
+  collection 
+} from 'firebase/firestore';
+import { chefAuth, chefDb, CHEF_APP_ID } from '../firebase';
 import { UserProfile, DEFAULT_PROFILE } from '../types';
 import { validateAIConnection } from '../services/geminiService';
 
+interface HomeData {
+  name: string;
+  members: string[];
+  ownerId?: string;
+}
+
+interface MemberProfile {
+  uid: string;
+  displayName: string;
+  email: string;
+  isOwner: boolean;
+}
+
 interface AuthContextType {
   chefUser: User | null;
-  trackerUser: User | null;
-  isInitialized: boolean;
-  isAIEnabled: boolean;
-  hasSelectedKey: boolean;
-  openKeySelector: () => Promise<void>;
+  trackerUser: User | null; // Alias
   
+  // Profile
   profile: UserProfile;
-  updateProfile: (updates: Partial<UserProfile>) => void;
+  updateProfile: (p: Partial<UserProfile>) => void;
   saveProfile: () => Promise<void>;
+  updateUserDisplayName: (name: string) => Promise<void>;
+  getProfileContext: () => string;
   
-  // AI Health
-  aiHealth: 'unknown' | 'checking' | 'healthy' | 'unhealthy' | 'region_restricted';
+  // AI Status
+  isAIEnabled: boolean;
+  aiHealth: 'unknown' | 'checking' | 'healthy' | 'auth_error' | 'quota_error' | 'network_error' | 'region_restricted' | 'unhealthy';
   aiErrorMsg: string;
   checkHealth: () => Promise<void>;
-  
-  // Helper to format profile for AI prompt
-  getProfileContext: () => string;
+  reportError: (type: AuthContextType['aiHealth'], msg: string) => void;
+  openKeySelector: () => Promise<void>;
+
+  // Homes
+  currentHomeId: string | null;
+  currentHome: HomeData | null;
+  homeMembers: MemberProfile[];
+  createHome: (name: string) => Promise<void>;
+  joinHome: (id: string) => Promise<void>;
+
+  // Auth Actions
+  login: (e: string, p: string) => Promise<void>;
+  register: (e: string, p: string) => Promise<void>;
+  logout: () => Promise<void>;
+  authError: string;
+  authMessage: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [chefUser, setChefUser] = useState<User | null>(null);
-  const [trackerUser, setTrackerUser] = useState<User | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-  
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
+  const [profileLoading, setProfileLoading] = useState(true);
 
-  // API Key State
-  const [hasSelectedKey, setHasSelectedKey] = useState(!!process.env.API_KEY);
-  
-  // AI Health State
-  const [aiHealth, setAiHealth] = useState<'unknown' | 'checking' | 'healthy' | 'unhealthy' | 'region_restricted'>('unknown');
+  // Homes
+  const [currentHomeId, setCurrentHomeId] = useState<string | null>(null);
+  const [currentHome, setCurrentHome] = useState<HomeData | null>(null);
+  const [homeMembers, setHomeMembers] = useState<MemberProfile[]>([]);
+
+  // Auth Feedback
+  const [authError, setAuthError] = useState('');
+  const [authMessage, setAuthMessage] = useState('');
+
+  // AI Health - OPTIMISTIC START (Unknown = Assumed Working until proven otherwise)
+  const [aiHealth, setAiHealth] = useState<AuthContextType['aiHealth']>('unknown');
   const [aiErrorMsg, setAiErrorMsg] = useState('');
-  
-  const isCheckingRef = useRef(false);
 
-  // 1. Auth Init
+  // 1. Auth Listener
   useEffect(() => {
-    let mounted = true;
-    const initAuth = async () => {
-      // Use a safe timeout to ensure app considers itself initialized even if Auth hangs
-      // 2500ms is a safe balance for AI Studio's "Launch" detection
-      const timeout = setTimeout(() => {
-        if (mounted && !isInitialized) setIsInitialized(true);
-      }, 2500);
+    const unsub = onAuthStateChanged(chefAuth, async (user) => {
+      setChefUser(user);
+      if (user) {
+        // OPTIMIZATION: Optimistic Cache Load
+        // Try to load home/profile from local storage immediately to unblock UI/Recipe fetching
+        const cacheKey = `chefai_user_cache_${user.uid}`;
+        try {
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            const c = JSON.parse(cached);
+            if (c.profile) setProfile(c.profile);
+            if (c.currentHomeId) setCurrentHomeId(c.currentHomeId);
+          }
+        } catch(e) { console.warn("Cache read error", e); }
 
-      try {
-        // If using unified project, we only need one sign-in.
-        if (chefAuth === trackerAuth) {
-           await signInAnonymously(chefAuth);
+        // Load Fresh User Config
+        const userDocRef = doc(chefDb, 'artifacts', CHEF_APP_ID, 'users', user.uid);
+        const snap = await getDoc(userDocRef);
+        
+        if (snap.exists()) {
+          const data = snap.data();
+          setProfile({ ...DEFAULT_PROFILE, ...data.profile });
+          
+          let homeId = data.currentHomeId;
+          if (!homeId) {
+             createHome(`${user.displayName || 'My'} Kitchen`);
+          } else {
+             if (homeId !== currentHomeId) setCurrentHomeId(homeId);
+          }
+
+          // Backfill/Sync Identity info to Firestore (so other members can see name/email)
+          if (user.email !== data.email || user.displayName !== data.displayName) {
+             setDoc(userDocRef, { email: user.email, displayName: user.displayName }, { merge: true });
+          }
+
+          // Update Cache
+          localStorage.setItem(cacheKey, JSON.stringify({
+            profile: { ...DEFAULT_PROFILE, ...data.profile },
+            currentHomeId: homeId || null
+          }));
+
         } else {
-           await Promise.all([
-             signInAnonymously(chefAuth).catch(e => console.warn("Chef Auth failed:", e.message)),
-             signInAnonymously(trackerAuth).catch(e => console.warn("Tracker Auth failed:", e.message))
-           ]);
+          // New User Setup
+          await setDoc(userDocRef, { 
+             profile: DEFAULT_PROFILE,
+             createdAt: new Date(),
+             email: user.email || '',
+             displayName: user.displayName || ''
+          });
+          createHome(`${user.displayName || 'My'} Kitchen`);
         }
-      } catch (e) {
-        console.warn("ChefAI Auth: Proceeding in Guest Mode");
-      } finally {
-        clearTimeout(timeout);
-        if (mounted) setIsInitialized(true);
+      } else {
+        setProfile(DEFAULT_PROFILE);
+        setCurrentHomeId(null);
+        // Anonymous login if no user
+        signInAnonymously(chefAuth).catch(console.error);
       }
-    };
-
-    const unsubChef = onAuthStateChanged(chefAuth, (u) => {
-      setChefUser(u);
-      // If unified, keep tracker user in sync
-      if (chefAuth === trackerAuth) setTrackerUser(u);
-    });
-
-    let unsubTracker = () => {};
-    // Only attach second listener if they are distinct instances
-    if (chefAuth !== trackerAuth) {
-      unsubTracker = onAuthStateChanged(trackerAuth, (u) => setTrackerUser(u));
-    }
-
-    initAuth();
-    return () => { mounted = false; unsubChef(); unsubTracker(); };
-  }, []);
-
-  // 2. Profile Sync
-  useEffect(() => {
-    if (!chefUser) return;
-    const prefDoc = doc(chefDb, 'artifacts', CHEF_APP_ID, 'users', chefUser.uid, 'data', 'profile');
-    const unsub = onSnapshot(prefDoc, (s) => {
-      if (s.exists()) {
-        const data = s.data() as Partial<UserProfile>;
-        setProfile({ ...DEFAULT_PROFILE, ...data });
-        // Sync haptics to local storage for the hook to read synchronously
-        localStorage.setItem('chefai_haptics', String(data.haptics ?? true));
-      }
+      setProfileLoading(false);
     });
     return () => unsub();
-  }, [chefUser]);
+  }, []);
 
-  // 3. API Key Check
+  // 2. Home Listener
   useEffect(() => {
-    const checkKey = async () => {
-      try {
-        if (process.env.API_KEY) {
-          setHasSelectedKey(true);
-          return;
-        }
-        const aistudio = (window as any).aistudio;
-        if (aistudio?.hasSelectedApiKey) {
-          const hasKey = await aistudio.hasSelectedApiKey();
-          setHasSelectedKey(hasKey);
-        }
-      } catch (e) {
-        console.warn("AI Studio Key API not available.");
-      }
-    };
-    checkKey();
-  }, []);
-
-  // 4. AI Health Check Logic
-  const checkHealth = useCallback(async () => {
-    if (isCheckingRef.current) return;
-    
-    isCheckingRef.current = true;
-    setAiHealth('checking');
-    
-    try {
-        const result = await validateAIConnection();
-        // Determine health state based on service response status
-        if (result.status === 'healthy') {
-          setAiHealth('healthy');
-        } else if (result.status === 'region_restricted') {
-          setAiHealth('region_restricted');
-        } else {
-          setAiHealth('unhealthy');
-        }
-        setAiErrorMsg(result.message);
-    } catch (e) {
-        setAiHealth('unhealthy');
-        setAiErrorMsg('Connection Failed');
-    } finally {
-        isCheckingRef.current = false;
+    if (!currentHomeId) {
+       setCurrentHome(null);
+       setHomeMembers([]);
+       return;
     }
-  }, []);
 
-  const openKeySelector = useCallback(async () => {
-    try {
-      const aistudio = (window as any).aistudio;
-      if (aistudio?.openSelectKey) {
-        await aistudio.openSelectKey();
-        setHasSelectedKey(true);
-        // We trigger a check immediately if the user manually selects a key
-        checkHealth();
-      }
-    } catch (e) {
-      console.error("Failed to open key selector", e);
-    }
-  }, [checkHealth]);
+    const homeRef = doc(chefDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId);
+    const unsub = onSnapshot(homeRef, async (s) => {
+       if (s.exists()) {
+          const hData = s.data() as HomeData;
+          setCurrentHome(hData);
+          
+          if (hData.members && hData.members.length > 0) {
+             const memberPromises = hData.members.map(async (uid: string) => {
+                 if (uid === chefUser?.uid) {
+                     return {
+                        uid,
+                        displayName: chefUser?.displayName || 'You',
+                        email: chefUser?.email || '',
+                        isOwner: uid === hData.ownerId
+                     };
+                 }
+                 
+                 try {
+                     const uSnap = await getDoc(doc(chefDb, 'artifacts', CHEF_APP_ID, 'users', uid));
+                     const uData = uSnap.exists() ? uSnap.data() : null;
+                     return {
+                        uid,
+                        displayName: uData?.displayName || 'Member',
+                        email: uData?.email || '...',
+                        isOwner: uid === hData.ownerId
+                     };
+                 } catch {
+                     return { uid, displayName: 'Member', email: '...', isOwner: uid === hData.ownerId };
+                 }
+             });
 
-  const updateProfile = (updates: Partial<UserProfile>) => {
-    setProfile(prev => {
-      const next = { ...prev, ...updates };
-      // Sync local effects immediately
-      if (typeof updates.haptics !== 'undefined') {
-        localStorage.setItem('chefai_haptics', String(updates.haptics));
-      }
-      return next;
+             const membersData = await Promise.all(memberPromises);
+             setHomeMembers(membersData);
+          }
+       } else {
+          setCurrentHomeId(null);
+       }
     });
+    return () => unsub();
+  }, [currentHomeId, chefUser]);
+
+  // 3. AI Health Check
+  const checkHealth = useCallback(async () => {
+    if (profile.aiEnabled === false) {
+       setAiHealth('unknown'); 
+       return;
+    }
+    
+    setAiHealth('checking');
+    try {
+      const res = await validateAIConnection();
+      setAiHealth(res.status);
+      setAiErrorMsg(res.message);
+    } catch (e) {
+      setAiHealth('unhealthy');
+    }
+  }, [profile.aiEnabled]);
+
+  const reportError = useCallback((type: AuthContextType['aiHealth'], msg: string) => {
+     setAiHealth(type);
+     setAiErrorMsg(msg);
+  }, []);
+
+  // --- ACTIONS ---
+
+  const updateProfile = (p: Partial<UserProfile>) => {
+    setProfile(prev => ({ ...prev, ...p }));
   };
 
   const saveProfile = async () => {
     if (!chefUser) return;
     try {
-      const prefDoc = doc(chefDb, 'artifacts', CHEF_APP_ID, 'users', chefUser.uid, 'data', 'profile');
-      await setDoc(prefDoc, profile, { merge: true });
-    } catch (e) {
-      console.error("Save profile failed:", e);
+      await setDoc(doc(chefDb, 'artifacts', CHEF_APP_ID, 'users', chefUser.uid), { profile }, { merge: true });
+      setAuthMessage('Profile saved!');
+      setTimeout(() => setAuthMessage(''), 3000);
+      // Explicit check on save is good UX
+      checkHealth(); 
+    } catch (e: any) {
+      setAuthError(e.message);
     }
   };
 
-  const getProfileContext = useCallback(() => {
-    const p = profile;
-    const parts = [
-      `Units: ${p.measurements}`,
-      `Servings: ${p.defaultServings}`,
-      `Skill: ${p.skillLevel}`,
-      p.dietary.length > 0 ? `Dietary: ${p.dietary.join(', ')}` : '',
-      p.appliances.length > 0 ? `Appliances: ${p.appliances.join(', ')}` : '',
-      p.dislikes ? `Dislikes: ${p.dislikes}` : '',
-      p.customInstructions ? `Custom: ${p.customInstructions}` : ''
-    ];
-    return parts.filter(Boolean).join('. ');
-  }, [profile]);
+  const updateUserDisplayName = async (name: string) => {
+    if (!chefUser) return;
+    try {
+      await updateFirebaseProfile(chefUser, { displayName: name });
+      setChefUser({ ...chefUser, displayName: name } as User);
+      await setDoc(doc(chefDb, 'artifacts', CHEF_APP_ID, 'users', chefUser.uid), { displayName: name }, { merge: true });
+      setAuthMessage('Name updated');
+      setTimeout(() => setAuthMessage(''), 3000);
+    } catch (e: any) {
+      setAuthError(e.message);
+    }
+  };
 
-  const isAIEnabled = useMemo(() => {
-    const keyReady = !!process.env.API_KEY || hasSelectedKey;
-    // Optimistic check: Enabled unless specifically marked unhealthy or region restricted
-    return keyReady && (profile.aiEnabled ?? true) && aiHealth !== 'unhealthy' && aiHealth !== 'region_restricted';
-  }, [hasSelectedKey, profile.aiEnabled, aiHealth]);
+  const getProfileContext = () => {
+    return `Diet: ${profile.dietary.join(', ')}. Appliances: ${profile.appliances.join(', ')}. Skill: ${profile.skillLevel}. ${profile.customInstructions}`;
+  };
+
+  const createHome = async (name: string) => {
+     if (!chefUser) return;
+     const homeRef = await addDoc(collection(chefDb, 'artifacts', CHEF_APP_ID, 'homes'), {
+        name,
+        ownerId: chefUser.uid,
+        members: [chefUser.uid],
+        createdAt: new Date()
+     });
+     
+     await setDoc(doc(chefDb, 'artifacts', CHEF_APP_ID, 'users', chefUser.uid), { currentHomeId: homeRef.id }, { merge: true });
+     setCurrentHomeId(homeRef.id);
+  };
+
+  const joinHome = async (homeId: string) => {
+     if (!chefUser) return;
+     const homeRef = doc(chefDb, 'artifacts', CHEF_APP_ID, 'homes', homeId);
+     const homeSnap = await getDoc(homeRef);
+     
+     if (!homeSnap.exists()) {
+        throw new Error("Invalid Code: Household not found.");
+     }
+
+     const homeData = homeSnap.data();
+     const members = homeData.members || [];
+     if (!members.includes(chefUser.uid)) {
+        await setDoc(homeRef, { members: [...members, chefUser.uid] }, { merge: true });
+     }
+
+     const userDocRef = doc(chefDb, 'artifacts', CHEF_APP_ID, 'users', chefUser.uid);
+     await setDoc(userDocRef, { currentHomeId: homeId }, { merge: true });
+     setCurrentHomeId(homeId);
+  };
+
+  const openKeySelector = async () => {
+    if ((window as any).aistudio && (window as any).aistudio.openSelectKey) {
+        await (window as any).aistudio.openSelectKey();
+        checkHealth();
+    } else {
+        alert("API Key selection not available in this environment.");
+    }
+  };
+
+  const login = async (e: string, p: string) => {
+     setAuthError('');
+     try {
+       await signInWithEmailAndPassword(chefAuth, e, p);
+     } catch (err: any) {
+       setAuthError(err.message);
+       throw err;
+     }
+  };
+
+  const register = async (e: string, p: string) => {
+     setAuthError('');
+     try {
+       await createUserWithEmailAndPassword(chefAuth, e, p);
+     } catch (err: any) {
+       setAuthError(err.message);
+       throw err;
+     }
+  };
+
+  const logout = async () => {
+     await signOut(chefAuth);
+     setProfile(DEFAULT_PROFILE);
+     setCurrentHomeId(null);
+  };
+
+  const isAIEnabled = profile.aiEnabled !== false && aiHealth !== 'unhealthy' && aiHealth !== 'auth_error' && aiHealth !== 'quota_error' && aiHealth !== 'region_restricted';
 
   return (
     <AuthContext.Provider value={{
-      chefUser, trackerUser, isInitialized,
-      isAIEnabled, hasSelectedKey, openKeySelector,
-      profile, updateProfile, saveProfile, getProfileContext,
-      aiHealth, aiErrorMsg, checkHealth
+      chefUser, trackerUser: chefUser,
+      profile, updateProfile, saveProfile, updateUserDisplayName, getProfileContext,
+      isAIEnabled, aiHealth, aiErrorMsg, checkHealth, reportError, openKeySelector,
+      currentHomeId, currentHome, homeMembers, createHome, joinHome,
+      login, register, logout, authError, authMessage
     }}>
       {children}
     </AuthContext.Provider>

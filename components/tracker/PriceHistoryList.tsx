@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { History, Loader2, CalendarDays } from 'lucide-react';
 import { Purchase, Product } from '../../types';
 import { CATEGORY_EMOJIS, getPerItemPrice, fmtCurrency, fmtDate } from '../../utils/tracker';
@@ -10,13 +10,56 @@ interface PriceHistoryListProps {
   purchases: Purchase[];
   products: Product[];
   onEdit: (id: string) => void;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 const PAGE_SIZE = 20;
 
-export const PriceHistoryList: React.FC<PriceHistoryListProps> = ({ purchases, onEdit }) => {
-  // Use generic infinite scroll hook
+export const PriceHistoryList: React.FC<PriceHistoryListProps> = ({ 
+  purchases, 
+  onEdit, 
+  hasMore = false, 
+  onLoadMore 
+}) => {
+  // Use generic infinite scroll hook for local rendering optimization
   const { displayLimit, observerTarget } = useInfiniteScroll(purchases, PAGE_SIZE);
+
+  // Trigger server load when reaching the end of the locally rendered list
+  useEffect(() => {
+    // If we've rendered everything available locally AND the server has more
+    if (displayLimit >= purchases.length && hasMore && onLoadMore) {
+        // Observe the same target used for local infinite scroll
+        // The useInfiniteScroll hook updates displayLimit.
+        // We need a mechanism to know when the user *hits* the bottom to trigger the server call.
+        
+        // Since useInfiniteScroll only handles the slice, we rely on a check within the observer logic.
+        // However, useInfiniteScroll is encapsulated.
+        // Simplified Logic: 
+        // If displayLimit matches purchases.length, it means the user scrolled to the bottom of current data.
+        // We'll rely on the observerTarget being visible to trigger this effect?
+        // No, 'useInfiniteScroll' internally uses IntersectionObserver.
+        
+        // Better approach: Since we can't easily hook into the internal observer of 'useInfiniteScroll' without modifying it,
+        // we will assume that if 'displayLimit' has saturated 'purchases.length', the next intersection should trigger 'onLoadMore'.
+        // But 'useInfiniteScroll' stops doing anything when limit >= length.
+        
+        // We'll add a secondary observer effect here for the "Server Load" trigger.
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && displayLimit >= purchases.length) {
+                    onLoadMore();
+                }
+            },
+            { threshold: 0.1 }
+        );
+        
+        const el = document.getElementById('infinite-scroll-trigger');
+        if (el) observer.observe(el);
+        
+        return () => observer.disconnect();
+    }
+  }, [displayLimit, purchases.length, hasMore, onLoadMore]);
 
   // Sort purchases: Date DESC -> Category ASC -> Name ASC
   const sortedPurchases = useMemo(() => {
@@ -131,8 +174,13 @@ export const PriceHistoryList: React.FC<PriceHistoryListProps> = ({ purchases, o
       </div>
 
       {/* Observer Target & Loading State */}
-      <div ref={observerTarget} className="p-12 flex justify-center items-center">
-        {displayLimit < purchases.length ? (
+      <div 
+        ref={observerTarget} // Attach the hook's ref here so it auto-expands local limit
+        id="infinite-scroll-trigger" // ID for the secondary effect to attach
+        className="p-12 flex justify-center items-center"
+      >
+        {/* Show loader if we have more locally OR more on server */}
+        {displayLimit < purchases.length || hasMore ? (
           <div className="flex items-center gap-3 text-content-tertiary">
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
             <span className="text-xs font-bold uppercase tracking-widest animate-pulse">

@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { History, LayoutGrid, Trash2, Save, Sparkles, TrendingDown, Calendar, Search, ExternalLink, AlertTriangle, Camera, Plus, BookOpen } from 'lucide-react';
 import { PageLayout, ViewHeader, Button, ActionBar, HeaderAction, HeaderActionSeparator, Modal, ModalHeader, ModalContent, Badge, SectionCard, BaseCard, ConfirmButton } from '../components/UI';
-import { GlobalFAB } from '../components/GlobalFAB';
+import { GlobalFAB } from '../components/layout/GlobalFAB';
 import { PriceEntryForm, PriceHistoryList, PriceCatalogList } from '../components/TrackerUI';
-import { MetaSection } from '../components/MetaSection';
+import { MetaSection } from '../components/recipe/MetaSection';
 import { fmtCurrency, getPerItemPrice, fmtDate, CATEGORY_EMOJIS } from '../utils/tracker';
 import { useTrackerController } from '../hooks/controllers/useTrackerController';
 
@@ -14,7 +14,13 @@ export const TrackerView: React.FC = () => {
 
   return (
     <PageLayout>
-      <input type="file" ref={refs.fileInputRef} className="hidden" accept="image/*" onChange={actions.handleFileSelect} />
+      <input 
+        type="file" 
+        ref={refs.fileInputRef} 
+        className="hidden" 
+        accept="image/*,.heic,.heif" 
+        onChange={actions.handleFileSelect} 
+      />
       
       <ViewHeader 
         title="Price Tracker" 
@@ -33,7 +39,18 @@ export const TrackerView: React.FC = () => {
         }
       />
 
-      {state.loading ? (
+      {state.error ? (
+        <div className="py-20 flex flex-col items-center gap-4 text-center">
+          <div className="w-16 h-16 bg-danger-container/20 rounded-full flex items-center justify-center text-danger">
+             <AlertTriangle className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+             <h3 className="font-bold text-lg text-content dark:text-content-dark">Unable to Load Data</h3>
+             <p className="text-sm text-content-secondary dark:text-content-secondary-dark max-w-sm mx-auto">{state.error}</p>
+          </div>
+          <Button variant="ghost" onClick={() => window.location.reload()} label="Reload Page" />
+        </div>
+      ) : state.loading && state.purchases.length === 0 ? (
         <div className="py-20 flex flex-col items-center gap-4 text-content-tertiary">
           <Sparkles className="w-10 h-10 animate-pulse" />
           <p className="font-bold text-sm uppercase tracking-widest">Loading Market Data...</p>
@@ -41,7 +58,13 @@ export const TrackerView: React.FC = () => {
       ) : state.activeTab === 'catalog' ? (
         <PriceCatalogList purchases={state.purchases} onOpenDetail={(pid, productName) => actions.setModal({ type: 'detail', pid, productName })} />
       ) : (
-        <PriceHistoryList purchases={state.purchases} products={state.products} onEdit={(id) => actions.setModal({ type: 'edit', id })} />
+        <PriceHistoryList 
+          purchases={state.purchases} 
+          products={state.products} 
+          onEdit={(id) => actions.setModal({ type: 'edit', id })}
+          hasMore={state.hasMore}
+          onLoadMore={actions.loadMorePurchases}
+        />
       )}
 
       {/* Global FAB for Adding Receipt */}

@@ -19,6 +19,15 @@ export const SYSTEM_INSTRUCTIONS = {
   
   ORCHESTRATOR: "Kitchen Orchestrator. Merge recipes into one workflow. OUTPUT MUST BE IN TRADITIONAL CHINESE (Hong Kong Style).",
   
+  PLANNER: (prefs: string) => `Meal Planner Agent. Generate a valid weekly meal plan (7 days). 
+  Context: ${prefs}. 
+  Output format: JSON Array of entries.
+  dayOffset: 0 (Monday) to 6 (Sunday).
+  slot: 'breakfast', 'lunch', or 'dinner'.
+  recipeName: Title of the dish.
+  emoji: Single char emoji.
+  Language: TRADITIONAL CHINESE (Hong Kong Style) for names.`,
+
   RECEIPT_OCR: `You are an expert OCR and Accounting agent specialized in Hong Kong retail receipts.
 
 **PRIORITY 1: STORE NAME EXTRACTION**
@@ -92,5 +101,6 @@ export const PROMPTS = {
   REFINE_RECIPE: (recipe: string, goal: string) => `Recipe: ${recipe}. Goal: ${goal}`,
   ORCHESTRATE: (recipes: string) => `Recipes: ${recipes}`,
   DEAL_SEARCH: (productName: string) => `Find 6 buying options for "${productName}".`,
-  BATCH_CLASSIFY: (items: string) => `Map these products to generic names: ${items}`
+  BATCH_CLASSIFY: (items: string) => `Map these products to generic names: ${items}`,
+  PLAN_WEEK: (recipes: string) => `My Cookbook: ${recipes}. Create a varied 7-day meal plan.`
 };

@@ -31,7 +31,7 @@ export const Typewriter: React.FC<{ text: string; speed?: number; className?: st
 };
 
 // --- COUNT UP ---
-export const CountUp: React.FC<{ value: number; duration?: number; className?: string }> = ({ value, duration = 300, className = '' }) => {
+export const CountUp: React.FC<{ value: number; duration?: number; className?: string }> = React.memo(({ value, duration = 300, className = '' }) => {
   const [displayValue, setDisplayValue] = useState(value);
   const startValue = useRef(value);
   const startTime = useRef<number | null>(null);
@@ -66,7 +66,7 @@ export const CountUp: React.FC<{ value: number; duration?: number; className?: s
     : displayValue.toFixed(2);
 
   return <span className={className}>{formatted}</span>;
-};
+});
 
 // --- BASE ROW (Shared Foundation) ---
 interface BaseRowProps {
@@ -79,7 +79,7 @@ interface BaseRowProps {
   className?: string;
 }
 
-const BaseRow: React.FC<BaseRowProps> = ({ leading, children, actions, onDelete, onClick, isChecked, className = '' }) => (
+const BaseRow: React.FC<BaseRowProps> = React.memo(({ leading, children, actions, onDelete, onClick, isChecked, className = '' }) => (
   <div 
     onClick={onClick}
     className={`flex items-stretch group border-b border-outline/30 dark:border-outline-dark/30 last:border-none transition-colors 
@@ -108,7 +108,7 @@ const BaseRow: React.FC<BaseRowProps> = ({ leading, children, actions, onDelete,
       </div>
     )}
   </div>
-);
+));
 
 // --- EDITABLE LIST ---
 interface EditableListProps<T> {
@@ -146,7 +146,7 @@ interface ListRowProps {
   className?: string;
 }
 
-export const ListRow: React.FC<ListRowProps> = ({ 
+export const ListRow: React.FC<ListRowProps> = React.memo(({ 
   leading, 
   content, 
   isEditing = false, 
@@ -170,7 +170,7 @@ export const ListRow: React.FC<ListRowProps> = ({
       <div className="text-sm text-content-secondary dark:text-content-secondary-dark font-medium leading-relaxed whitespace-pre-wrap">{content}</div>
     )}
   </BaseRow>
-);
+));
 
 // --- INGREDIENT COMPONENTS (Composable) ---
 
@@ -181,7 +181,7 @@ export const IngredientInput: React.FC<{
   unit: string;
   onChange: (field: string, val: any) => void;
   onDelete: () => void;
-}> = ({ name, quantity, unit, onChange, onDelete }) => {
+}> = React.memo(({ name, quantity, unit, onChange, onDelete }) => {
   const actions = (
     <div className="flex items-center gap-2">
        <div className="flex items-center justify-center min-w-[80px] px-2.5 py-1.5 rounded-lg border transition-all bg-surface-variant dark:bg-surface-variant-dark border-outline dark:border-outline-dark">
@@ -196,7 +196,7 @@ export const IngredientInput: React.FC<{
       <input value={name} onChange={(e) => onChange('name', e.target.value)} className="w-full text-sm font-medium bg-transparent outline-none text-content dark:text-content-dark" placeholder="Item Name" />
     </BaseRow>
   );
-};
+});
 
 // 2. SCALER ROW (Recipe View Mode)
 export const IngredientScaler: React.FC<{
@@ -209,7 +209,7 @@ export const IngredientScaler: React.FC<{
   scaleInputValue?: string;
   onScaleChange?: (val: string) => void;
   onScaleBlur?: () => void;
-}> = ({ name, quantity, unit, scalingFactor, onScaleClick, isScaling, scaleInputValue, onScaleChange, onScaleBlur }) => {
+}> = React.memo(({ name, quantity, unit, scalingFactor, onScaleClick, isScaling, scaleInputValue, onScaleChange, onScaleBlur }) => {
   const displayQty = quantity * scalingFactor;
   
   const actions = (
@@ -237,7 +237,7 @@ export const IngredientScaler: React.FC<{
       <p className="text-sm font-medium text-content dark:text-content-dark truncate">{name}</p>
     </BaseRow>
   );
-};
+});
 
 // 3. CHECKABLE ROW (Shopping List Mode)
 export const CheckableIngredient: React.FC<{
@@ -246,7 +246,7 @@ export const CheckableIngredient: React.FC<{
   unit: string;
   isChecked: boolean;
   onToggle: () => void;
-}> = ({ name, quantity, unit, isChecked, onToggle }) => {
+}> = React.memo(({ name, quantity, unit, isChecked, onToggle }) => {
   const { trigger } = useHaptics();
   const [isPending, setIsPending] = useState(false);
   const timerRef = useRef<any>(null);
@@ -322,17 +322,17 @@ export const CheckableIngredient: React.FC<{
       </div>
     </BaseRow>
   );
-};
+});
 
 // 4. SIMPLE ROW (Orchestrator Mode)
-export const IngredientRow: React.FC<{ name: string; quantity: number; unit: string }> = ({ name, quantity, unit }) => {
+export const IngredientRow: React.FC<{ name: string; quantity: number; unit: string }> = React.memo(({ name, quantity, unit }) => {
   const actions = (
     <span className="text-xs font-bold font-mono text-content-secondary dark:text-content-secondary-dark bg-surface-variant dark:bg-surface-variant-dark px-2 py-1 rounded">
       {Number(quantity.toFixed(2))} {unit}
     </span>
   );
   return <BaseRow actions={actions}><p className="text-sm font-medium text-content dark:text-content-dark">{name}</p></BaseRow>;
-};
+});
 
 // --- BADGE & EMPTY STATE ---
 export const Badge: React.FC<any> = ({ label, icon, variant = 'primary', className = '', onClick }) => {

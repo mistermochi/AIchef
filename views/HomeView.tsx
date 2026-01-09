@@ -1,19 +1,41 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Info, PlusCircle, Key, ExternalLink, Bot, AlertTriangle, RefreshCw } from 'lucide-react';
 import { ViewHeader, PromptInput, PageLayout, Button } from '../components/UI';
 import { useRecipeContext } from '../context/RecipeContext';
 import { useAuthContext } from '../context/AuthContext';
 import { useUIContext } from '../context/UIContext';
+import { useRecipeAI } from '../hooks/useRecipeAI';
+import { Recipe } from '../types';
 
 export const HomeView: React.FC = () => {
-  const { 
-    recipeInput, setRecipeInput, processRecipeAction, loading, error, 
-    handleManualCreateAction
-  } = useRecipeContext();
+  const { setActiveRecipe } = useRecipeContext();
+  
+  const [recipeInput, setRecipeInput] = useState('');
   
   const { isAIEnabled, openKeySelector, profile, aiHealth, aiErrorMsg, checkHealth } = useAuthContext();
   const { setView } = useUIContext();
+  
+  const { processRecipe, loading, error } = useRecipeAI();
+
+  const handleManualCreateAction = () => {
+    setActiveRecipe({ 
+      title:'New Recipe', 
+      emoji:'🥘', 
+      summary:'', 
+      ingredients:[{name:'',quantity:1,unit:'g'}], 
+      instructions:[''], 
+      extractedTips:[], 
+      aiSuggestions:[] 
+    } as Recipe);
+  };
+
+  const handleProcessRecipe = async () => {
+    const result = await processRecipe(recipeInput);
+    if (result) {
+      setActiveRecipe(result);
+    }
+  };
 
   return (
     <PageLayout>
@@ -105,7 +127,7 @@ export const HomeView: React.FC = () => {
               autoFocus
               value={recipeInput} 
               onChange={setRecipeInput} 
-              onSubmit={processRecipeAction}
+              onSubmit={handleProcessRecipe}
               loading={loading}
               error={error}
               placeholder="Paste a recipe URL, list ingredients, or describe a dish..."

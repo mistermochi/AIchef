@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Tag, DollarSign, Scale, Layers, Trash2, MessageSquare, ChevronDown, Check } from 'lucide-react';
 import { Input, Button } from '../UI';
 import { CATEGORIES, CATEGORY_EMOJIS, UNITS } from '../../utils/tracker';
@@ -15,7 +15,7 @@ interface TrackerLogItemProps {
   hideDelete?: boolean;
 }
 
-export const TrackerLogItem: React.FC<TrackerLogItemProps> = ({ 
+export const TrackerLogItem: React.FC<TrackerLogItemProps> = React.memo(({ 
   item, 
   products = [], 
   onUpdate, 
@@ -25,17 +25,6 @@ export const TrackerLogItem: React.FC<TrackerLogItemProps> = ({
 }) => {
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const handleNameChange = (val: string) => {
     onUpdate({ name: val });
@@ -71,10 +60,15 @@ export const TrackerLogItem: React.FC<TrackerLogItemProps> = ({
 
   return (
     <div className={`p-4 md:p-6 group hover:bg-primary-container/5 dark:hover:bg-primary-container-dark/5 transition-colors ${!isLast ? 'border-b border-outline/30 dark:border-outline-dark/30' : ''}`}>
+      {/* Lightweight Backdrop for closing suggestions */}
+      {showSuggestions && (
+        <div className="fixed inset-0 z-[50] cursor-default" onClick={() => setShowSuggestions(false)} />
+      )}
+
       <div className="flex flex-col gap-5">
         {/* Top Row: Name and Category */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative" ref={wrapperRef}>
+          <div className={`flex-1 relative ${showSuggestions ? 'z-[60]' : ''}`}>
             <label className="text-2xs font-bold text-content-tertiary uppercase px-1 tracking-widest mb-1.5 block">Product Name</label>
             <Input 
               placeholder="e.g. Organic Whole Milk" 
@@ -189,4 +183,4 @@ export const TrackerLogItem: React.FC<TrackerLogItemProps> = ({
       </div>
     </div>
   );
-};
+});

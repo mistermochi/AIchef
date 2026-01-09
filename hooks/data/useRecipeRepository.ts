@@ -1,23 +1,34 @@
 
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, serverTimestamp, doc, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy, limit } from 'firebase/firestore';
 import { chefDb, CHEF_APP_ID } from '../../firebase';
 import { Recipe } from '../../types';
-import { User } from 'firebase/auth';
+import { useAuthContext } from '../../context/AuthContext';
 
-export function useRecipeRepository(user: User | null) {
+export function useRecipeRepository(homeId: string | null) {
+  const { chefUser } = useAuthContext();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Pagination State
+  const INITIAL_LIMIT = 12;
+  const LOAD_STEP = 12;
+  const [limitCount, setLimitCount] = useState(INITIAL_LIMIT);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    if (!homeId) {
         setRecipes([]);
         setLoading(false);
         return;
     }
     setLoading(true);
-    const recipeCol = collection(chefDb, 'artifacts', CHEF_APP_ID, 'public', 'data', 'recipes');
-    const q = query(recipeCol, orderBy('createdAt', 'desc'));
+    
+    // New Path: artifacts/{appId}/homes/{homeId}/recipes
+    const recipeCol = collection(chefDb, 'artifacts', CHEF_APP_ID, 'homes', homeId, 'recipes');
+    
+    // Optimized Query: Only fetch limited number of docs initially
+    const q = query(recipeCol, orderBy('createdAt', 'desc'), limit(limitCount));
 
     const unsub = onSnapshot(q, { includeMetadataChanges: true }, (s) => {
       const data = s.docs.map(d => {
@@ -25,44 +36,53 @@ export function useRecipeRepository(user: User | null) {
         return { 
             id: d.id, 
             ...raw,
-            // Pre-calculate/Normalize timestamp to number for faster client-side sorting if needed
-            // and to avoid serialization issues
             createdAt: raw.createdAt 
         } as Recipe;
       });
       
       setRecipes(data);
       
-      // If we have data from cache, we can stop loading immediately
-      // even if the server check is pending.
+      // Heuristic: If we received fewer docs than requested, we've hit the end.
+      if (data.length < limitCount) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
+      
       if (!s.metadata.hasPendingWrites) {
          setLoading(false);
       }
     });
     
     return () => unsub();
-  }, [user]);
+  }, [homeId, limitCount]);
+
+  const loadMore = () => {
+    if (hasMore && !loading) {
+      setLimitCount(prev => prev + LOAD_STEP);
+    }
+  };
 
   const addRecipe = async (recipe: Recipe) => {
-    if (!user) throw new Error("User not authenticated");
-    return await addDoc(collection(chefDb, 'artifacts', CHEF_APP_ID, 'public', 'data', 'recipes'), { 
+    if (!chefUser || !homeId) throw new Error("No active home session");
+    return await addDoc(collection(chefDb, 'artifacts', CHEF_APP_ID, 'homes', homeId, 'recipes'), { 
         ...recipe, 
-        authorId: user.uid, 
-        createdAt: serverTimestamp() 
+        authorId: chefUser.uid, 
+        createdAt: new Date() 
     });
   };
 
   const updateRecipe = async (id: string, data: Partial<Recipe>) => {
-      if (!user) throw new Error("User not authenticated");
-      const recipeRef = doc(chefDb, 'artifacts', CHEF_APP_ID, 'public', 'data', 'recipes', id);
+      if (!homeId) throw new Error("No active home session");
+      const recipeRef = doc(chefDb, 'artifacts', CHEF_APP_ID, 'homes', homeId, 'recipes', id);
       await updateDoc(recipeRef, data);
   };
 
   const deleteRecipe = async (id: string) => {
-      if (!user) throw new Error("User not authenticated");
-      const recipeRef = doc(chefDb, 'artifacts', CHEF_APP_ID, 'public', 'data', 'recipes', id);
+      if (!homeId) throw new Error("No active home session");
+      const recipeRef = doc(chefDb, 'artifacts', CHEF_APP_ID, 'homes', homeId, 'recipes', id);
       await deleteDoc(recipeRef);
   };
 
-  return { recipes, loading, addRecipe, updateRecipe, deleteRecipe };
+  return { recipes, loading, addRecipe, updateRecipe, deleteRecipe, loadMore, hasMore };
 }

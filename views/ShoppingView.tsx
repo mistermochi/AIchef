@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { ShoppingCart, Trash2, Layers, Cpu, X, ListChecks, Settings2, Minus, Plus, CookingPot, Utensils } from 'lucide-react';
-import { OrchestratorOverlay } from '../components/OrchestratorOverlay';
+import { OrchestratorOverlay } from '../components/shopping/OrchestratorOverlay';
 import { Button, SectionCard, IconButton, ViewHeader, CheckableIngredient, EmptyState, HeaderAction, HeaderActionSeparator, ActionBar, PageLayout, ConfirmButton } from '../components/UI';
 import { useCartContext } from '../context/CartContext';
 import { useUIContext } from '../context/UIContext';

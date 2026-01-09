@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useDeferredValue } from 'react';
-import { Search, Database, ShoppingCart, Check, ChevronRight, Store, ArrowLeft, Tag, Package } from 'lucide-react';
+import { Search, Database, ShoppingCart, Check, ChevronRight, Store, ArrowLeft, Tag, Package, Loader2 } from 'lucide-react';
 import { Purchase } from '../../types';
 import { CATEGORY_EMOJIS, fmtCurrency, getPerItemPrice, fmtDate } from '../../utils/tracker';
 import { Input, EmptyState, Button, Badge } from '../UI';
@@ -40,6 +40,10 @@ export const PriceCatalogList: React.FC<{
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search); // Defer search term for heavy filtering
 
+  // Performance: Defer the dataset update to prevent blocking UI during large data transitions or initial load
+  const deferredPurchases = useDeferredValue(purchases);
+  const isStale = deferredPurchases !== purchases;
+
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedGeneric, setSelectedGeneric] = useState<string | null>(null);
 
@@ -51,7 +55,7 @@ export const PriceCatalogList: React.FC<{
   }>(() => {
     // 1. Group raw purchases by unique product (Normalized Name)
     const groupedByProduct: Record<string, Purchase[]> = {};
-    purchases.forEach(p => {
+    deferredPurchases.forEach(p => {
       const key = p.productName?.trim()?.toLowerCase() || 'unknown';
       if (!groupedByProduct[key]) groupedByProduct[key] = [];
       groupedByProduct[key].push(p);
@@ -110,7 +114,7 @@ export const PriceCatalogList: React.FC<{
     const sortedCategories = Object.keys(treeData).sort();
 
     return { tree: treeData, flatList: allProducts, categories: sortedCategories };
-  }, [purchases]);
+  }, [deferredPurchases]);
 
   // --- Filtering for Search (Uses Deferred Value) ---
   const searchResults = useMemo(() => {
@@ -154,6 +158,7 @@ export const PriceCatalogList: React.FC<{
         <div className="sticky top-0 z-10 bg-surface-variant dark:bg-surface-variant-dark pt-1 pb-4">
           <Input 
             startIcon={<Search className="w-4 h-4" />} 
+            endIcon={isStale ? <Loader2 className="w-3 h-3 animate-spin" /> : undefined}
             placeholder="Filter products..." 
             value={search} 
             onChange={(e) => setSearch(e.target.value)} 
@@ -179,6 +184,7 @@ export const PriceCatalogList: React.FC<{
     <div className="sticky top-0 z-10 bg-surface-variant dark:bg-surface-variant-dark pt-1 pb-4 space-y-2">
       <Input 
         startIcon={<Search className="w-4 h-4" />} 
+        endIcon={isStale ? <Loader2 className="w-3 h-3 animate-spin" /> : undefined}
         placeholder="Find item..." 
         value={search} 
         onChange={(e) => setSearch(e.target.value)} 
@@ -213,7 +219,7 @@ export const PriceCatalogList: React.FC<{
     const sortedProducts = [...group.products].sort((a, b) => a.bestPrice - b.bestPrice);
 
     return (
-      <div className="pb-20">
+      <div className={`pb-20 transition-opacity duration-200 ${isStale ? 'opacity-70' : 'opacity-100'}`}>
         {headerNav}
         <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
            <div className="px-1">
@@ -255,7 +261,7 @@ export const PriceCatalogList: React.FC<{
     const generics = (Object.values(groupMap) as GenericGroup[]).sort((a, b) => a.name.localeCompare(b.name));
 
     return (
-      <div className="pb-20">
+      <div className={`pb-20 transition-opacity duration-200 ${isStale ? 'opacity-70' : 'opacity-100'}`}>
         {headerNav}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in slide-in-from-right-4 duration-300">
            {generics.map(gen => (
@@ -286,7 +292,7 @@ export const PriceCatalogList: React.FC<{
 
   // 4. Root View (Tier 1: Categories)
   return (
-    <div className="pb-20">
+    <div className={`pb-20 transition-opacity duration-200 ${isStale ? 'opacity-70' : 'opacity-100'}`}>
       {headerNav}
       <div className="grid grid-cols-1 gap-3 animate-in fade-in duration-300">
          {categories.length === 0 ? (

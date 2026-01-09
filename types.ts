@@ -1,7 +1,4 @@
 
-// Fix: Use modular Firestore Timestamp import.
-import { Timestamp } from 'firebase/firestore';
-
 export interface Ingredient {
   name: string;
   quantity: number;
@@ -20,7 +17,7 @@ export interface Recipe {
   sourceUrl?: string;
   coverImage?: string | null;
   authorId?: string;
-  createdAt?: Timestamp;
+  createdAt?: any; // Was Timestamp
   lastRefinement?: string;
 }
 
@@ -51,6 +48,21 @@ export interface GenieIdea {
   title: string;
   summary: string;
   emoji: string;
+}
+
+// --- Meal Planner Types ---
+
+export type MealSlot = 'breakfast' | 'lunch' | 'tea' | 'dinner';
+
+export interface MealPlanEntry {
+  id?: string;
+  date: string; // YYYY-MM-DD
+  slot: MealSlot;
+  recipeId?: string; // Matches a Recipe.id if from cookbook
+  customTitle?: string; // Fallback title if not in cookbook or custom entry
+  emoji?: string;
+  servings: number;
+  isCooked: boolean;
 }
 
 // --- Price Tracker Types ---
@@ -93,7 +105,7 @@ export interface OnlineDeal {
   imageUrl: string;
 }
 
-export type View = 'home' | 'cookbook' | 'profile' | 'shopping' | 'genie' | 'tracker';
+export type View = 'home' | 'cookbook' | 'profile' | 'shopping' | 'genie' | 'tracker' | 'test' | 'plan';
 
 // --- User Profile ---
 

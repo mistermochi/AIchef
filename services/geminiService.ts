@@ -4,16 +4,24 @@ import { Recipe, GenieIdea, OrchestrationPlan } from '../types';
 import { SYSTEM_INSTRUCTIONS, PROMPTS } from '../constants/prompts';
 import { SCHEMAS } from '../constants/schemas';
 
-// Helper to get a fresh client instance using the current environment key
+// --- CLIENT CACHING ---
+let cachedClient: GoogleGenAI | null = null;
+let cachedKey: string | undefined = undefined;
+
+// Helper to get a memoized client instance using the current environment key
 const getClient = () => {
-	const key = localStorage.getItem('chefai_pass');
+	const apiKey = localStorage.getItem('chefai_pass');
   
   // If the key is null or empty, stop immediately
-	if (!key) {
+	if (!apiKey) {
 	  throw new Error("API Key not found in localStorage");
 	}
-
-	return new GoogleGenAI({ apiKey: key });
+	
+  if (!cachedClient || cachedKey !== apiKey) {
+    cachedClient = new GoogleGenAI({ apiKey });
+    cachedKey = apiKey;
+  }
+  return cachedClient;
 };
 
 // --- FACTORY ---
@@ -90,12 +98,17 @@ export const processRecipe = (input: string, prefs: string) => callAI<Partial<Re
   system: SYSTEM_INSTRUCTIONS.RECIPE_PROCESSOR(prefs)
 });
 
-export const generateGenieIdeas = (ingredients: string, prefs: string) => callAI<GenieIdea[]>({
-  model: 'gemini-flash-lite-latest',
-  schema: SCHEMAS.GENIE,
-  prompt: PROMPTS.GENIE_INPUT(ingredients),
-  system: SYSTEM_INSTRUCTIONS.GENIE(prefs)
-});
+export const generateGenieIdeas = async (ingredients: string, prefs: string): Promise<GenieIdea[]> => {
+  const prompt = `${SYSTEM_INSTRUCTIONS.GENIE(prefs)}\n\nInput:\n${PROMPTS.GENIE_INPUT(ingredients)}`;
+  
+  // Directly use callAI with the array schema
+  return callAI<GenieIdea[]>({
+    model: 'gemini-2.5-flash',
+    schema: SCHEMAS.GENIE,
+    prompt: prompt,
+    system: "You are a creative chef."
+  });
+};
 
 export const refineRecipe = (recipe: Recipe, prompt: string) => callAI<string[]>({
   model: 'gemini-3-pro-preview',
@@ -109,6 +122,13 @@ export const generateOrchestrationPlan = (recipes: Recipe[]) => callAI<Orchestra
   schema: SCHEMAS.ORCHESTRATION,
   prompt: PROMPTS.ORCHESTRATE(JSON.stringify(recipes.map(r => ({ title: r.title, steps: r.instructions })))),
   system: SYSTEM_INSTRUCTIONS.ORCHESTRATOR
+});
+
+export const generateMealPlan = (recipes: Recipe[], prefs: string) => callAI<any[]>({
+  model: 'gemini-3-pro-preview',
+  schema: SCHEMAS.MEAL_PLAN,
+  prompt: PROMPTS.PLAN_WEEK(recipes.map(r => r.title).join(', ')),
+  system: SYSTEM_INSTRUCTIONS.PLANNER(prefs)
 });
 
 export const searchDeals = async (productName: string) => {

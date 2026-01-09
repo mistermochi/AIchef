@@ -1,37 +1,49 @@
 
-import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, CookingPot, Loader2, Plus, PlusCircle, Key, ExternalLink, Info, Check, ShoppingCart, Bot } from 'lucide-react';
 import { Recipe } from '../types';
 import { ViewHeader, Input, EmptyState, RecipeSkeleton, PageLayout, GridList, Button, Modal, ModalHeader, ModalContent, PromptInput, Card, CardMedia, CardContent, CardTitle, CardDescription, CardFooter, CardFloatingAction, IngredientBadges } from '../components/UI';
-import { GlobalFAB } from '../components/GlobalFAB';
+import { GlobalFAB } from '../components/layout/GlobalFAB';
 import { useRecipeContext } from '../context/RecipeContext';
 import { useCartContext } from '../context/CartContext';
 import { useAuthContext } from '../context/AuthContext';
-import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 import { useUIContext } from '../context/UIContext';
-
-const PAGE_SIZE = 6;
+import { useRecipeAI } from '../hooks/useRecipeAI';
 
 export const HistoryView: React.FC = () => {
   const { 
-    searchTerm, setSearchTerm, filteredRecipes: allFilteredRecipes, recipesLoading: loading,
-    setActiveRecipe, setIsEditing, setScalingFactor,
-    recipeInput, setRecipeInput, processRecipeAction, loading: aiLoading, error: aiError, 
-    handleManualCreateAction
+    searchTerm, setSearchTerm, filteredRecipes, recipesLoading: loading,
+    setActiveRecipe, loadMore, hasMore
   } = useRecipeContext();
 
-  // Defer the filtered list updates to keep the UI (typing) responsive
-  const filteredRecipes = useDeferredValue(allFilteredRecipes);
-
+  const { processRecipe, loading: aiLoading, error: aiError } = useRecipeAI();
   const { cart: shoppingCart, addToCart, removeFromCart } = useCartContext();
   const { isAIEnabled, openKeySelector, profile } = useAuthContext();
   const { setView } = useUIContext();
 
   const [placeholder, setPlaceholder] = useState('Search recipes...');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [recipeInput, setRecipeInput] = useState('');
   
-  // Use generic infinite scroll hook on the deferred list
-  const { displayLimit, observerTarget } = useInfiniteScroll(filteredRecipes, PAGE_SIZE);
+  // Intersection Observer for Infinite Loading
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: '200px' }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadMore]);
 
   useEffect(() => {
     const updatePlaceholder = () => setPlaceholder(window.innerWidth < 640 ? 'Search' : 'Search recipes...');
@@ -39,8 +51,6 @@ export const HistoryView: React.FC = () => {
     window.addEventListener('resize', updatePlaceholder);
     return () => window.removeEventListener('resize', updatePlaceholder);
   }, []);
-
-  const visibleRecipes = useMemo(() => filteredRecipes.slice(0, displayLimit), [filteredRecipes, displayLimit]);
 
   const handleCartClick = (_: React.MouseEvent, recipe: Recipe) => {
     const cartItem = shoppingCart.find(item => item.recipeId === recipe.id);
@@ -50,20 +60,32 @@ export const HistoryView: React.FC = () => {
 
   const handleCardClick = (recipe: Recipe) => {
     setActiveRecipe(recipe);
-    setIsEditing(false);
-    setScalingFactor(1);
   };
 
   const handleCreate = async () => {
-    await processRecipeAction();
-    setShowAddModal(false);
+    const result = await processRecipe(recipeInput);
+    if (result) {
+        setActiveRecipe(result);
+        setShowAddModal(false);
+        setRecipeInput('');
+    }
   };
 
   const handleManual = () => {
-    handleManualCreateAction();
+    setActiveRecipe({ 
+        title:'New Recipe', 
+        emoji:'🥘', 
+        summary:'', 
+        ingredients:[{name:'',quantity:1,unit:'g'}], 
+        instructions:[''], 
+        extractedTips:[], 
+        aiSuggestions:[] 
+    } as Recipe);
     setShowAddModal(false);
   };
 
+  // We simply render whatever filteredRecipes contains. 
+  // The list size is now controlled by the backend limit in RecipeRepository.
   return (
     <PageLayout>
       <ViewHeader 
@@ -89,14 +111,14 @@ export const HistoryView: React.FC = () => {
         }
       />
 
-      {loading ? (
+      {loading && filteredRecipes.length === 0 ? (
         <GridList>
-           {[...Array(PAGE_SIZE)].map((_, i) => <RecipeSkeleton key={i} />)}
+           {[...Array(6)].map((_, i) => <RecipeSkeleton key={i} />)}
         </GridList>
       ) : filteredRecipes.length > 0 ? (
         <>
           <GridList>
-            {visibleRecipes.map((recipe, idx) => {
+            {filteredRecipes.map((recipe, idx) => {
               const isInCart = shoppingCart.some(item => item.recipeId === recipe.id);
               
               return (
@@ -104,7 +126,7 @@ export const HistoryView: React.FC = () => {
                   key={recipe.id}
                   onClick={() => handleCardClick(recipe)}
                   className="animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both h-full"
-                  style={{ animationDelay: `${(idx % PAGE_SIZE) * 40}ms` }}
+                  style={{ animationDelay: `${(idx % 12) * 40}ms` }}
                 >
                   <CardMedia src={recipe.coverImage} fallbackEmoji={recipe.emoji}>
                     <CardFloatingAction 
@@ -129,11 +151,12 @@ export const HistoryView: React.FC = () => {
             })}
           </GridList>
 
+          {/* Loading Trigger / Footer */}
           <div ref={observerTarget} className="p-12 flex justify-center items-center">
-            {displayLimit < filteredRecipes.length ? (
+            {hasMore ? (
               <div className="flex items-center gap-3 text-content-tertiary">
                 <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                <span className="text-xs font-bold uppercase tracking-widest animate-pulse">Scanning Cookbook...</span>
+                <span className="text-xs font-bold uppercase tracking-widest animate-pulse">Loading More...</span>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2 opacity-30">

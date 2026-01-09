@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
@@ -12,6 +12,16 @@ interface ModalProps {
 }
 
 export const Modal: React.FC<ModalProps> = ({ onClose, children, size = 'lg', className = '' }) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const sizes = {
     sm: 'max-w-md',
     md: 'max-w-xl',
@@ -21,7 +31,7 @@ export const Modal: React.FC<ModalProps> = ({ onClose, children, size = 'lg', cl
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div className="fixed inset-0 z-[300] flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop with Fade In */}
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity animate-fade-in" onClick={onClose} />
       

@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { collection, getDocs, query, writeBatch, doc, Timestamp, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, writeBatch, doc, orderBy } from 'firebase/firestore';
 import { chefDb, trackerDb, CHEF_APP_ID, TRACKER_APP_ID } from '../firebase';
 import { useAuthContext } from '../context/AuthContext';
 import { downloadFile, readFileAsText, jsonToCSV, csvToJson } from '../utils/backup';
@@ -71,7 +71,7 @@ export function useBackupRestore() {
           const payload = {
             ...data,
             authorId: chefUser.uid,
-            createdAt: r.createdAt ? Timestamp.fromDate(new Date(r.createdAt as any)) : Timestamp.now()
+            createdAt: r.createdAt ? new Date(r.createdAt as any) : new Date()
           };
           batch.set(doc(ref, id), payload);
         });
@@ -170,10 +170,10 @@ export function useBackupRestore() {
             singleQty: parseFloat(item.singleQty) || 0,
             count: parseFloat(item.count) || 1,
             store: item.store || '',
-            date: item.date ? Timestamp.fromDate(new Date(item.date)) : Timestamp.now(),
+            date: item.date ? new Date(item.date) : new Date(),
             comment: item.comment || '',
             normalizedPrice: normalizedPrice,
-            timestamp: Timestamp.now()
+            timestamp: new Date()
           };
           
           batch.set(doc(ref, item.id), payload);

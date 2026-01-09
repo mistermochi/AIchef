@@ -1,14 +1,18 @@
 
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, query, orderBy, limit, doc, setDoc, addDoc, writeBatch, deleteDoc, serverTimestamp } from 'firebase/firestore';
-import { trackerDb, TRACKER_APP_ID } from '../firebase';
+import { collection, onSnapshot, query, orderBy, limit, doc, setDoc, addDoc, writeBatch, deleteDoc } from 'firebase/firestore';
+import { trackerDb, CHEF_APP_ID } from '../firebase';
 import { Product, Purchase } from '../types';
 import { useAuthContext } from './AuthContext';
+import { useUIContext } from './UIContext';
 
 interface TrackerContextType {
   products: Product[];
   purchases: Purchase[];
   loading: boolean;
+  error: string | null;
+  hasMore: boolean;
+  loadMorePurchases: () => void;
   savePurchase: (data: any, isEdit: boolean, id?: string) => Promise<boolean>;
   savePurchasesBatch: (items: any[]) => Promise<boolean>;
   deletePurchase: (id: string) => Promise<void>;
@@ -17,49 +21,97 @@ interface TrackerContextType {
 const TrackerContext = createContext<TrackerContextType | undefined>(undefined);
 
 export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { trackerUser } = useAuthContext();
+  const { currentHomeId, trackerUser } = useAuthContext();
+  const { view } = useUIContext();
+  
   const [purchases, setPurchases] = useState<Purchase[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasActivated, setHasActivated] = useState(false);
+  
+  // Pagination State
+  const [limitCount, setLimitCount] = useState(50);
+  const [hasMore, setHasMore] = useState(true);
+
+  // Lazy Activation: Only start fetching if user visits Tracker or Plan views
+  useEffect(() => {
+    if (!hasActivated && (view === 'tracker' || view === 'plan')) {
+      setHasActivated(true);
+    }
+  }, [view, hasActivated]);
 
   // Load Purchases
   useEffect(() => {
-    if (!trackerUser) return;
-    const purcRef = collection(trackerDb, 'artifacts', TRACKER_APP_ID, 'public', 'data', 'purchases');
-    // Increased limit to 1000 to better support the Catalog view
-    const unsub = onSnapshot(query(purcRef, orderBy('date', 'desc'), limit(1000)), { includeMetadataChanges: true }, (s) => {
-      const data = s.docs.map(d => {
-        const raw = d.data();
-        // Normalize date to JS Date object immediately to avoid repeated toDate calls
-        let dateObj = new Date();
-        if (raw.date?.toDate) dateObj = raw.date.toDate();
-        else if (raw.date) dateObj = new Date(raw.date);
+    // 1. If no home, reset.
+    // 2. If not activated yet, do nothing (keep initial empty state)
+    if (!currentHomeId || !hasActivated) {
+        if (!currentHomeId) setPurchases([]);
+        setLoading(false);
+        return;
+    }
+    
+    setLoading(true);
+    setError(null);
 
-        return { 
-            id: d.id, 
-            ...raw,
-            date: dateObj // Normalized
-        } as Purchase;
-      });
-      
-      setPurchases(data);
-      
-      // Stop loading if data is available (even from cache)
-      setLoading(false);
-    });
+    const purcRef = collection(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'purchases');
+    
+    // Fetch with dynamic limit
+    const unsub = onSnapshot(
+      query(purcRef, orderBy('date', 'desc'), limit(limitCount)), 
+      { includeMetadataChanges: true }, 
+      (s) => {
+        const data = s.docs.map(d => {
+          const raw = d.data();
+          let dateObj = new Date();
+          // Defensive date parsing
+          if (raw.date?.toDate) dateObj = raw.date.toDate();
+          else if (raw.date) dateObj = new Date(raw.date);
+
+          return { 
+              id: d.id, 
+              ...raw,
+              date: dateObj
+          } as Purchase;
+        });
+        
+        setPurchases(data);
+        
+        // If we got fewer than requested, we're at the end
+        // Note: checking >= limitCount accounts for exact matches where more might exist, 
+        // but typically simple heuristic is fine for infinite scroll.
+        if (data.length < limitCount) {
+          setHasMore(false);
+        } else {
+          setHasMore(true);
+        }
+
+        setLoading(false);
+      },
+      (err) => {
+        console.error("Tracker Snapshot Error:", err);
+        setError(err.message);
+        setLoading(false);
+      }
+    );
     return () => unsub();
-  }, [trackerUser]);
+  }, [currentHomeId, hasActivated, limitCount]);
 
-  // Derived Products
+  const loadMorePurchases = () => {
+    if (hasMore && !loading) {
+      setLimitCount(prev => prev + 50);
+    }
+  };
+
+  // Derived Products (Note: This will only reflect products in the loaded purchases)
   const products = useMemo(() => {
     const productMap: Record<string, Product> = {};
     purchases.forEach(p => {
-      // Use normalized name as the key/ID since we no longer have a dedicated productId
       const nameKey = p.productName?.trim()?.toLowerCase() || 'unknown';
       if (!productMap[nameKey]) {
         productMap[nameKey] = {
-          id: nameKey, // The ID is now strictly the normalized name
+          id: nameKey,
           name: p.productName || 'Unknown Product',
-          genericName: p.genericName, // Include extracted generic name
+          genericName: p.genericName,
           category: p.category || 'General',
           defaultUnit: p.unit
         };
@@ -69,39 +121,41 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [purchases]);
 
   const savePurchase = async (data: any, isEdit: boolean, id?: string) => {
-    if (!trackerUser) return false;
-    const ref = collection(trackerDb, 'artifacts', TRACKER_APP_ID, 'public', 'data', 'purchases');
+    if (!currentHomeId || !trackerUser) return false;
+    const ref = collection(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'purchases');
     try {
       const { id: _, ...cleanData } = data;
-      // We no longer save productId. Grouping is done dynamically by productName.
       const payload = { ...cleanData, userId: trackerUser.uid };
       if (isEdit && id) {
         await setDoc(doc(ref, id), payload, { merge: true });
       } else {
-        await addDoc(ref, { ...payload, timestamp: serverTimestamp() });
+        await addDoc(ref, { ...payload, timestamp: new Date() });
       }
       return true;
     } catch (e) { console.error("Tracker Save Error:", e); return false; }
   };
 
   const savePurchasesBatch = async (items: any[]) => {
-    if (!trackerUser || items.length === 0) return false;
+    if (!currentHomeId || !trackerUser || items.length === 0) return false;
     const batch = writeBatch(trackerDb);
-    const ref = collection(trackerDb, 'artifacts', TRACKER_APP_ID, 'public', 'data', 'purchases');
+    const ref = collection(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'purchases');
     try {
       items.forEach(item => {
         const { id: _, ...cleanItem } = item;
-        batch.set(doc(ref), { ...cleanItem, timestamp: serverTimestamp(), userId: trackerUser.uid });
+        batch.set(doc(ref), { ...cleanItem, timestamp: new Date(), userId: trackerUser.uid });
       });
       await batch.commit();
       return true;
     } catch (e) { console.error("Batch error", e); return false; }
   };
 
-  const deletePurchase = (id: string) => deleteDoc(doc(trackerDb, 'artifacts', TRACKER_APP_ID, 'public', 'data', 'purchases', id));
+  const deletePurchase = (id: string) => {
+      if (!currentHomeId) return Promise.reject("No Home");
+      return deleteDoc(doc(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'purchases', id));
+  };
 
   return (
-    <TrackerContext.Provider value={{ products, purchases, loading, savePurchase, savePurchasesBatch, deletePurchase }}>
+    <TrackerContext.Provider value={{ products, purchases, loading, error, hasMore, loadMorePurchases, savePurchase, savePurchasesBatch, deletePurchase }}>
       {children}
     </TrackerContext.Provider>
   );

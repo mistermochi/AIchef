@@ -60,6 +60,19 @@ export const SCHEMAS = {
     },
     required: ['optimizedSummary', 'totalEstimatedTime', 'steps'],
   },
+  MEAL_PLAN: {
+    type: Type.ARRAY,
+    items: {
+      type: Type.OBJECT,
+      properties: {
+        dayOffset: { type: Type.NUMBER, description: "0 for Monday, 6 for Sunday" },
+        slot: { type: Type.STRING, enum: ['breakfast', 'lunch', 'dinner'] },
+        recipeName: { type: Type.STRING, description: "Name of the recipe to cook" },
+        emoji: { type: Type.STRING }
+      },
+      required: ['dayOffset', 'slot', 'recipeName']
+    }
+  },
   DEALS: {
     type: Type.ARRAY,
     items: {

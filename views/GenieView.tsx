@@ -1,18 +1,24 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Sparkles, CookingPot, Zap, Mic, Plus, Bot } from 'lucide-react';
 import { ViewHeader, Badge, PromptInput, EmptyState, GenieCard, GenieSkeleton, PageLayout, Button } from '../components/UI';
 import { useRecipeContext } from '../context/RecipeContext';
 import { useAuthContext } from '../context/AuthContext';
 import { useUIContext } from '../context/UIContext';
+import { useRecipeAI } from '../hooks/useRecipeAI';
+import { GenieIdea } from '../types';
 
 export const GenieView: React.FC = () => {
-  const { 
-    genieInput, setGenieInput, genieIdeas, genieLoading,
-    generateGenieIdeasAction, selectGenieIdea, loading: loadingRecipe, error
-  } = useRecipeContext();
+  const { setActiveRecipe } = useRecipeContext();
   const { isAIEnabled, profile } = useAuthContext();
   const { setView } = useUIContext();
+  
+  const { 
+    generateGenieIdeas, genieLoading, genieIdeas, 
+    processRecipe, loading: loadingRecipe, error: recipeError 
+  } = useRecipeAI();
+  
+  const [genieInput, setGenieInput] = useState('');
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -21,6 +27,16 @@ export const GenieView: React.FC = () => {
       scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [genieLoading, genieIdeas]);
+
+  const selectGenieIdea = async (idea: GenieIdea) => {
+    const prompt = `Recipe Idea: ${idea.title}. Description: ${idea.summary}. Generate full recipe.`;
+    const result = await processRecipe(prompt);
+    if (result) {
+        setActiveRecipe(result);
+    }
+  };
+
+  const handleGenerate = () => generateGenieIdeas(genieInput);
 
   const shouldShowHeader = genieLoading || genieIdeas.length > 0;
 
@@ -102,10 +118,10 @@ export const GenieView: React.FC = () => {
              <PromptInput 
                 value={genieInput}
                 onChange={setGenieInput}
-                onSubmit={generateGenieIdeasAction}
+                onSubmit={handleGenerate}
                 loading={genieLoading || loadingRecipe}
                 placeholder="What's in your fridge?"
-                error={error}
+                error={recipeError}
                 className="text-lg shadow-xl"
                 actions={
                   <>

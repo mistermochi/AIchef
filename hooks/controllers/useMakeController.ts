@@ -1,18 +1,30 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useRecipeContext } from '../../context/RecipeContext';
+import { useRecipeSessionContext } from '../../context/RecipeSessionContext';
 import { useVoiceControl, VoiceCommand } from '../useVoiceControl';
 import { useWakeLock } from '../useDevice';
+import { Ingredient } from '../../types';
+import { findDurationInText, parseDurationToSeconds } from '../../utils/parsers';
 
-interface ActiveTimer {
+export interface ActiveTimer {
   total: number;
-  remaining: number;
+  endsAt: number; // Replaces 'remaining' with a fixed end timestamp
   label: string;
   status: 'running' | 'paused' | 'done';
 }
 
-export function useMakeController() {
-  const { activeRecipe: recipe, setIsHandsFree } = useRecipeContext();
+export interface CookingSessionProps {
+  recipe: {
+    instructions: string[];
+    ingredients: Ingredient[];
+    extractedTips?: string[];
+    aiSuggestions?: string[];
+  } | null;
+  onClose: () => void;
+}
+
+// GENERIC HOOK: Decoupled from Context
+export function useCookingSession({ recipe, onClose }: CookingSessionProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [showIngredients, setShowIngredients] = useState(false);
   const [showTips, setShowTips] = useState(false);
@@ -23,9 +35,6 @@ export function useMakeController() {
   
   // Ref for circular dependency
   const commandHandlerRef = useRef<((command: VoiceCommand, text: string) => void) | null>(null);
-
-  // --- ACTIONS ---
-  const closeView = () => setIsHandsFree(false);
 
   const nextStep = useCallback(() => {
     if (recipe && currentStep < recipe.instructions.length - 1) {
@@ -43,55 +52,29 @@ export function useMakeController() {
     return false;
   }, [currentStep]);
 
-  // --- HELPERS ---
-  const parseFuzzyNumber = (str: string): number => {
-    if (/^[\d\.]+$/.test(str)) return parseFloat(str);
-    if (str === '半') return 0.5;
-    const map: Record<string, number> = {
-        '零': 0, '一': 1, '二': 2, '兩': 2, '三': 3, '四': 4, 
-        '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10, '百': 100
-    };
-    let total = 0, current = 0;
-    for (const char of str) {
-        const val = map[char];
-        if (val === undefined) continue;
-        if (val === 10 || val === 100) {
-            if (current === 0) current = 1;
-            total += current * val;
-            current = 0;
-        } else {
-            current = val;
-        }
-    }
-    return total + current;
-  };
-
-  const parseDurationToSeconds = (numRaw: string | number, unit: string) => {
-    const num = typeof numRaw === 'string' ? parseFuzzyNumber(numRaw) : numRaw;
-    const u = unit.toLowerCase();
-    if (u.startsWith('min') || u.includes('分')) return num * 60;
-    if (u.startsWith('hour') || u.startsWith('hr') || u.includes('小')) return num * 3600;
-    if (u.startsWith('sec') || u.includes('秒')) return num;
-    return 0;
-  };
-
-  const findDurationInText = (text: string) => {
-     // Prioritize full words to prevent 'minutes' matching as 'min' and leaving 'utes'
-     const regex = /([0-9\.]+|[零一二兩三四五六七八九十百半]+)\s*(minutes?|mins?|hours?|hrs?|seconds?|secs?|分鐘|分|小時|秒鐘|秒)/i;
-     const match = regex.exec(text);
-     if (match) {
-        return { seconds: parseDurationToSeconds(match[1], match[2]), label: match[0] };
-     }
-     return null;
-  };
-
   const startSmartTimer = (seconds: number, label: string) => {
-    setActiveTimer({ total: seconds, remaining: seconds, label, status: 'running' });
+    // Safety check: ensure seconds is a valid positive number
+    if (!Number.isFinite(seconds) || seconds <= 0) return;
+    
+    setActiveTimer({ 
+      total: seconds, 
+      endsAt: Date.now() + (seconds * 1000), 
+      label, 
+      status: 'running' 
+    });
   };
 
   const toggleTimer = () => {
     if (!activeTimer) return;
-    setActiveTimer(prev => prev ? ({ ...prev, status: prev.status === 'running' ? 'paused' : 'running' }) : null);
+    
+    if (activeTimer.status === 'running') {
+      // Pause: Save remaining time by calculating a fake "endsAt" for when we resume
+      const remainingMs = Math.max(0, activeTimer.endsAt - Date.now());
+      setActiveTimer({ ...activeTimer, status: 'paused', endsAt: remainingMs });
+    } else {
+      // Resume: 'endsAt' currently holds remaining ms. Convert to future timestamp.
+      setActiveTimer({ ...activeTimer, status: 'running', endsAt: Date.now() + activeTimer.endsAt });
+    }
   };
 
   const stopTimer = () => setActiveTimer(null);
@@ -173,20 +156,23 @@ export function useMakeController() {
 
   useEffect(() => { commandHandlerRef.current = handleVoiceCommand; }, [handleVoiceCommand]);
 
-  // Timer Tick
+  // Timer Completion Check (Replacing the interval)
   useEffect(() => {
-    let interval: any;
-    if (activeTimer?.status === 'running' && activeTimer.remaining > 0) {
-      interval = setInterval(() => {
-        setActiveTimer(prev => {
-          if (!prev) return null;
-          if (prev.remaining <= 1) return { ...prev, remaining: 0, status: 'done' };
-          return { ...prev, remaining: prev.remaining - 1 };
-        });
-      }, 1000);
+    if (activeTimer?.status === 'running') {
+      const timeRemaining = activeTimer.endsAt - Date.now();
+      
+      if (timeRemaining <= 0) {
+        // Already done
+        setActiveTimer(prev => prev ? { ...prev, status: 'done', endsAt: 0 } : null);
+      } else {
+        // Set a timeout for the exact end time
+        const timerId = setTimeout(() => {
+           setActiveTimer(prev => prev ? { ...prev, status: 'done', endsAt: 0 } : null);
+        }, timeRemaining);
+        return () => clearTimeout(timerId);
+      }
     }
-    return () => clearInterval(interval);
-  }, [activeTimer?.status]);
+  }, [activeTimer?.status, activeTimer?.endsAt]);
 
   // Timer Announce
   useEffect(() => {
@@ -207,6 +193,15 @@ export function useMakeController() {
 
   return {
     state: { recipe, currentStep, showIngredients, showTips, activeCommand, activeTimer, isListening, isSpeaking, transcript, isWakeLockActive },
-    actions: { nextStep, prevStep, toggleListening, setShowIngredients, setShowTips, closeView, speak, startSmartTimer, toggleTimer, stopTimer, parseDurationToSeconds }
+    actions: { nextStep, prevStep, toggleListening, setShowIngredients, setShowTips, closeView: onClose, speak, startSmartTimer, toggleTimer, stopTimer, parseDurationToSeconds }
   };
+}
+
+// Wrapper used in RecipeModal context
+export function useMakeController() {
+  const { recipe, setIsHandsFree } = useRecipeSessionContext();
+  return useCookingSession({ 
+    recipe: recipe, 
+    onClose: () => setIsHandsFree(false) 
+  });
 }
