@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'chefai-studio-v2';
+const CACHE_NAME = 'chefai-studio-v3';
 const BASE_PATH = '/AIchef/';
 const ASSETS_TO_CACHE = [
   BASE_PATH,
