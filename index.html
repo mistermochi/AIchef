@@ -213,13 +213,5 @@
 <body>
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          if (window.origin === 'null' || window.location.protocol === 'blob:') return;
-          navigator.serviceWorker.register('./service-worker.js', { scope: './' }).catch(err => console.warn(err));
-        });
-      }
-    </script>
 </body>
 </html>
