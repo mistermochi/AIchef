@@ -14,6 +14,7 @@ import { useAuthContext } from '../context/AuthContext';
 import { useBackupRestore } from '../hooks/useBackupRestore';
 import { useUIContext } from '../context/UIContext';
 import { useDataMigration } from '../hooks/useDataMigration';
+import { usePWA } from '../hooks/usePWA';
 import { DIETARY_LIST, APPLIANCE_LIST } from '../types';
 
 export const ProfileView: React.FC = () => {
@@ -27,6 +28,7 @@ export const ProfileView: React.FC = () => {
   const { restoreCookbook, restoreTracker, exportCookbook, exportTracker, processing, status } = useBackupRestore();
   const { runMigration, migrating, progress, total, status: migrationStatus } = useDataMigration();
   const { darkMode, setDarkMode } = useUIContext();
+  const { isInstallable, install } = usePWA();
 
   const recipeFileRef = useRef<HTMLInputElement>(null);
   const trackerFileRef = useRef<HTMLInputElement>(null);
@@ -39,7 +41,7 @@ export const ProfileView: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('chefai_pass', passValue);
   }, [passValue]);
-
+	
   // Household Local State
   const [joinId, setJoinId] = useState('');
   const [createName, setCreateName] = useState('');
@@ -483,6 +485,22 @@ export const ProfileView: React.FC = () => {
             {/* 4. STUDIO SETTINGS */}
             <SectionCard title="Studio Settings" icon={<Settings2 />}>
               <div className="space-y-1 divide-y divide-outline/30 dark:divide-outline-dark/30">
+                {/* PWA INSTALL BUTTON */}
+                {isInstallable && (
+                    <div onClick={install} className="flex items-center justify-between py-3 cursor-pointer group">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-primary-container dark:bg-primary-container-dark text-primary dark:text-primary-dark">
+                           <Download className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-content dark:text-content-dark">Install App</div>
+                          <div className="text-xs text-content-secondary dark:text-content-secondary-dark">Add to Home Screen</div>
+                        </div>
+                      </div>
+                      <Button size="sm" onClick={(e) => { e.stopPropagation(); install(); }}>Install</Button>
+                    </div>
+                )}
+
                 <div onClick={() => updateProfile({ aiEnabled: !profile.aiEnabled })} className="flex items-center justify-between py-3 cursor-pointer group">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-full transition-colors ${profile.aiEnabled ? 'bg-primary-container dark:bg-primary-container-dark text-primary dark:text-primary-dark' : 'bg-surface-variant dark:bg-surface-variant-dark text-content-tertiary'}`}>

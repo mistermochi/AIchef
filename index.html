@@ -219,7 +219,7 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           if (window.origin === 'null' || window.location.protocol === 'blob:') return;
-          navigator.serviceWorker.register('sw.js').catch(err => console.warn(err));
+          navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(err => console.warn(err));
         });
       }
     </script>
