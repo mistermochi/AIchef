@@ -160,6 +160,7 @@ export const PriceCatalogList: React.FC<{
           <Input 
             startIcon={<Search className="w-4 h-4" />} 
             endIcon={isStale ? <Loader2 className="w-3 h-3 animate-spin" /> : undefined}
+            onClear={() => setSearch('')}
             placeholder="Filter products..." 
             value={search} 
             onChange={(e) => setSearch(e.target.value)} 
@@ -186,6 +187,7 @@ export const PriceCatalogList: React.FC<{
       <Input 
         startIcon={<Search className="w-4 h-4" />} 
         endIcon={isStale ? <Loader2 className="w-3 h-3 animate-spin" /> : undefined}
+        onClear={() => setSearch('')}
         placeholder="Find item..." 
         value={search} 
         onChange={(e) => setSearch(e.target.value)} 
