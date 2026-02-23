@@ -6,20 +6,39 @@ import { Product, Purchase } from '../types';
 import { useAuthContext } from './AuthContext';
 import { useUIContext } from './UIContext';
 
+/**
+ * @interface TrackerContextType
+ * @description Defines the shape of the Tracker Context, which manages grocery purchase history and product price tracking.
+ */
 interface TrackerContextType {
+  /** Aggregated list of unique products derived from purchase history. */
   products: Product[];
+  /** List of individual purchase records. */
   purchases: Purchase[];
+  /** Indicates if data is currently being fetched from Firestore. */
   loading: boolean;
+  /** Error message if a fetch fails. */
   error: string | null;
+  /** Whether more purchase records are available for pagination. */
   hasMore: boolean;
+  /** Increments the pagination limit to load more records. */
   loadMorePurchases: () => void;
+  /** Saves a single purchase record (create or update). */
   savePurchase: (data: any, isEdit: boolean, id?: string) => Promise<boolean>;
+  /** Saves multiple purchase records in a single Firestore batch. */
   savePurchasesBatch: (items: any[]) => Promise<boolean>;
+  /** Deletes a specific purchase record by ID. */
   deletePurchase: (id: string) => Promise<void>;
 }
 
 const TrackerContext = createContext<TrackerContextType | undefined>(undefined);
 
+/**
+ * @component TrackerProvider
+ * @description Manages the state and persistence of grocery purchase history.
+ * Subscribes to Firestore data based on the current household (Home) and provides pagination support.
+ * Only activates (starts fetching) when the user navigates to a relevant view to save resources.
+ */
 export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentHomeId, trackerUser } = useAuthContext();
   const { view } = useUIContext();
@@ -161,6 +180,11 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
   );
 };
 
+/**
+ * Hook to consume the TrackerContext.
+ * @returns {TrackerContextType} The tracker context value.
+ * @throws {Error} If used outside of a TrackerProvider.
+ */
 export const useTrackerContext = () => {
   const context = useContext(TrackerContext);
   if (!context) throw new Error('useTrackerContext must be used within TrackerProvider');

@@ -4,6 +4,17 @@ import * as gemini from '../services/geminiService';
 import { useAuthContext } from '../context/AuthContext';
 import { Recipe, GenieIdea } from '../types';
 
+/**
+ * @hook useRecipeAI
+ * @description A high-level hook that connects the UI to the Gemini AI services for recipe-related tasks.
+ * It manages loading states, handles AI-specific errors, and provides functions for processing, refining, and generating recipe ideas.
+ *
+ * Interactions:
+ * - {@link geminiService}: Calls the underlying AI functions.
+ * - {@link useAuthContext}: Uses user preferences and reports AI health status.
+ *
+ * @returns {Object} An object containing state and AI action functions.
+ */
 export function useRecipeAI() {
   const { isAIEnabled, openKeySelector, getProfileContext, reportError } = useAuthContext();
   
@@ -32,6 +43,11 @@ export function useRecipeAI() {
     }
   };
 
+  /**
+   * Processes raw text or OCR data into a structured Recipe object.
+   * @param {string} input - The raw recipe data.
+   * @returns {Promise<Recipe|null>} The structured recipe or null if failed.
+   */
   const processRecipe = async (input: string): Promise<Recipe | null> => {
     if (!input.trim() || !isAIEnabled) return null;
     setLoading(true); 
@@ -54,6 +70,11 @@ export function useRecipeAI() {
     }
   };
 
+  /**
+   * Generates creative recipe ideas based on a list of ingredients.
+   * Updates the `genieIdeas` state.
+   * @param {string} input - List of ingredients.
+   */
   const generateGenieIdeas = async (input: string) => {
     if (!input.trim() || !isAIEnabled) return;
     setGenieLoading(true); 
@@ -69,6 +90,12 @@ export function useRecipeAI() {
     }
   };
 
+  /**
+   * Requests refinement suggestions for an existing recipe.
+   * @param {Recipe} recipe - The original recipe.
+   * @param {string} prompt - User feedback or instructions.
+   * @returns {Promise<string[]>} A list of suggested changes.
+   */
   const refineRecipe = async (recipe: Recipe, prompt: string): Promise<string[]> => {
     if (!prompt.trim() || !isAIEnabled) return [];
     setLoading(true);

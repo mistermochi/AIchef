@@ -4,11 +4,22 @@ import { Recipe, GenieIdea, OrchestrationPlan } from '../types';
 import { SYSTEM_INSTRUCTIONS, PROMPTS } from '../constants/prompts';
 import { SCHEMAS } from '../constants/schemas';
 
+/**
+ * @module GeminiService
+ * @description Provides high-level functions to interact with Google Gemini AI models.
+ * It handles client initialization, error mapping, and specific AI-driven features like recipe processing and orchestration.
+ */
+
 // --- CLIENT CACHING ---
 let cachedClient: GoogleGenAI | null = null;
 let cachedKey: string | undefined = undefined;
 
-// Helper to get a memoized client instance using the current environment key
+/**
+ * Retrieves a memoized instance of the GoogleGenAI client.
+ * Uses the API key stored in localStorage ('chefai_pass').
+ * @returns {GoogleGenAI} The Gemini AI client.
+ * @throws {Error} If the API key is not found in localStorage.
+ */
 const getClient = () => {
 	const apiKey = localStorage.getItem('chefai_pass');
   
@@ -24,7 +35,18 @@ const getClient = () => {
   return cachedClient;
 };
 
-// --- FACTORY ---
+/**
+ * Internal factory function to make standardized calls to the Gemini AI models.
+ * @template T
+ * @param {Object} config - The configuration for the AI call.
+ * @param {string} config.model - The model ID to use (e.g., 'gemini-3-pro-preview').
+ * @param {string} config.system - System instructions to guide the AI's behavior.
+ * @param {string} config.prompt - The user prompt.
+ * @param {any} config.schema - The expected JSON response schema.
+ * @param {any[]} [config.tools] - Optional tools for the AI (e.g., Google Search).
+ * @returns {Promise<T>} The parsed JSON response from the AI.
+ * @throws {Error} Maps various AI errors (quota, region, auth) to user-friendly messages.
+ */
 async function callAI<T>(config: {
   model: string;
   system: string;
@@ -55,7 +77,13 @@ async function callAI<T>(config: {
   }
 }
 
-// --- UTILITIES ---
+/**
+ * Validates the AI connection and API key without consuming significant quota.
+ * Uses a zero-cost token count check on a cheap model.
+ * @returns {Promise<Object>} Status of the connection and a message.
+ * @returns {'healthy'|'auth_error'|'quota_error'|'network_error'|'region_restricted'} return.status
+ * @returns {string} return.message
+ */
 export const validateAIConnection = async (): Promise<{ status: 'healthy' | 'auth_error' | 'quota_error' | 'network_error' | 'region_restricted', message: string }> => {
   const ai = getClient();
   try {
@@ -90,7 +118,12 @@ export const validateAIConnection = async (): Promise<{ status: 'healthy' | 'aut
   }
 };
 
-// --- FEATURES ---
+/**
+ * Processes raw recipe text or image data into a structured Recipe object.
+ * @param {string} input - The raw recipe data (text or OCR result).
+ * @param {string} prefs - User dietary preferences and context.
+ * @returns {Promise<Partial<Recipe>>} The structured recipe data.
+ */
 export const processRecipe = (input: string, prefs: string) => callAI<Partial<Recipe>>({
   model: 'gemini-3-pro-preview',
   schema: SCHEMAS.RECIPE,
@@ -98,6 +131,12 @@ export const processRecipe = (input: string, prefs: string) => callAI<Partial<Re
   system: SYSTEM_INSTRUCTIONS.RECIPE_PROCESSOR(prefs)
 });
 
+/**
+ * Generates creative recipe ideas based on available ingredients.
+ * @param {string} ingredients - List of available ingredients.
+ * @param {string} prefs - User dietary preferences and context.
+ * @returns {Promise<GenieIdea[]>} A list of recipe ideas.
+ */
 export const generateGenieIdeas = async (ingredients: string, prefs: string): Promise<GenieIdea[]> => {
   const prompt = `${SYSTEM_INSTRUCTIONS.GENIE(prefs)}\n\nInput:\n${PROMPTS.GENIE_INPUT(ingredients)}`;
   
@@ -110,6 +149,12 @@ export const generateGenieIdeas = async (ingredients: string, prefs: string): Pr
   });
 };
 
+/**
+ * Refines an existing recipe based on user feedback or specific requests.
+ * @param {Recipe} recipe - The original recipe object.
+ * @param {string} prompt - User instructions for refinement.
+ * @returns {Promise<string[]>} A list of recommended changes/refinements.
+ */
 export const refineRecipe = (recipe: Recipe, prompt: string) => callAI<string[]>({
   model: 'gemini-3-pro-preview',
   schema: { type: Type.ARRAY, items: { type: Type.STRING } },
@@ -117,6 +162,12 @@ export const refineRecipe = (recipe: Recipe, prompt: string) => callAI<string[]>
   system: SYSTEM_INSTRUCTIONS.REFINE
 });
 
+/**
+ * Generates a multi-recipe orchestration plan (prep, cook, wait steps).
+ * Synchronizes timing between multiple dishes.
+ * @param {Recipe[]} recipes - The list of recipes to orchestrate.
+ * @returns {Promise<OrchestrationPlan>} The multi-step orchestration plan.
+ */
 export const generateOrchestrationPlan = (recipes: Recipe[]) => callAI<OrchestrationPlan>({
   model: 'gemini-3-pro-preview',
   schema: SCHEMAS.ORCHESTRATION,
@@ -124,6 +175,12 @@ export const generateOrchestrationPlan = (recipes: Recipe[]) => callAI<Orchestra
   system: SYSTEM_INSTRUCTIONS.ORCHESTRATOR
 });
 
+/**
+ * Generates a weekly meal plan based on a collection of recipes.
+ * @param {Recipe[]} recipes - Available recipes to choose from.
+ * @param {string} prefs - User preferences.
+ * @returns {Promise<any[]>} The generated meal plan entries.
+ */
 export const generateMealPlan = (recipes: Recipe[], prefs: string) => callAI<any[]>({
   model: 'gemini-3-pro-preview',
   schema: SCHEMAS.MEAL_PLAN,
@@ -131,6 +188,11 @@ export const generateMealPlan = (recipes: Recipe[], prefs: string) => callAI<any
   system: SYSTEM_INSTRUCTIONS.PLANNER(prefs)
 });
 
+/**
+ * Searches for online deals and prices for a specific product using Google Search grounding.
+ * @param {string} productName - The name of the product to search for.
+ * @returns {Promise<Object>} An object containing found items and their sources.
+ */
 export const searchDeals = async (productName: string) => {
   const ai = getClient();
   const response = await ai.models.generateContent({
@@ -156,6 +218,12 @@ export const searchDeals = async (productName: string) => {
   return { items, sources };
 };
 
+/**
+ * Extracts structured purchase data from a receipt image using OCR and AI analysis.
+ * @param {string} base64Image - The base64 encoded receipt image.
+ * @param {string} mimeType - The MIME type of the image.
+ * @returns {Promise<Object>} Structured data containing product names, prices, and quantities.
+ */
 export const extractReceiptData = async (base64Image: string, mimeType: string) => {
   const ai = getClient();
   const response = await ai.models.generateContent({
@@ -174,6 +242,12 @@ export const extractReceiptData = async (base64Image: string, mimeType: string) 
   return JSON.parse(response.text || '{}');
 };
 
+/**
+ * Classifies multiple product names into generic/canonical names for better data organization.
+ * Used during data migration or cleanup.
+ * @param {string[]} productNames - List of raw product names.
+ * @returns {Promise<Array<{original_name: string, generic_name: string}>>} Mapped product names.
+ */
 export const batchClassifyProducts = async (productNames: string[]) => {
   return callAI<{ original_name: string, generic_name: string }[]>({
     model: 'gemini-flash-lite-latest',

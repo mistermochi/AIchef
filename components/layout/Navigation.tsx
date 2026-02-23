@@ -29,6 +29,21 @@ const NavButton = ({ active, icon, onClick, label }: { active: boolean, icon: Re
   );
 };
 
+/**
+ * @component Navigation
+ * @description The main navigation component for the application.
+ * It provides a vertical sidebar for desktop users and a bottom tab bar for mobile users.
+ *
+ * Features:
+ * - View Switching: Allows users to navigate between all primary views (Cookbook, Planner, Genie, etc.).
+ * - User Profile Access: Displays the current user's initial or avatar and provides access to the Profile view.
+ * - Haptic Feedback: Integrated with `useHaptics` for tactile interaction on mobile.
+ *
+ * Interactions:
+ * - {@link useUIContext}: To read and set the currently active view.
+ * - {@link useAuthContext}: To display user information (email, display name).
+ * - {@link useHaptics}: For touch feedback on navigation items.
+ */
 export const Navigation: React.FC = () => {
   const { view, setView } = useUIContext();
   const { chefUser } = useAuthContext();

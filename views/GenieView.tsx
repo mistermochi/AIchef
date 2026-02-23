@@ -8,6 +8,21 @@ import { useUIContext } from '../context/UIContext';
 import { useRecipeAI } from '../hooks/useRecipeAI';
 import { GenieIdea } from '../types';
 
+/**
+ * @view GenieView
+ * @description The "Kitchen Genie" view.
+ * It allows users to input a list of ingredients and receive AI-generated recipe ideas.
+ *
+ * Features:
+ * - Idea Generation: Suggests recipe titles, summaries, and emojis based on input.
+ * - Recipe Creation: Allows selecting an idea to generate a full, structured recipe.
+ * - AI Status Handling: Shows specific states when AI is disabled or resting.
+ *
+ * Interactions:
+ * - {@link useRecipeAI}: For generating ideas and processing selected recipes.
+ * - {@link useRecipeContext}: For setting the active recipe when an idea is selected.
+ * - {@link useAuthContext}: For checking AI enablement and user profile preferences.
+ */
 export const GenieView: React.FC = () => {
   const { setActiveRecipe } = useRecipeContext();
   const { isAIEnabled, profile } = useAuthContext();

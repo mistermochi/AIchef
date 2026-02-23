@@ -2,6 +2,12 @@
 import React from 'react';
 import { FAB, FABProps } from '../ui/Buttons';
 
+/**
+ * @component GlobalFAB
+ * @description A wrapper for the Floating Action Button (FAB) that handles its global positioning.
+ * It is primarily intended for mobile users, appearing in the bottom-right corner above the navigation bar.
+ * On desktop (`md:` breakpoint and above), it is hidden by default as primary actions are moved to headers.
+ */
 export const GlobalFAB: React.FC<FABProps> = ({ className = '', style, label, ...props }) => {
   // Positions the FAB fixed at bottom right.
   // Mobile: Bottom is calculated to sit above the Bottom Navigation Bar (~60px height + safe area).

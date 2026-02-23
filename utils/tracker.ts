@@ -47,15 +47,30 @@ export const UNIT_TYPES: Record<string, 'volume' | 'mass' | 'count'> = {
   'pcs': 'count'
 };
 
+/**
+ * Formats a number as a USD currency string.
+ * @param {number} num - The number to format.
+ * @returns {string} Formatted currency string.
+ */
 export const fmtCurrency = (num: number) => 
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
 
+/**
+ * Formats a Firestore Timestamp or Date object into a short date string (e.g., "Jan 1").
+ * @param {any} d - The date or timestamp to format.
+ * @returns {string} Short date string or '?' if invalid.
+ */
 export const fmtDate = (d: any) => {
   if (!d) return '?';
   const _d = d?.toDate ? d.toDate() : new Date(d);
   return isNaN(_d.getTime()) ? '?' : _d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
+/**
+ * Formats a date for use in an HTML date input (YYYY-MM-DD).
+ * @param {any} d - The date or timestamp to format.
+ * @returns {string} Date string in YYYY-MM-DD format.
+ */
 export const fmtDateInput = (d: any) => {
   if (!d) return new Date().toISOString().split('T')[0];
   const _d = d.toDate ? d.toDate() : new Date(d);
@@ -108,6 +123,12 @@ const KEYWORD_MAP: Record<string, string[]> = {
   'Beverages': ['tea', 'coffee', 'juice', 'soda', 'water', 'coke']
 };
 
+/**
+ * Heuristically determines the category of a product based on its name.
+ * Uses a keyword map for common grocery items.
+ * @param {string} name - The product name.
+ * @returns {string} The determined category name, or 'General' if no match.
+ */
 export const getCategory = (name: string): string => {
   if (!name) return 'General';
   const n = name.toLowerCase();

@@ -3,7 +3,18 @@ import { useCallback } from 'react';
 
 type HapticPattern = 'light' | 'medium' | 'heavy' | 'success' | 'error';
 
+/**
+ * @hook useHaptics
+ * @description Provides a simple interface for triggering haptic feedback (vibration) on supported devices.
+ * It checks for the 'chefai_haptics' setting in localStorage to determine if vibration should be active.
+ *
+ * @returns {Object} { trigger }
+ */
 export function useHaptics() {
+  /**
+   * Triggers a specific haptic pattern.
+   * @param {HapticPattern} [type='light'] - The intensity or pattern of the haptic feedback.
+   */
   const trigger = useCallback((type: HapticPattern = 'light') => {
     if (typeof navigator === 'undefined' || !navigator.vibrate) return;
     

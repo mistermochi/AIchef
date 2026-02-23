@@ -23,6 +23,22 @@ const LoadingFallback = () => (
   </div>
 );
 
+/**
+ * @component ChefAIApp
+ * @description The root component of the ChefAI application.
+ * It sets up the main layout, including the sidebar navigation and the main content area.
+ * It also handles dynamic view switching (lazy-loading views) and manages the visibility of the global Recipe Modal.
+ *
+ * Layout:
+ * - {@link Navigation}: Fixed sidebar on desktop, bottom bar on mobile.
+ * - `main`: Dynamic container that renders the currently active view based on `UIContext`.
+ * - {@link RecipeModal}: A global modal that overlays the active view when a recipe is selected.
+ *
+ * Interactions:
+ * - {@link useUIContext}: To determine which view to render.
+ * - {@link useRecipeContext}: To check if a recipe modal should be displayed.
+ * - {@link useAuthContext}: For mobile-specific header actions (profile access).
+ */
 export default function ChefAIApp() {
   const { view, setView } = useUIContext();
   const { activeRecipe } = useRecipeContext();

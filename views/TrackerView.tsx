@@ -8,6 +8,20 @@ import { MetaSection } from '../components/recipe/MetaSection';
 import { fmtCurrency, getPerItemPrice, fmtDate, CATEGORY_EMOJIS } from '../utils/tracker';
 import { useTrackerController } from '../hooks/controllers/useTrackerController';
 
+/**
+ * @view TrackerView
+ * @description The main view for the Price Tracker feature.
+ * It displays a catalog of products and a history of purchases.
+ * Users can log new receipts, edit existing entries, and view detailed price insights for specific products.
+ *
+ * This view uses the `useTrackerController` to handle its logic and state.
+ *
+ * Features:
+ * - Product Catalog: Aggregated view of best prices per product.
+ * - Purchase History: Chronological list of all recorded purchases.
+ * - Detail Modal: Shows price trends, related recipes, and AI-driven online deal comparisons.
+ * - Receipt Scanning: Integrated with Gemini AI for OCR-based data entry.
+ */
 export const TrackerView: React.FC = () => {
   const { state, actions, refs, computed } = useTrackerController();
   const [showDeals, setShowDeals] = useState(false);

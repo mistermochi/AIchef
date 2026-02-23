@@ -7,6 +7,21 @@ import { useMealPlanRepository } from '../data/useMealPlanRepository';
 import { MealPlanEntry, MealSlot, Recipe } from '../../types';
 import { generateMealPlan } from '../../services/geminiService';
 
+/**
+ * @hook usePlanController
+ * @description The controller for the Meal Planner view.
+ * It manages the navigation of weeks, fetching meal plans from the repository,
+ * and performing actions like adding/removing meals, generating AI plans, and syncing to the cart.
+ *
+ * Interactions:
+ * - {@link useAuthContext}: For home ID, profile context, and AI status.
+ * - {@link useRecipeContext}: For accessing the cookbook.
+ * - {@link useCartContext}: For adding recipes to the shopping cart.
+ * - {@link useMealPlanRepository}: For Firestore CRUD operations on meal plans.
+ * - {@link generateMealPlan}: Service call for AI-assisted planning.
+ *
+ * @returns {Object} { state, actions }
+ */
 export function usePlanController() {
   const { currentHomeId, getProfileContext, isAIEnabled } = useAuthContext();
   const { savedRecipes } = useRecipeContext();

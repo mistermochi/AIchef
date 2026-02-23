@@ -15,6 +15,19 @@ interface UsePriceEntryProps {
   externalSubmitTrigger?: number;
 }
 
+/**
+ * @hook usePriceEntry
+ * @description The controller for the Price Entry form (used in Log and Edit modes).
+ * It manages the state of metadata (date, store) and individual line items,
+ * handles validation, and integrates with the `useReceiptScanner` for AI-based OCR.
+ *
+ * Interactions:
+ * - {@link useReceiptScanner}: For scanning receipt images and extracting data.
+ * - {@link calcNormalizedPrice}: For calculating the unit-normalized price before submission.
+ *
+ * @param {UsePriceEntryProps} props - Configuration for the price entry form.
+ * @returns {Object} { metadata, items, actions, scanState, uiState }
+ */
 export function usePriceEntry({
   initialData,
   mode,

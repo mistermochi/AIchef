@@ -12,6 +12,20 @@ export type TrackerModal =
   | { type: 'edit'; id: string }
   | { type: 'detail'; pid: string; productName: string };
 
+/**
+ * @hook useTrackerController
+ * @description The controller for the Tracker (Price Tracker) view.
+ * It manages the UI state (tabs, modals), handles file scanning for receipts,
+ * interacts with the TrackerContext for data persistence, and uses Gemini AI for deal searching.
+ *
+ * Interactions:
+ * - {@link useTrackerContext}: For fetching products and purchases, and performing CRUD operations.
+ * - {@link useAuthContext}: To check if AI is enabled and report AI-related errors.
+ * - {@link useRecipeContext}: For linking products to saved recipes and setting active recipes.
+ * - {@link searchDeals}: Service call to fetch online price insights.
+ *
+ * @returns {Object} { state, actions, refs, computed }
+ */
 export function useTrackerController() {
   const { products, purchases, loading, error, savePurchase, savePurchasesBatch, deletePurchase, loadMorePurchases, hasMore } = useTrackerContext();
   const { isAIEnabled, reportError } = useAuthContext();
