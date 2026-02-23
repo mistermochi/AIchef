@@ -1,9 +1,9 @@
 
-import { expect, TestContext } from '../utils/testRunner';
+import { expect, TestContext } from '../shared/lib/testRunner';
 import { calcNormalizedPrice, getPerItemPrice, getCategory } from '../entities/tracker/model/trackerModel';
-import { formatQty } from '../utils/helpers';
-import { parseDurationToSeconds, findDurationInText, parseFuzzyNumber } from '../utils/parsers';
-import { consolidateShoppingList } from '../utils/shopping';
+import { formatQty } from '../shared/lib/helpers';
+import { parseDurationToSeconds, findDurationInText, parseFuzzyNumber } from '../shared/lib/parsers';
+import { consolidateShoppingList } from '../shared/lib/shopping';
 
 export const runMathTests = async () => {
   const ctx = new TestContext();

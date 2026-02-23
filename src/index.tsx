@@ -1,9 +1,9 @@
 import ReactDOM from 'react-dom/client';
-import ChefAIApp from './App';
-import { AuthProvider } from './context/AuthContext';
-import { UIProvider } from './context/UIContext';
-import { RecipeProvider } from './context/RecipeContext';
-import { CartProvider } from './context/CartContext';
+import ChefAIApp from './app/App';
+import { AuthProvider } from './entities/user/model/AuthContext';
+import { UIProvider } from './app/providers/UIContext';
+import { RecipeProvider } from './entities/recipe/model/RecipeContext';
+import { CartProvider } from './features/shopping-cart/model/CartContext';
 import { TrackerProvider } from './entities/tracker/model/TrackerContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!);

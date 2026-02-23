@@ -1,8 +1,8 @@
 
 import { useState, useCallback } from 'react';
-import { extractReceiptData } from '../../../services/geminiService';
-import { compressImage } from '../../../utils/helpers';
-import { useAuthContext } from '../../../context/AuthContext';
+import { extractReceiptData } from '../../../shared/api/geminiService';
+import { compressImage } from '../../../shared/lib/helpers';
+import { useAuthContext } from '../../../entities/user/model/AuthContext';
 // @ts-ignore
 import heic2any from 'heic2any';
 

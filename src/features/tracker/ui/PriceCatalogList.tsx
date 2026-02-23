@@ -7,8 +7,8 @@ import { CATEGORY_EMOJIS } from '../../../entities/tracker/config';
 import { fmtCurrency } from '../../../shared/lib/format';
 import { fmtDate } from '../../../shared/lib/date';
 import { Timestamp } from 'firebase/firestore';
-import { Input, EmptyState, Button, Badge } from '../../../components/UI';
-import { useCartContext } from '../../../context/CartContext';
+import { Input, EmptyState, Button, Badge } from '../../../shared/ui';
+import { useCartContext } from '../../../features/shopping-cart/model/CartContext';
 
 // --- Types for the Catalog Tree ---
 

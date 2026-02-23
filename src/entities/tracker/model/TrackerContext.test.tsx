@@ -1,21 +1,21 @@
 import React from 'react';
 import { renderHook, act } from '@testing-library/react';
 import { TrackerProvider, useTrackerContext } from './TrackerContext';
-import { useAuthContext } from '../../../context/AuthContext';
-import { useUIContext } from '../../../context/UIContext';
+import { useAuthContext } from '../../../entities/user/model/AuthContext';
+import { useUIContext } from '../../../app/providers/UIContext';
 import * as firestore from 'firebase/firestore';
 
 // Mock dependencies
-jest.mock('../../../firebase', () => ({
+jest.mock('../../../shared/api/firebase', () => ({
   trackerDb: {},
   CHEF_APP_ID: 'test-app'
 }));
 
-jest.mock('../../../context/AuthContext', () => ({
+jest.mock('../../../entities/user/model/AuthContext', () => ({
   useAuthContext: jest.fn()
 }));
 
-jest.mock('../../../context/UIContext', () => ({
+jest.mock('../../../app/providers/UIContext', () => ({
   useUIContext: jest.fn()
 }));
 

@@ -1,7 +1,7 @@
 
-import { TestContext } from '../utils/testRunner';
-import { CartContextType } from '../context/CartContext';
-import { Recipe } from '../types';
+import { TestContext } from '../shared/lib/testRunner';
+import { CartContextType } from '../features/shopping-cart/model/CartContext';
+import { Recipe } from '../entities/recipe/model/types';
 
 // We pass the actual hooks/contexts as arguments to these functions
 // so they can run inside the React Component scope of the TestDashboard

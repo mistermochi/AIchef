@@ -1,19 +1,19 @@
 
 import React, { useState } from 'react';
 import { History, LayoutGrid, Trash2, Save, Sparkles, TrendingDown, Calendar, Search, ExternalLink, AlertTriangle, Camera, Plus, BookOpen } from 'lucide-react';
-import { PageLayout, ViewHeader, Button, ActionBar, HeaderAction, HeaderActionSeparator, Modal, ModalHeader, ModalContent, Badge, SectionCard, BaseCard, ConfirmButton } from '../../../components/UI';
-import { GlobalFAB } from '../../../components/layout/GlobalFAB';
+import { PageLayout, ViewHeader, Button, ActionBar, HeaderAction, HeaderActionSeparator, Modal, ModalHeader, ModalContent, Badge, SectionCard, BaseCard, ConfirmButton } from '../../../shared/ui';
+import { GlobalFAB } from '../../../shared/ui/layout/GlobalFAB';
 import { PriceEntryForm } from '../../../features/tracker/ui/PriceEntryForm';
 import { PriceHistoryList } from '../../../features/tracker/ui/PriceHistoryList';
 import { PriceCatalogList } from '../../../features/tracker/ui/PriceCatalogList';
-import { MetaSection } from '../../../components/recipe/MetaSection';
+import { MetaSection } from '../../../entities/recipe/ui/MetaSection';
 import { fmtCurrency } from '../../../shared/lib/format';
 import { fmtDate } from '../../../shared/lib/date';
 import { getPerItemPrice } from '../../../entities/tracker/model/trackerModel';
 import { CATEGORY_EMOJIS } from '../../../entities/tracker/config';
 import { useTracker } from '../../../features/tracker/model/useTracker';
 import { Purchase } from '../../../entities/tracker/model/types';
-import { Recipe } from '../../../types';
+import { Recipe } from '../../../shared/model/types';
 
 /**
  * @view TrackerPage

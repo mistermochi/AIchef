@@ -2,7 +2,7 @@
 import React from 'react';
 import { Layers, Loader2, BrainCircuit, ChevronDown, ChevronUp } from 'lucide-react';
 import { fmtCurrency } from '../../../shared/lib/format';
-import { SectionCard, EditableList } from '../../../components/UI';
+import { SectionCard, EditableList } from '../../../shared/ui';
 import { LineItem, PriceEntryFormProps } from './types';
 import { TrackerLogItem } from './TrackerLogItem';
 import { PriceFormMetadata } from './PriceFormMetadata';

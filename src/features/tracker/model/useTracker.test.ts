@@ -8,13 +8,13 @@ jest.mock("@google/genai", () => ({
 
 import { useTracker } from './useTracker';
 import { useTrackerContext } from '../../../entities/tracker/model/TrackerContext';
-import { useAuthContext } from '../../../context/AuthContext';
-import { useRecipeContext } from '../../../context/RecipeContext';
+import { useAuthContext } from '../../../entities/user/model/AuthContext';
+import { useRecipeContext } from '../../../entities/recipe/model/RecipeContext';
 
 // Mock contexts
 jest.mock('../../../entities/tracker/model/TrackerContext');
-jest.mock('../../../context/AuthContext');
-jest.mock('../../../context/RecipeContext');
+jest.mock('../../../entities/user/model/AuthContext');
+jest.mock('../../../entities/recipe/model/RecipeContext');
 
 describe('useTracker', () => {
   const mockSavePurchase = jest.fn();

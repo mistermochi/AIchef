@@ -1,10 +1,10 @@
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, onSnapshot, query, orderBy, limit, doc, setDoc, addDoc, writeBatch, deleteDoc } from 'firebase/firestore';
-import { trackerDb, CHEF_APP_ID } from '../../../firebase';
+import { trackerDb, CHEF_APP_ID } from '../../../shared/api/firebase';
 import { Product, Purchase } from './types';
-import { useAuthContext } from '../../../context/AuthContext';
-import { useUIContext } from '../../../context/UIContext';
+import { useAuthContext } from '../../../entities/user/model/AuthContext';
+import { useUIContext } from '../../../app/providers/UIContext';
 
 /**
  * @interface TrackerContextType

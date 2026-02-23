@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Tag, DollarSign, Scale, Layers, Trash2, MessageSquare, ChevronDown, Check } from 'lucide-react';
-import { Input, Button } from '../../../components/UI';
+import { Input, Button } from '../../../shared/ui';
 import { CATEGORIES, CATEGORY_EMOJIS, UNITS } from '../../../entities/tracker/config';
 import { LineItem } from './types';
 import { Product } from '../../../entities/tracker/model/types';

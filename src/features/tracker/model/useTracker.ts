@@ -1,10 +1,10 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useTrackerContext } from '../../../entities/tracker/model/TrackerContext';
-import { useAuthContext } from '../../../context/AuthContext';
-import { useRecipeContext } from '../../../context/RecipeContext';
-import { searchDeals } from '../../../services/geminiService';
-import { Recipe } from '../../../types';
+import { useAuthContext } from '../../../entities/user/model/AuthContext';
+import { useRecipeContext } from '../../../entities/recipe/model/RecipeContext';
+import { searchDeals } from '../../../shared/api/geminiService';
+import { Recipe } from '../../../shared/model/types';
 import { Purchase } from '../../../entities/tracker/model/types';
 import { toDate } from '../../../shared/lib/date';
 

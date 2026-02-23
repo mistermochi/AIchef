@@ -6,8 +6,8 @@ import { getPerItemPrice } from '../../../entities/tracker/model/trackerModel';
 import { CATEGORY_EMOJIS } from '../../../entities/tracker/config';
 import { fmtCurrency } from '../../../shared/lib/format';
 import { fmtDate, toDate } from '../../../shared/lib/date';
-import { SectionCard, EmptyState, ListRow } from '../../../components/UI';
-import { useInfiniteScroll } from '../../../hooks/useInfiniteScroll';
+import { SectionCard, EmptyState, ListRow } from '../../../shared/ui';
+import { useInfiniteScroll } from '../../../shared/lib/hooks/useInfiniteScroll';
 
 interface PriceHistoryListProps {
   purchases: Purchase[];
