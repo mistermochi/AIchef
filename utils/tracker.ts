@@ -55,7 +55,7 @@ export const fmtDateInput = (d: Timestamp | Date | string | null | undefined) =>
  * Returns Price Per Base Unit.
  */
 export const calcNormalizedPrice = (price: number, quantity: number, unit: string) => {
-  if (!price || !quantity) return 0;
+  if (!price || !quantity || price < 0 || quantity < 0) return 0;
   const multiplier = MULTIPLIERS[unit.toLowerCase()] || 1;
   const totalBaseUnits = quantity * multiplier;
   return totalBaseUnits > 0 ? price / totalBaseUnits : 0;
