@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, CookingPot, Loader2, Plus, PlusCircle, Key, ExternalLink, Info, Check, ShoppingCart, Bot } from 'lucide-react';
 import { Recipe } from '../types';
 import { ViewHeader, Input, EmptyState, RecipeSkeleton, PageLayout, GridList, Button, Modal, ModalHeader, ModalContent, PromptInput, Card, CardMedia, CardContent, CardTitle, CardDescription, CardFooter, CardFloatingAction, IngredientBadges } from '../components/UI';
@@ -9,6 +9,7 @@ import { useCartContext } from '../context/CartContext';
 import { useAuthContext } from '../context/AuthContext';
 import { useUIContext } from '../context/UIContext';
 import { useRecipeAI } from '../hooks/useRecipeAI';
+import { useInfiniteScroll } from '../hooks/useInfiniteScroll';
 
 export const HistoryView: React.FC = () => {
   const { 
@@ -25,25 +26,13 @@ export const HistoryView: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [recipeInput, setRecipeInput] = useState('');
   
-  // Intersection Observer for Infinite Loading
-  const observerTarget = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
-          loadMore();
-        }
-      },
-      { threshold: 0.1, rootMargin: '200px' }
-    );
-
-    if (observerTarget.current) {
-      observer.observe(observerTarget.current);
-    }
-
-    return () => observer.disconnect();
-  }, [hasMore, loading, loadMore]);
+  // ⚡ Optimization: Use unified infinite scroll for local virtualization and remote loading.
+  // This reduces DOM weight by only rendering a subset of recipes at a time.
+  const { displayLimit, observerTarget } = useInfiniteScroll(
+    filteredRecipes,
+    12,
+    hasMore ? loadMore : undefined
+  );
 
   useEffect(() => {
     const updatePlaceholder = () => setPlaceholder(window.innerWidth < 640 ? 'Search' : 'Search recipes...');
@@ -118,7 +107,7 @@ export const HistoryView: React.FC = () => {
       ) : filteredRecipes.length > 0 ? (
         <>
           <GridList>
-            {filteredRecipes.map((recipe, idx) => {
+            {filteredRecipes.slice(0, displayLimit).map((recipe, idx) => {
               const isInCart = shoppingCart.some(item => item.recipeId === recipe.id);
               
               return (

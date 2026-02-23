@@ -1,5 +1,5 @@
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useCallback } from 'react';
 import { ShoppingCart, Trash2, Layers, Cpu, X, ListChecks, Settings2, Minus, Plus, CookingPot, Utensils, Loader2 } from 'lucide-react';
 const OrchestratorOverlay = React.lazy(() => import('../components/shopping/OrchestratorOverlay').then(m => ({ default: m.OrchestratorOverlay })));
 import { Button, SectionCard, IconButton, ViewHeader, CheckableIngredient, EmptyState, HeaderAction, HeaderActionSeparator, ActionBar, PageLayout, ConfirmButton } from '../components/UI';
@@ -36,6 +36,11 @@ export const ShoppingView: React.FC = () => {
 
   const [showSources, setShowSources] = useState(false);
   const [showOrchestrator, setShowOrchestrator] = useState(false);
+
+  // ⚡ Optimization: Stable toggle handler prevents re-rendering all ingredient rows
+  const handleToggle = useCallback((key: string) => {
+    toggleIngredientCheck(key);
+  }, [toggleIngredientCheck]);
 
   if (shoppingCart.length === 0) {
     return (
@@ -109,11 +114,12 @@ export const ShoppingView: React.FC = () => {
                 return (
                   <CheckableIngredient
                     key={key}
+                    id={key}
                     name={ing.name}
                     quantity={ing.quantity}
                     unit={ing.unit}
                     isChecked={isChecked}
-                    onToggle={() => toggleIngredientCheck(key)}
+                    onToggle={handleToggle}
                   />
                 );
               })}

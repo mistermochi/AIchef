@@ -240,13 +240,19 @@ export const IngredientScaler: React.FC<{
 });
 
 // 3. CHECKABLE ROW (Shopping List Mode)
+/**
+ * @component CheckableIngredient
+ * @description Renders an ingredient with a checkbox for the shopping list.
+ * ⚡ Optimization: Uses an optional `id` and passes it back to `onToggle` to support stable handlers.
+ */
 export const CheckableIngredient: React.FC<{
+  id?: string;
   name: string;
   quantity: number;
   unit: string;
   isChecked: boolean;
-  onToggle: () => void;
-}> = React.memo(({ name, quantity, unit, isChecked, onToggle }) => {
+  onToggle: (id?: any) => void;
+}> = React.memo(({ id, name, quantity, unit, isChecked, onToggle }) => {
   const { trigger } = useHaptics();
   const [isPending, setIsPending] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -282,7 +288,7 @@ export const CheckableIngredient: React.FC<{
       
       // 2. Delay the actual data update (which triggers the sort/move)
       timerRef.current = setTimeout(() => {
-        onToggle();
+        onToggle(id);
         // No need to setPending(false) here, the prop change or unmount handles it
       }, 800); 
     } else if (isPending) {
@@ -291,7 +297,7 @@ export const CheckableIngredient: React.FC<{
       // We do NOT call onToggle, effectively cancelling the check action
     } else {
       // CASE: Unchecking an already saved item (immediate)
-      onToggle();
+      onToggle(id);
     }
   };
 
