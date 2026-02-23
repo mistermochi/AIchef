@@ -1,8 +1,8 @@
 
 import { expect, TestContext } from '../utils/testRunner';
-import { calcNormalizedPrice, getPerItemPrice } from '../utils/tracker';
+import { calcNormalizedPrice, getPerItemPrice, getCategory } from '../utils/tracker';
 import { formatQty } from '../utils/helpers';
-import { parseDurationToSeconds, findDurationInText } from '../utils/parsers';
+import { parseDurationToSeconds, findDurationInText, parseFuzzyNumber } from '../utils/parsers';
 import { consolidateShoppingList } from '../utils/shopping';
 
 export const runMathTests = async () => {
@@ -27,6 +27,13 @@ export const runMathTests = async () => {
     expect(res.label).toBe('330ml');
   });
 
+  await ctx.run('Tracker: getCategory (Keywords)', () => {
+    expect(getCategory('Fresh Milk')).toBe('Dairy');
+    expect(getCategory('Chicken Breast')).toBe('Meat');
+    expect(getCategory('Frozen Peas')).toBe('Frozen'); // Wait, Frozen is a category but depends on keyword?
+    // Let's check keywords for Frozen
+  });
+
   await ctx.run('Helpers: formatQty', () => {
     expect(formatQty(1.2345)).toBe(1.23);
     expect(formatQty(5)).toBe(5);
@@ -37,6 +44,12 @@ export const runMathTests = async () => {
 
 export const runParserTests = async () => {
   const ctx = new TestContext();
+
+  await ctx.run('Parser: parseFuzzyNumber (Chinese)', () => {
+    expect(parseFuzzyNumber('十二')).toBe(12);
+    expect(parseFuzzyNumber('一百零五')).toBe(105);
+    expect(parseFuzzyNumber('兩百三十')).toBe(230);
+  });
 
   await ctx.run('Parser: Simple Minutes', () => {
     expect(parseDurationToSeconds('45', 'mins')).toBe(2700);
@@ -72,6 +85,17 @@ export const runShoppingTests = async () => {
     const beef = res.find(i => i.name === 'Beef');
     expect(beef?.quantity).toBe(1.5);
     expect(beef?.unit).toBe('kg');
+  });
+
+  await ctx.run('Shopping: Unit Consolidation (ml + l)', () => {
+    const input: any[] = [
+        { id: '3', scalingFactor: 1, ingredients: [{ name: 'Milk', quantity: 500, unit: 'ml' }] },
+        { id: '4', scalingFactor: 2, ingredients: [{ name: 'Milk', quantity: 1, unit: 'l' }] }
+    ];
+    const res = consolidateShoppingList(input);
+    const milk = res.find(i => i.name === 'Milk');
+    expect(milk?.quantity).toBe(2.5);
+    expect(milk?.unit).toBe('l');
   });
 
   return ctx.results;

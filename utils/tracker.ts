@@ -23,6 +23,8 @@ export const CATEGORY_EMOJIS: Record<string, string> = {
   'Frozen': '🧊'
 };
 
+import { Timestamp } from 'firebase/firestore';
+
 export const UNITS = ['ml', 'l', 'g', 'kg', 'lb', 'jin', 'pcs'];
 
 // Base Multipliers to convert TO the smallest common unit (ml, g, pcs)
@@ -56,14 +58,26 @@ export const fmtCurrency = (num: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
 
 /**
+ * Normalizes various date formats (Firestore Timestamp, Date, string) into a Javascript Date.
+ * @param {Timestamp|Date|any} d - The date-like object.
+ * @returns {Date} Normalized Date object.
+ */
+export const toDate = (d: Timestamp | Date | any): Date => {
+  if (!d) return new Date();
+  if (d instanceof Date) return d;
+  if (d && typeof d.toDate === 'function') return d.toDate();
+  const _d = new Date(d);
+  return isNaN(_d.getTime()) ? new Date() : _d;
+};
+
+/**
  * Formats a Firestore Timestamp or Date object into a short date string (e.g., "Jan 1").
  * @param {any} d - The date or timestamp to format.
  * @returns {string} Short date string or '?' if invalid.
  */
 export const fmtDate = (d: any) => {
-  if (!d) return '?';
-  const _d = d?.toDate ? d.toDate() : new Date(d);
-  return isNaN(_d.getTime()) ? '?' : _d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const _d = toDate(d);
+  return _d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
 /**
@@ -72,8 +86,7 @@ export const fmtDate = (d: any) => {
  * @returns {string} Date string in YYYY-MM-DD format.
  */
 export const fmtDateInput = (d: any) => {
-  if (!d) return new Date().toISOString().split('T')[0];
-  const _d = d.toDate ? d.toDate() : new Date(d);
+  const _d = toDate(d);
   if (isNaN(_d.getTime())) return new Date().toISOString().split('T')[0];
   const year = _d.getFullYear();
   const month = String(_d.getMonth() + 1).padStart(2, '0');
@@ -120,7 +133,8 @@ const KEYWORD_MAP: Record<string, string[]> = {
   'Dairy': ['cheese', 'egg', 'yogurt', 'milk', 'butter', 'cream'],
   'Alcohol': ['beer', 'wine', 'sake', 'alcohol', 'whiskey', 'vodka'],
   'Snacks': ['chip', 'cookie', 'biscuit', 'chocolate', 'snack', 'candy'],
-  'Beverages': ['tea', 'coffee', 'juice', 'soda', 'water', 'coke']
+  'Beverages': ['tea', 'coffee', 'juice', 'soda', 'water', 'coke'],
+  'Frozen': ['frozen', 'ice cream', 'pizza', 'nuggets']
 };
 
 /**

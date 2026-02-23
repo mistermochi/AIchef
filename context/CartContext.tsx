@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useMemo } from 'react';
-import { ShoppingListItem, OrchestrationPlan, Ingredient } from '../types';
+import { ShoppingListItem, OrchestrationPlan, Ingredient, Recipe } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import * as gemini from '../services/geminiService';
 import { useAuthContext } from './AuthContext';
@@ -14,7 +14,7 @@ interface CartContextType {
   /** List of recipes and their scaling factors currently in the cart. */
   cart: ShoppingListItem[];
   /** Adds a recipe to the cart with a specific scaling factor. */
-  addToCart: (recipe: any, factor: number) => void;
+  addToCart: (recipe: Recipe, factor: number) => void;
   /** Removes a recipe from the cart by its unique cart item ID. */
   removeFromCart: (id: string) => void;
   /** Updates the scaling factor for a specific cart item. */
@@ -61,7 +61,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [orchestrationLoading, setOrchestrationLoading] = useState(false);
 
   // --- ACTIONS ---
-  const addToCart = (recipe: any, factor: number) => {
+  const addToCart = (recipe: Recipe, factor: number) => {
     setCart(prev => [...prev, {
       id: Math.random().toString(36).substring(2, 9),
       recipeId: recipe.id,
@@ -107,7 +107,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [consolidatedList, checked]);
 
   const generateOrchestrationAction = async () => {
-    const recipes = cart.map(i => i.originalRecipe).filter(Boolean) as any[];
+    const recipes = cart.map(i => i.originalRecipe).filter(Boolean) as Recipe[];
     if (recipes.length === 0 || !isAIEnabled) return;
     setOrchestrationLoading(true);
     try {

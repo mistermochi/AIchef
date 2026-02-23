@@ -2,7 +2,7 @@
 import React, { useMemo, useEffect } from 'react';
 import { History, Loader2, CalendarDays } from 'lucide-react';
 import { Purchase, Product } from '../../types';
-import { CATEGORY_EMOJIS, getPerItemPrice, fmtCurrency, fmtDate } from '../../utils/tracker';
+import { CATEGORY_EMOJIS, getPerItemPrice, fmtCurrency, fmtDate, toDate } from '../../utils/tracker';
 import { SectionCard, EmptyState, ListRow } from '../UI';
 import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
 
@@ -49,8 +49,8 @@ export const PriceHistoryList: React.FC<PriceHistoryListProps> = ({
   const sortedPurchases = useMemo(() => {
     return [...purchases].sort((a, b) => {
       // 1. Date Descending
-      const dateA = a.date?.toDate ? a.date.toDate().getTime() : new Date(a.date).getTime();
-      const dateB = b.date?.toDate ? b.date.toDate().getTime() : new Date(b.date).getTime();
+      const dateA = toDate(a.date).getTime();
+      const dateB = toDate(b.date).getTime();
       if (dateB !== dateA) return dateB - dateA;
 
       // 2. Category Ascending

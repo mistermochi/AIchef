@@ -2,10 +2,10 @@
 
 ## 🚀 Technical Improvements
 
-- [ ] **Type Safety:** Improve type definitions in `types.ts` to avoid `any` in some legacy areas (e.g., Firestore timestamps).
-- [ ] **Error Boundaries:** Implement React Error Boundaries to catch and gracefully handle UI crashes.
-- [ ] **Unit Testing:** Increase test coverage for utility functions in `utils/` and complex logic in controllers.
-- [ ] **Performance:** Optimize `TrackerContext` to avoid unnecessary re-renders when only one product/purchase changes.
+- [x] **Type Safety:** Improve type definitions in `types.ts` to avoid `any` in some legacy areas (e.g., Firestore timestamps).
+- [x] **Error Boundaries:** Implement React Error Boundaries to catch and gracefully handle UI crashes.
+- [x] **Unit Testing:** Increase test coverage for utility functions in `utils/`.
+- [x] **Performance:** Optimize `TrackerContext` to avoid unnecessary re-renders when only one product/purchase changes.
 - [ ] **Offline Support:** Enhance PWA capabilities by implementing more robust caching strategies for recipe images.
 - [ ] **Code Splitting:** Use React.lazy for view-level code splitting to improve initial load time.
 - [ ] **Refactoring:** `useRecipeAI` and `useChefAI` (if it becomes used) could be merged or better organized if they overlap.

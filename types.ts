@@ -5,6 +5,8 @@ export interface Ingredient {
   unit: string;
 }
 
+import { Timestamp, FieldValue } from 'firebase/firestore';
+
 export interface Recipe {
   id?: string;
   title: string;
@@ -17,7 +19,7 @@ export interface Recipe {
   sourceUrl?: string;
   coverImage?: string | null;
   authorId?: string;
-  createdAt?: any; // Was Timestamp
+  createdAt?: Timestamp | Date | FieldValue;
   lastRefinement?: string;
 }
 
@@ -82,7 +84,7 @@ export interface Purchase {
   productName: string;
   genericName?: string; // Canonical name for recipe matching
   category: string;
-  date: any; // Firestore Timestamp or Date
+  date: Timestamp | Date;
   price: number;
   quantity: number; // Total quantity (singleQty * count)
   singleQty?: number; // The size of a single unit in a pack (e.g. 330 for a 6-pack)
@@ -91,7 +93,7 @@ export interface Purchase {
   normalizedPrice: number;
   store: string;
   comment?: string;
-  timestamp?: any;
+  timestamp?: Timestamp | Date | FieldValue;
   appId?: string;
   userId?: string;
 }

@@ -6,7 +6,7 @@ import { useRecipeContext } from './context/RecipeContext';
 import { useAuthContext } from './context/AuthContext';
 import { Navigation } from './components/layout/Navigation';
 import RecipeModal from './components/recipe/RecipeModal';
-import { PageHeader } from './components/UI';
+import { PageHeader, ErrorBoundary } from './components/UI';
 
 // Lazy load views
 const HistoryView = React.lazy(() => import('./views/HistoryView').then(module => ({ default: module.HistoryView })));
@@ -88,15 +88,17 @@ export default function ChefAIApp() {
         {/* Workspace with Fluid Transition Wrapper */}
         <main className="flex-1 overflow-hidden relative">
           <div key={view} className="absolute inset-0 overflow-hidden flex flex-col animate-view-enter">
-            <Suspense fallback={<LoadingFallback />}>
-              {view === 'genie' && <GenieView />}
-              {(view === 'cookbook' || view === 'home') && <HistoryView />}
-              {view === 'shopping' && <ShoppingView />}
-              {view === 'tracker' && <TrackerView />}
-              {view === 'profile' && <ProfileView />}
-              {view === 'test' && <TestDashboardView />}
-              {view === 'plan' && <PlanView />}
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingFallback />}>
+                {view === 'genie' && <GenieView />}
+                {(view === 'cookbook' || view === 'home') && <HistoryView />}
+                {view === 'shopping' && <ShoppingView />}
+                {view === 'tracker' && <TrackerView />}
+                {view === 'profile' && <ProfileView />}
+                {view === 'test' && <TestDashboardView />}
+                {view === 'plan' && <PlanView />}
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </main>
       </div>

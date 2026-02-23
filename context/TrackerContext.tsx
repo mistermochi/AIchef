@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { collection, onSnapshot, query, orderBy, limit, doc, setDoc, addDoc, writeBatch, deleteDoc } from 'firebase/firestore';
 import { trackerDb, CHEF_APP_ID } from '../firebase';
 import { Product, Purchase } from '../types';
@@ -24,9 +24,9 @@ interface TrackerContextType {
   /** Increments the pagination limit to load more records. */
   loadMorePurchases: () => void;
   /** Saves a single purchase record (create or update). */
-  savePurchase: (data: any, isEdit: boolean, id?: string) => Promise<boolean>;
+  savePurchase: (data: Partial<Purchase>, isEdit: boolean, id?: string) => Promise<boolean>;
   /** Saves multiple purchase records in a single Firestore batch. */
-  savePurchasesBatch: (items: any[]) => Promise<boolean>;
+  savePurchasesBatch: (items: Partial<Purchase>[]) => Promise<boolean>;
   /** Deletes a specific purchase record by ID. */
   deletePurchase: (id: string) => Promise<void>;
 }
@@ -115,11 +115,11 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return () => unsub();
   }, [currentHomeId, hasActivated, limitCount]);
 
-  const loadMorePurchases = () => {
+  const loadMorePurchases = useCallback(() => {
     if (hasMore && !loading) {
       setLimitCount(prev => prev + 50);
     }
-  };
+  }, [hasMore, loading]);
 
   // Derived Products (Note: This will only reflect products in the loaded purchases)
   const products = useMemo(() => {
@@ -139,7 +139,7 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return Object.values(productMap).sort((a, b) => a.name.localeCompare(b.name));
   }, [purchases]);
 
-  const savePurchase = async (data: any, isEdit: boolean, id?: string) => {
+  const savePurchase = useCallback(async (data: Partial<Purchase>, isEdit: boolean, id?: string) => {
     if (!currentHomeId || !trackerUser) return false;
     const ref = collection(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'purchases');
     try {
@@ -152,9 +152,9 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       return true;
     } catch (e) { console.error("Tracker Save Error:", e); return false; }
-  };
+  }, [currentHomeId, trackerUser]);
 
-  const savePurchasesBatch = async (items: any[]) => {
+  const savePurchasesBatch = useCallback(async (items: Partial<Purchase>[]) => {
     if (!currentHomeId || !trackerUser || items.length === 0) return false;
     const batch = writeBatch(trackerDb);
     const ref = collection(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'purchases');
@@ -166,15 +166,20 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
       await batch.commit();
       return true;
     } catch (e) { console.error("Batch error", e); return false; }
-  };
+  }, [currentHomeId, trackerUser]);
 
-  const deletePurchase = (id: string) => {
+  const deletePurchase = useCallback((id: string) => {
       if (!currentHomeId) return Promise.reject("No Home");
       return deleteDoc(doc(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'purchases', id));
-  };
+  }, [currentHomeId]);
+
+  const contextValue = useMemo(() => ({
+    products, purchases, loading, error, hasMore,
+    loadMorePurchases, savePurchase, savePurchasesBatch, deletePurchase
+  }), [products, purchases, loading, error, hasMore, loadMorePurchases, savePurchase, savePurchasesBatch, deletePurchase]);
 
   return (
-    <TrackerContext.Provider value={{ products, purchases, loading, error, hasMore, loadMorePurchases, savePurchase, savePurchasesBatch, deletePurchase }}>
+    <TrackerContext.Provider value={contextValue}>
       {children}
     </TrackerContext.Provider>
   );

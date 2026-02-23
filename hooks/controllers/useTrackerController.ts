@@ -4,7 +4,8 @@ import { useTrackerContext } from '../../context/TrackerContext';
 import { useAuthContext } from '../../context/AuthContext';
 import { useRecipeContext } from '../../context/RecipeContext';
 import { searchDeals } from '../../services/geminiService';
-import { Recipe } from '../../types';
+import { Recipe, Purchase } from '../../types';
+import { toDate } from '../../utils/tracker';
 
 export type TrackerModal = 
   | { type: 'none' }
@@ -83,15 +84,15 @@ export function useTrackerController() {
     }
   };
 
-  const handleSave = async (data: any) => {
+  const handleSave = async (data: Partial<Purchase> | Partial<Purchase>[]) => {
     if (isSaving || (modal.type !== 'log' && modal.type !== 'edit')) return;
     setIsSaving(true);
     let success = false;
     try {
       if (modal.type === 'edit') {
-        success = await savePurchase(data, true, modal.id);
+        success = await savePurchase(data as Partial<Purchase>, true, modal.id);
       } else {
-        success = await savePurchasesBatch(Array.isArray(data) ? data : [data]);
+        success = await savePurchasesBatch(Array.isArray(data) ? data : [data as Partial<Purchase>]);
       }
     } catch (e) { console.error(e); }
     setIsSaving(false);
@@ -153,8 +154,8 @@ export function useTrackerController() {
 
     // 3. Sort by Date Descending to ensure index 0 is truly the latest
     const sortedHistory = [...history].sort((a, b) => {
-        const dateA = a.date?.toDate ? a.date.toDate().getTime() : new Date(a.date).getTime();
-        const dateB = b.date?.toDate ? b.date.toDate().getTime() : new Date(b.date).getTime();
+        const dateA = toDate(a.date).getTime();
+        const dateB = toDate(b.date).getTime();
         return dateB - dateA;
     });
 
