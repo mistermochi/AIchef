@@ -3,6 +3,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Recipe, GenieIdea, OrchestrationPlan } from '../types';
 import { SYSTEM_INSTRUCTIONS, PROMPTS } from '../constants/prompts';
 import { SCHEMAS } from '../constants/schemas';
+import { mapAIError } from '../utils/ai';
 
 /**
  * @module GeminiService
@@ -51,8 +52,8 @@ async function callAI<T>(config: {
   model: string;
   system: string;
   prompt: string;
-  schema: any;
-  tools?: any[];
+  schema: object;
+  tools?: object[];
 }): Promise<T> {
   const ai = getClient();
   try {
@@ -69,11 +70,8 @@ async function callAI<T>(config: {
     if (!response.text) throw new Error("Safety filter blocked response.");
     return JSON.parse(response.text.trim()) as T;
   } catch (error: any) {
-    const msg = error.message.toLowerCase();
-    if (msg.includes('location') || msg.includes('region')) throw new Error("Region not supported.");
-    if (msg.includes('entity was not found') || msg.includes('api_key_not_found')) throw new Error("API_KEY_NOT_FOUND");
-    if (msg.includes('429') || msg.includes('quota')) throw new Error("API Limit reached.");
-    throw new Error(error.message || "AI Service failure.");
+    const mapped = mapAIError(error);
+    throw new Error(mapped.message);
   }
 }
 
@@ -81,10 +79,10 @@ async function callAI<T>(config: {
  * Validates the AI connection and API key without consuming significant quota.
  * Uses a zero-cost token count check on a cheap model.
  * @returns {Promise<Object>} Status of the connection and a message.
- * @returns {'healthy'|'auth_error'|'quota_error'|'network_error'|'region_restricted'} return.status
+ * @returns {'healthy'|'auth_error'|'quota_error'|'network_error'|'region_restricted'|'unhealthy'} return.status
  * @returns {string} return.message
  */
-export const validateAIConnection = async (): Promise<{ status: 'healthy' | 'auth_error' | 'quota_error' | 'network_error' | 'region_restricted', message: string }> => {
+export const validateAIConnection = async (): Promise<{ status: 'healthy' | 'auth_error' | 'quota_error' | 'network_error' | 'region_restricted' | 'unhealthy', message: string }> => {
   const ai = getClient();
   try {
     // Zero-cost check using countTokens on a cheap model
@@ -95,26 +93,7 @@ export const validateAIConnection = async (): Promise<{ status: 'healthy' | 'aut
     });
     return { status: 'healthy', message: 'Connected' };
   } catch (error: any) {
-    const msg = error.message.toLowerCase();
-
-    // 1. Region/Location Check (Priority)
-    // Google returns "User location is not supported for the API use" with 400 Bad Request
-    if (msg.includes('location') || msg.includes('region') || msg.includes('unsupported country')) {
-       return { status: 'region_restricted', message: 'Location Not Supported' };
-    }
-
-    // 2. Quota Check
-    if (msg.includes('quota') || msg.includes('429')) {
-      return { status: 'quota_error', message: 'Quota Exceeded' };
-    }
-
-    // 3. Auth Check (Generic 400/403/Key)
-    if (msg.includes('api_key') || msg.includes('403') || msg.includes('400') || msg.includes('not found')) {
-      return { status: 'auth_error', message: 'Invalid API Key' };
-    }
-
-    // 4. Fallback
-    return { status: 'network_error', message: error.message || 'Connection Failed' };
+    return mapAIError(error);
   }
 };
 

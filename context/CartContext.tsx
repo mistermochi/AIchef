@@ -10,7 +10,7 @@ import { consolidateShoppingList } from '../utils/shopping';
  * @interface CartContextType
  * @description Defines the shape of the Cart Context, which manages the shopping cart, ingredient consolidation, and AI orchestration.
  */
-interface CartContextType {
+export interface CartContextType {
   /** List of recipes and their scaling factors currently in the cart. */
   cart: ShoppingListItem[];
   /** Adds a recipe to the cart with a specific scaling factor. */

@@ -1,53 +1,8 @@
 
-export const STORES = [
-  'ParknShop', 'Wellcome', 'Market (Wet/Local)', 'AEON', 'HKTVmall', 
-  '759 Store', 'Circle K', '7-11', 'Costco', 'Don Don Donki', 'Other'
-];
-
-export const CATEGORIES = [
-  'General', 'Alcohol', 'Dairy', 'Meat', 'Fruit', 'Vegetables', 
-  'Pantry', 'Snacks', 'Beverages', 'Household', 'Frozen'
-];
-
-export const CATEGORY_EMOJIS: Record<string, string> = {
-  'General': '🏷️',
-  'Alcohol': '🍷',
-  'Dairy': '🥛',
-  'Meat': '🥩',
-  'Fruit': '🍎',
-  'Vegetables': '🥦',
-  'Pantry': '🥫',
-  'Snacks': '🍪',
-  'Beverages': '🥤',
-  'Household': '🧻',
-  'Frozen': '🧊'
-};
-
 import { Timestamp } from 'firebase/firestore';
+import { MULTIPLIERS, KEYWORD_MAP } from '../constants/app';
 
-export const UNITS = ['ml', 'l', 'g', 'kg', 'lb', 'jin', 'pcs'];
-
-// Base Multipliers to convert TO the smallest common unit (ml, g, pcs)
-export const MULTIPLIERS: Record<string, number> = { 
-  'ml': 1, 
-  'l': 1000, 
-  'g': 1, 
-  'kg': 1000, 
-  'lb': 453.592, 
-  'jin': 604.8, 
-  'pcs': 1 
-};
-
-// Unit Types for safe aggregation
-export const UNIT_TYPES: Record<string, 'volume' | 'mass' | 'count'> = {
-  'ml': 'volume',
-  'l': 'volume',
-  'g': 'mass',
-  'kg': 'mass',
-  'lb': 'mass',
-  'jin': 'mass',
-  'pcs': 'count'
-};
+export { STORES, CATEGORIES, CATEGORY_EMOJIS, UNITS, MULTIPLIERS, UNIT_TYPES } from '../constants/app';
 
 /**
  * Formats a number as a USD currency string.
@@ -59,33 +14,33 @@ export const fmtCurrency = (num: number) =>
 
 /**
  * Normalizes various date formats (Firestore Timestamp, Date, string) into a Javascript Date.
- * @param {Timestamp|Date|any} d - The date-like object.
+ * @param {Timestamp|Date|string|null|undefined} d - The date-like object.
  * @returns {Date} Normalized Date object.
  */
-export const toDate = (d: Timestamp | Date | any): Date => {
+export const toDate = (d: Timestamp | Date | string | null | undefined): Date => {
   if (!d) return new Date();
   if (d instanceof Date) return d;
-  if (d && typeof d.toDate === 'function') return d.toDate();
-  const _d = new Date(d);
+  if (d && typeof (d as any).toDate === 'function') return (d as any).toDate();
+  const _d = new Date(d as string | number | Date);
   return isNaN(_d.getTime()) ? new Date() : _d;
 };
 
 /**
  * Formats a Firestore Timestamp or Date object into a short date string (e.g., "Jan 1").
- * @param {any} d - The date or timestamp to format.
- * @returns {string} Short date string or '?' if invalid.
+ * @param {Timestamp|Date|string|null|undefined} d - The date or timestamp to format.
+ * @returns {string} Short date string.
  */
-export const fmtDate = (d: any) => {
+export const fmtDate = (d: Timestamp | Date | string | null | undefined) => {
   const _d = toDate(d);
   return _d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
 /**
  * Formats a date for use in an HTML date input (YYYY-MM-DD).
- * @param {any} d - The date or timestamp to format.
+ * @param {Timestamp|Date|string|null|undefined} d - The date or timestamp to format.
  * @returns {string} Date string in YYYY-MM-DD format.
  */
-export const fmtDateInput = (d: any) => {
+export const fmtDateInput = (d: Timestamp | Date | string | null | undefined) => {
   const _d = toDate(d);
   if (isNaN(_d.getTime())) return new Date().toISOString().split('T')[0];
   const year = _d.getFullYear();
@@ -123,18 +78,6 @@ export const getPerItemPrice = (p: { price: number, count?: number, singleQty?: 
   
   const label = `${Number(size)}${p.unit}`;
   return { price: pricePerItem, label };
-};
-
-const KEYWORD_MAP: Record<string, string[]> = {
-  'Meat': ['pork', 'fish', 'chicken', 'beef', 'lamb', 'sausage', 'steak', 'meat'],
-  'Fruit': ['apple', 'banana', 'orange', 'grape', 'berry', 'melon', 'pear', 'fruit', 'lemon', 'lime', 'mango', 'peach', 'plum', 'cherry', 'strawberry', 'blueberry'],
-  'Pantry': ['soy', 'sauce', 'salt', 'sugar', 'oil', 'flour', 'noodle', 'rice', 'pasta', 'cereal'],
-  'Vegetables': ['vegetable', 'veggie', 'cabbage', 'tomato', 'potato', 'carrot', 'onion', 'garlic', 'broccoli', 'kale', 'spinach', 'pepper'],
-  'Dairy': ['cheese', 'egg', 'yogurt', 'milk', 'butter', 'cream'],
-  'Alcohol': ['beer', 'wine', 'sake', 'alcohol', 'whiskey', 'vodka'],
-  'Snacks': ['chip', 'cookie', 'biscuit', 'chocolate', 'snack', 'candy'],
-  'Beverages': ['tea', 'coffee', 'juice', 'soda', 'water', 'coke'],
-  'Frozen': ['frozen', 'ice cream', 'pizza', 'nuggets']
 };
 
 /**

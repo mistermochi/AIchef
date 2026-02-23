@@ -82,10 +82,41 @@ const ActiveTimerDisplay: React.FC<{
 };
 
 
+import { VoiceCommand } from '../../hooks/useVoiceControl';
+import { Ingredient } from '../../types';
+
 // --- DUMB UI COMPONENT ---
 export interface MakeViewUIProps {
-  state: any;
-  actions: any;
+  state: {
+    recipe: {
+      instructions: string[];
+      ingredients: Ingredient[];
+      extractedTips?: string[];
+      aiSuggestions?: string[];
+    } | null;
+    currentStep: number;
+    activeCommand: { cmd: VoiceCommand, label: string } | null;
+    activeTimer: ActiveTimer | null;
+    isListening: boolean;
+    isSpeaking: boolean;
+    transcript: string;
+    showIngredients: boolean;
+    showTips: boolean;
+    isWakeLockActive: boolean;
+  };
+  actions: {
+    nextStep: () => boolean;
+    prevStep: () => boolean;
+    toggleListening: () => void;
+    setShowIngredients: (v: boolean) => void;
+    setShowTips: (v: boolean) => void;
+    closeView: () => void;
+    speak: (text: string) => void;
+    startSmartTimer: (seconds: number, label: string) => void;
+    toggleTimer: () => void;
+    stopTimer: () => void;
+    parseDurationToSeconds: (num: string | number, unit: string) => number;
+  };
 }
 
 export const MakeViewUI: React.FC<MakeViewUIProps> = ({ state, actions }) => {
@@ -317,7 +348,7 @@ export const MakeViewUI: React.FC<MakeViewUIProps> = ({ state, actions }) => {
           <ModalHeader title="Ingredients" onClose={() => actions.setShowIngredients(false)} />
           <ModalContent>
              <div className="space-y-0 divide-y divide-outline/20">
-               {recipe.ingredients.map((ing: any, i: number) => (
+               {recipe.ingredients.map((ing: Ingredient, i: number) => (
                  <div key={i} className="flex justify-between items-center py-4">
                     <span className="text-lg font-medium">{ing.name}</span>
                     <span className="font-bold font-mono text-primary dark:text-primary-dark bg-primary-container/20 px-2 py-1 rounded">{ing.quantity} {ing.unit}</span>

@@ -138,6 +138,3 @@ export const DEFAULT_PROFILE: UserProfile = {
   customInstructions: '',
   aiEnabled: true
 };
-
-export const APPLIANCE_LIST = ['Air Fryer', 'Instant Pot', 'Blender', 'Slow Cooker', 'Sous Vide', 'Food Processor', 'Wok'];
-export const DIETARY_LIST = ['Vegetarian', 'Vegan', 'Gluten-Free', 'Keto', 'Low Carb', 'Dairy-Free', 'Nut-Free'];

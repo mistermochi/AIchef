@@ -15,7 +15,7 @@ import { useBackupRestore } from '../hooks/useBackupRestore';
 import { useUIContext } from '../context/UIContext';
 import { useDataMigration } from '../hooks/useDataMigration';
 import { usePWA } from '../hooks/usePWA';
-import { DIETARY_LIST, APPLIANCE_LIST } from '../types';
+import { DIETARY_LIST, APPLIANCE_LIST } from '../constants/app';
 
 /**
  * @view ProfileView

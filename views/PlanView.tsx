@@ -282,7 +282,7 @@ export const PlanView: React.FC = () => {
                                     <ArrowRight className="w-4 h-4 text-content-tertiary group-hover:text-primary transition-colors" />
                                 </button>
                             ))}
-                            {savedRecipes.length === 0 && <EmptyState title="Cookbook Empty" description="Add recipes first." />}
+                            {savedRecipes.length === 0 && <EmptyState icon={<Calendar />} title="Cookbook Empty" description="Add recipes first." />}
                         </div>
                       </>
                   ) : (

@@ -1,3 +1,0 @@
-
-// Moved to public/manifest.json to ensure it is copied to dist/ on build.
-export {};

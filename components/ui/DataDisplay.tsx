@@ -179,7 +179,7 @@ export const IngredientInput: React.FC<{
   name: string;
   quantity: number;
   unit: string;
-  onChange: (field: string, val: any) => void;
+  onChange: (field: 'name' | 'quantity' | 'unit', val: string | number) => void;
   onDelete: () => void;
 }> = React.memo(({ name, quantity, unit, onChange, onDelete }) => {
   const actions = (
@@ -249,7 +249,7 @@ export const CheckableIngredient: React.FC<{
 }> = React.memo(({ name, quantity, unit, isChecked, onToggle }) => {
   const { trigger } = useHaptics();
   const [isPending, setIsPending] = useState(false);
-  const timerRef = useRef<any>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Clear timeout if component unmounts
   useEffect(() => {
@@ -335,8 +335,16 @@ export const IngredientRow: React.FC<{ name: string; quantity: number; unit: str
 });
 
 // --- BADGE & EMPTY STATE ---
-export const Badge: React.FC<any> = ({ label, icon, variant = 'primary', className = '', onClick }) => {
-  const variants: any = {
+export interface BadgeProps {
+  label: React.ReactNode;
+  icon?: React.ReactNode;
+  variant?: 'primary' | 'neutral' | 'success' | 'warning';
+  className?: string;
+  onClick?: () => void;
+}
+
+export const Badge: React.FC<BadgeProps> = ({ label, icon, variant = 'primary', className = '', onClick }) => {
+  const variants = {
     primary: "bg-primary-container dark:bg-primary-container-dark text-primary dark:text-primary-dark border-primary/20",
     neutral: "bg-surface-variant dark:bg-surface-variant-dark text-content-secondary dark:text-content-secondary-dark border-outline dark:border-outline-dark",
     success: "bg-success-container dark:bg-success-container-dark text-success-dark border-success/20",
@@ -344,16 +352,24 @@ export const Badge: React.FC<any> = ({ label, icon, variant = 'primary', classNa
   };
   return (
     <span onClick={onClick} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-2xs font-bold uppercase border transition-all ${variants[variant]} ${className} ${onClick ? 'cursor-pointer hover:opacity-80 active:scale-95' : ''}`}>
-      {icon && React.cloneElement(icon as any, { className: "w-3.5 h-3.5" })}
+      {icon && React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: "w-3.5 h-3.5" })}
       {label}
     </span>
   );
 };
 
-export const EmptyState: React.FC<any> = ({ icon, title, description, action, className = '' }) => (
+export interface EmptyStateProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+  className?: string;
+}
+
+export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description, action, className = '' }) => (
   <div className={`h-full flex flex-col items-center justify-center animate-fade-in px-4 text-center ${className}`}>
     <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 bg-surface dark:bg-surface-dark border border-outline dark:border-outline-dark rounded-3xl flex items-center justify-center mb-6 shadow-sm">
-      {React.cloneElement(icon as any, { className: "w-8 h-8 md:w-10 md:h-10 text-content-tertiary dark:text-content-tertiary-dark" })}
+      {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: "w-8 h-8 md:w-10 md:h-10 text-content-tertiary dark:text-content-tertiary-dark" })}
     </div>
     <h3 className="text-lg md:text-xl font-bold text-content dark:text-content-dark google-sans">{title}</h3>
     <p className="text-sm text-content-secondary dark:text-content-secondary-dark mt-2 max-w-xs leading-relaxed">{description}</p>

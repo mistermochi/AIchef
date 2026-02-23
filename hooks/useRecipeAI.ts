@@ -3,6 +3,7 @@ import { useState } from 'react';
 import * as gemini from '../services/geminiService';
 import { useAuthContext } from '../context/AuthContext';
 import { Recipe, GenieIdea } from '../types';
+import { mapAIError } from '../utils/ai';
 
 /**
  * @hook useRecipeAI
@@ -25,21 +26,11 @@ export function useRecipeAI() {
   const [genieIdeas, setGenieIdeas] = useState<GenieIdea[]>([]);
 
   const handleAIError = (e: any) => {
-    const msg = e.message.toLowerCase();
-    
-    if (msg.includes('api_key_not_found') || msg.includes('api key') || msg.includes('auth')) {
-      reportError('auth_error', "API Key invalid or missing.");
-      setError("API Key invalid or missing.");
+    const mapped = mapAIError(e);
+    reportError(mapped.status, mapped.message);
+    setError(mapped.message);
+    if (mapped.status === 'auth_error') {
       openKeySelector();
-    } else if (msg.includes('limit') || msg.includes('quota')) {
-      reportError('quota_error', "API Quota Exceeded.");
-      setError("API Quota Exceeded.");
-    } else if (msg.includes('region') || msg.includes('location')) {
-      reportError('region_restricted', "Region Not Supported.");
-      setError("Region Not Supported.");
-    } else {
-      reportError('unhealthy', e.message);
-      setError(e.message);
     }
   };
 

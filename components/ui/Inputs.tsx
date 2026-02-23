@@ -103,7 +103,7 @@ export const Input: React.FC<InputProps> = ({ className = '', startIcon, endIcon
     <div className="relative w-full">
       {startIcon && (
         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-content-tertiary dark:text-content-tertiary-dark pointer-events-none">
-          {React.cloneElement(startIcon as React.ReactElement<any>, { size: 16 })}
+          {React.cloneElement(startIcon as React.ReactElement<{ size?: number }>, { size: 16 })}
         </div>
       )}
       <input
@@ -112,7 +112,7 @@ export const Input: React.FC<InputProps> = ({ className = '', startIcon, endIcon
       />
       {endIcon && (
         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary dark:text-content-tertiary-dark pointer-events-none">
-          {React.cloneElement(endIcon as React.ReactElement<any>, { size: 16 })}
+          {React.cloneElement(endIcon as React.ReactElement<{ size?: number }>, { size: 16 })}
         </div>
       )}
     </div>

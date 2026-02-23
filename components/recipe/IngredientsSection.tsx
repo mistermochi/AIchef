@@ -13,9 +13,9 @@ export const IngredientsSection: React.FC = () => {
 
   if (!recipe) return null;
 
-  const updateIng = (idx: number, field: string, val: any) => {
+  const updateIng = (idx: number, field: keyof Ingredient, val: string | number) => {
     const updated = [...recipe.ingredients];
-    updated[idx] = { ...updated[idx], [field]: val };
+    (updated[idx] as any)[field] = val;
     setRecipe(p => p ? ({ ...p, ingredients: updated }) : null);
   };
 
