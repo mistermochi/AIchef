@@ -23,5 +23,27 @@ describe('shopping utils', () => {
       expect(milk?.quantity).toBe(2.5);
       expect(milk?.unit).toBe('l');
     });
+
+    it('should handle zero quantity', () => {
+      const input: any[] = [
+        { id: '5', scalingFactor: 1, ingredients: [{ name: 'Salt', quantity: 0, unit: 'g' }] }
+      ];
+      const res = consolidateShoppingList(input);
+      expect(res[0].quantity).toBe(0);
+    });
+
+    it('should handle negative scaling factor', () => {
+      const input: any[] = [
+        { id: '6', scalingFactor: -1, ingredients: [{ name: 'Sugar', quantity: 100, unit: 'g' }] }
+      ];
+      const res = consolidateShoppingList(input);
+      // It multiplies it, so it might be negative. Let's see how it behaves.
+      expect(res[0].quantity).toBe(-100);
+    });
+
+    it('should handle empty cart', () => {
+      const res = consolidateShoppingList([]);
+      expect(res).toEqual([]);
+    });
   });
 });

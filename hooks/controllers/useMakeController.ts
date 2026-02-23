@@ -44,20 +44,30 @@ export function useCookingSession({ recipe, onClose }: CookingSessionProps) {
   const commandHandlerRef = useRef<((command: VoiceCommand, text: string) => void) | null>(null);
 
   const nextStep = useCallback(() => {
-    if (recipe && currentStep < recipe.instructions.length - 1) {
-      setCurrentStep(prev => prev + 1);
-      return true;
+    let success = false;
+    if (recipe) {
+      setCurrentStep(prev => {
+        if (prev < recipe.instructions.length - 1) {
+          success = true;
+          return prev + 1;
+        }
+        return prev;
+      });
     }
-    return false;
-  }, [currentStep, recipe]);
+    return success;
+  }, [recipe]);
 
   const prevStep = useCallback(() => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
-      return true;
-    }
-    return false;
-  }, [currentStep]);
+    let success = false;
+    setCurrentStep(prev => {
+      if (prev > 0) {
+        success = true;
+        return prev - 1;
+      }
+      return prev;
+    });
+    return success;
+  }, []);
 
   const startSmartTimer = (seconds: number, label: string) => {
     // Safety check: ensure seconds is a valid positive number

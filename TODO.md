@@ -15,37 +15,37 @@
 
 Establish a comprehensive Jest-based test suite focusing on core logic and high-complexity modules.
 
-1.  **`utils/tracker.ts`** (High Priority)
+1.  **[x] `utils/tracker.ts`** (High Priority)
     - Test `calcNormalizedPrice` with all supported units (ml, l, g, kg, lb, jin, pcs).
     - Edge cases: zero/negative quantity, zero/negative price, unknown units.
     - Test `getCategory` with various product names, case sensitivity, and empty input.
-2.  **`utils/parsers.ts`** (High Priority)
+2.  **[x] `utils/parsers.ts`** (High Priority)
     - Test `parseFuzzyNumber` with complex Chinese number combinations (e.g., "一百零五", "兩百三十").
     - Test `findDurationInText` with multi-language inputs and varied placements.
     - Edge cases: invalid characters, empty strings, missing units.
-3.  **`utils/shopping.ts`** (Medium Priority)
+3.  **[x] `utils/shopping.ts`** (Medium Priority)
     - Test `consolidateShoppingList` with mixed unit types (e.g., merging "g" and "kg").
     - Edge cases: items with 0 quantity, scaling factor of 0 or negative, empty cart.
-4.  **`utils/ai.ts`** (Medium Priority)
+4.  **[x] `utils/ai.ts`** (Medium Priority)
     - Test `mapAIError` to ensure all Gemini API error types are correctly mapped to user-friendly statuses.
     - Test fallback logic for unknown error messages.
-5.  **`hooks/useRecipeAI.ts`** (Medium Priority)
+5.  **[x] `hooks/useRecipeAI.ts`** (Medium Priority)
     - Mock `geminiService` to test success and failure flows for recipe processing and Genie idea generation.
     - Verify correct loading state transitions and error state propagation.
-6.  **`context/TrackerContext.tsx`** (Medium Priority)
+6.  **[x] `context/TrackerContext.tsx`** (Medium Priority)
     - Mock Firebase Firestore to test real-time subscription handling and pagination.
     - Test CRUD operations: `savePurchase`, `deletePurchase`, `savePurchasesBatch`.
-7.  **`context/CartContext.tsx`** (Medium Priority)
+7.  **[x] `context/CartContext.tsx`** (Medium Priority)
     - Test cart management logic: `addToCart`, `removeFromCart`, `updateCartItemFactor`.
     - Verify ingredient checklist persistence and statistics calculation.
-8.  **`services/geminiService.ts`** (Low Priority - Internal logic)
+8.  **[x] `services/geminiService.ts`** (Low Priority - Internal logic)
     - Test `validateAIConnection` with mocked AI client responses for all health statuses.
     - Test `getClient` behavior with and without API keys in localStorage.
-9.  **`hooks/controllers/useMakeController.ts`** (Low Priority - Complex Interaction)
+9.  **[x] `hooks/controllers/useMakeController.ts`** (Low Priority - Complex Interaction)
     - Test cooking session navigation logic: `nextStep`, `prevStep` boundaries.
     - Test `ActiveTimer` behavior: pausing, resuming, and auto-done status.
     - Verify voice command mapping to internal state changes.
-10. **`hooks/controllers/useTrackerController.ts`** (Low Priority - UI Logic)
+10. **[x] `hooks/controllers/useTrackerController.ts`** (Low Priority - UI Logic)
     - Test tab switching and modal state management.
     - Verify error reporting interaction with `AuthContext` during AI deal searches.
 

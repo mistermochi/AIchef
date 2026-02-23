@@ -11,6 +11,11 @@ describe('parsers utils', () => {
     it('should parse "半" as 0.5', () => {
       expect(parseFuzzyNumber('半')).toBe(0.5);
     });
+
+    it('should handle invalid input', () => {
+      expect(parseFuzzyNumber('')).toBe(0);
+      expect(parseFuzzyNumber('abc')).toBe(0);
+    });
   });
 
   describe('parseDurationToSeconds', () => {
@@ -33,6 +38,14 @@ describe('parsers utils', () => {
     it('should find duration in Chinese text', () => {
       const found = findDurationInText("蒸三十分鐘");
       expect(found?.seconds).toBe(1800);
+    });
+
+    it('should handle missing units', () => {
+      expect(findDurationInText("Bake for 45 at 200C")).toBeNull();
+    });
+
+    it('should handle empty string', () => {
+      expect(findDurationInText("")).toBeNull();
     });
   });
 });

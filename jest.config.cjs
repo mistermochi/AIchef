@@ -9,9 +9,12 @@ module.exports = {
     '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$': '<rootDir>/tests/__mocks__/fileMock.js',
   },
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
+    '^.+\\.(ts|tsx|mjs)$': ['ts-jest', {
       tsconfig: 'tsconfig.json',
     }],
   },
   testMatch: ['**/__tests__/**/*.ts?(x)', '**/?(*.)+(spec|test).ts?(x)'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(@google/genai|p-retry|lucide-react)/)',
+  ],
 };
