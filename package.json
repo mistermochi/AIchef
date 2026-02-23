@@ -1,4 +1,3 @@
-
 {
   "name": "aichef-studio",
   "private": true,
@@ -8,21 +7,31 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "test": "jest",
     "typecheck": "tsc --noEmit",
     "validate": "tsc --noEmit"
   },
   "dependencies": {
     "@google/genai": "^1.34.0",
-    "firebase": "^12.7.0",
+    "firebase": "^12.9.0",
     "heic2any": "^0.0.4",
     "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/jest": "^30.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.4",
+    "identity-obj-proxy": "^3.0.0",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
     "typescript": "^5.7.2",
     "vite": "^6.0.0"
   }
