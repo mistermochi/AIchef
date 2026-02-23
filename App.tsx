@@ -5,7 +5,7 @@ import { useUIContext } from './context/UIContext';
 import { useRecipeContext } from './context/RecipeContext';
 import { useAuthContext } from './context/AuthContext';
 import { Navigation } from './components/layout/Navigation';
-import RecipeModal from './components/recipe/RecipeModal';
+const RecipeModal = React.lazy(() => import('./components/recipe/RecipeModal'));
 import { PageHeader, ErrorBoundary } from './components/UI';
 
 // Lazy load views
@@ -103,7 +103,11 @@ export default function ChefAIApp() {
         </main>
       </div>
 
-      {activeRecipe && <RecipeModal />}
+      {activeRecipe && (
+        <Suspense fallback={null}>
+          <RecipeModal />
+        </Suspense>
+      )}
     </div>
   );
 }

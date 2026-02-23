@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
-import { ShoppingCart, Trash2, Layers, Cpu, X, ListChecks, Settings2, Minus, Plus, CookingPot, Utensils } from 'lucide-react';
-import { OrchestratorOverlay } from '../components/shopping/OrchestratorOverlay';
+import React, { useState, Suspense } from 'react';
+import { ShoppingCart, Trash2, Layers, Cpu, X, ListChecks, Settings2, Minus, Plus, CookingPot, Utensils, Loader2 } from 'lucide-react';
+const OrchestratorOverlay = React.lazy(() => import('../components/shopping/OrchestratorOverlay').then(m => ({ default: m.OrchestratorOverlay })));
 import { Button, SectionCard, IconButton, ViewHeader, CheckableIngredient, EmptyState, HeaderAction, HeaderActionSeparator, ActionBar, PageLayout, ConfirmButton } from '../components/UI';
 import { useCartContext } from '../context/CartContext';
 import { useUIContext } from '../context/UIContext';
@@ -158,11 +158,17 @@ export const ShoppingView: React.FC = () => {
       )}
 
       {showOrchestrator && orchestrationPlan && (
-        <OrchestratorOverlay 
-          plan={orchestrationPlan}
-          shoppingCart={shoppingCart} 
-          onClose={() => setShowOrchestrator(false)} 
-        />
+        <Suspense fallback={
+          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+            <Loader2 className="w-10 h-10 animate-spin text-white" />
+          </div>
+        }>
+          <OrchestratorOverlay
+            plan={orchestrationPlan}
+            shoppingCart={shoppingCart}
+            onClose={() => setShowOrchestrator(false)}
+          />
+        </Suspense>
       )}
     </>
   );

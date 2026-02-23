@@ -6,10 +6,10 @@
 - [x] **Error Boundaries:** Implement React Error Boundaries to catch and gracefully handle UI crashes.
 - [x] **Unit Testing:** Increase test coverage for utility functions in `utils/`.
 - [x] **Performance:** Optimize `TrackerContext` to avoid unnecessary re-renders when only one product/purchase changes.
-- [ ] **Offline Support:** Enhance PWA capabilities by implementing more robust caching strategies for recipe images.
-- [ ] **Code Splitting:** Use React.lazy for view-level code splitting to improve initial load time.
-- [ ] **Refactoring:** `useRecipeAI` and `useChefAI` (if it becomes used) could be merged or better organized if they overlap.
-- [ ] **Cleanup:** Remove or properly deprecate the empty/0-byte component files in the root `components/` directory (e.g., `Navigation.tsx`, `RecipeModal.tsx`) to avoid confusion with the active versions in subdirectories.
+- [x] **Offline Support:** Enhance PWA capabilities by implementing more robust caching strategies for recipe images.
+- [x] **Code Splitting:** Use React.lazy for view-level code splitting to improve initial load time.
+- [x] **Refactoring:** `useRecipeAI` and `useChefAI` (if it becomes used) could be merged or better organized if they overlap.
+- [x] **Cleanup:** Remove or properly deprecate the empty/0-byte component files in the root `components/` directory (e.g., `Navigation.tsx`, `RecipeModal.tsx`) to avoid confusion with the active versions in subdirectories.
 
 ## ⚠️ Perceived Pitfalls
 
