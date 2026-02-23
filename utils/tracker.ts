@@ -1,64 +1,47 @@
 
-export const STORES = [
-  'ParknShop', 'Wellcome', 'Market (Wet/Local)', 'AEON', 'HKTVmall', 
-  '759 Store', 'Circle K', '7-11', 'Costco', 'Don Don Donki', 'Other'
-];
+import { Timestamp } from 'firebase/firestore';
+import { MULTIPLIERS, KEYWORD_MAP } from '../constants/app';
 
-export const CATEGORIES = [
-  'General', 'Alcohol', 'Dairy', 'Meat', 'Fruit', 'Vegetables', 
-  'Pantry', 'Snacks', 'Beverages', 'Household', 'Frozen'
-];
+export { STORES, CATEGORIES, CATEGORY_EMOJIS, UNITS, MULTIPLIERS, UNIT_TYPES } from '../constants/app';
 
-export const CATEGORY_EMOJIS: Record<string, string> = {
-  'General': '🏷️',
-  'Alcohol': '🍷',
-  'Dairy': '🥛',
-  'Meat': '🥩',
-  'Fruit': '🍎',
-  'Vegetables': '🥦',
-  'Pantry': '🥫',
-  'Snacks': '🍪',
-  'Beverages': '🥤',
-  'Household': '🧻',
-  'Frozen': '🧊'
-};
-
-export const UNITS = ['ml', 'l', 'g', 'kg', 'lb', 'jin', 'pcs'];
-
-// Base Multipliers to convert TO the smallest common unit (ml, g, pcs)
-export const MULTIPLIERS: Record<string, number> = { 
-  'ml': 1, 
-  'l': 1000, 
-  'g': 1, 
-  'kg': 1000, 
-  'lb': 453.592, 
-  'jin': 604.8, 
-  'pcs': 1 
-};
-
-// Unit Types for safe aggregation
-export const UNIT_TYPES: Record<string, 'volume' | 'mass' | 'count'> = {
-  'ml': 'volume',
-  'l': 'volume',
-  'g': 'mass',
-  'kg': 'mass',
-  'lb': 'mass',
-  'jin': 'mass',
-  'pcs': 'count'
-};
-
+/**
+ * Formats a number as a USD currency string.
+ * @param {number} num - The number to format.
+ * @returns {string} Formatted currency string.
+ */
 export const fmtCurrency = (num: number) => 
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
 
-export const fmtDate = (d: any) => {
-  if (!d) return '?';
-  const _d = d?.toDate ? d.toDate() : new Date(d);
-  return isNaN(_d.getTime()) ? '?' : _d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+/**
+ * Normalizes various date formats (Firestore Timestamp, Date, string) into a Javascript Date.
+ * @param {Timestamp|Date|string|null|undefined} d - The date-like object.
+ * @returns {Date} Normalized Date object.
+ */
+export const toDate = (d: Timestamp | Date | string | null | undefined): Date => {
+  if (!d) return new Date();
+  if (d instanceof Date) return d;
+  if (d && typeof (d as any).toDate === 'function') return (d as any).toDate();
+  const _d = new Date(d as string | number | Date);
+  return isNaN(_d.getTime()) ? new Date() : _d;
 };
 
-export const fmtDateInput = (d: any) => {
-  if (!d) return new Date().toISOString().split('T')[0];
-  const _d = d.toDate ? d.toDate() : new Date(d);
+/**
+ * Formats a Firestore Timestamp or Date object into a short date string (e.g., "Jan 1").
+ * @param {Timestamp|Date|string|null|undefined} d - The date or timestamp to format.
+ * @returns {string} Short date string.
+ */
+export const fmtDate = (d: Timestamp | Date | string | null | undefined) => {
+  const _d = toDate(d);
+  return _d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+/**
+ * Formats a date for use in an HTML date input (YYYY-MM-DD).
+ * @param {Timestamp|Date|string|null|undefined} d - The date or timestamp to format.
+ * @returns {string} Date string in YYYY-MM-DD format.
+ */
+export const fmtDateInput = (d: Timestamp | Date | string | null | undefined) => {
+  const _d = toDate(d);
   if (isNaN(_d.getTime())) return new Date().toISOString().split('T')[0];
   const year = _d.getFullYear();
   const month = String(_d.getMonth() + 1).padStart(2, '0');
@@ -97,17 +80,12 @@ export const getPerItemPrice = (p: { price: number, count?: number, singleQty?: 
   return { price: pricePerItem, label };
 };
 
-const KEYWORD_MAP: Record<string, string[]> = {
-  'Meat': ['pork', 'fish', 'chicken', 'beef', 'lamb', 'sausage', 'steak', 'meat'],
-  'Fruit': ['apple', 'banana', 'orange', 'grape', 'berry', 'melon', 'pear', 'fruit', 'lemon', 'lime', 'mango', 'peach', 'plum', 'cherry', 'strawberry', 'blueberry'],
-  'Pantry': ['soy', 'sauce', 'salt', 'sugar', 'oil', 'flour', 'noodle', 'rice', 'pasta', 'cereal'],
-  'Vegetables': ['vegetable', 'veggie', 'cabbage', 'tomato', 'potato', 'carrot', 'onion', 'garlic', 'broccoli', 'kale', 'spinach', 'pepper'],
-  'Dairy': ['cheese', 'egg', 'yogurt', 'milk', 'butter', 'cream'],
-  'Alcohol': ['beer', 'wine', 'sake', 'alcohol', 'whiskey', 'vodka'],
-  'Snacks': ['chip', 'cookie', 'biscuit', 'chocolate', 'snack', 'candy'],
-  'Beverages': ['tea', 'coffee', 'juice', 'soda', 'water', 'coke']
-};
-
+/**
+ * Heuristically determines the category of a product based on its name.
+ * Uses a keyword map for common grocery items.
+ * @param {string} name - The product name.
+ * @returns {string} The determined category name, or 'General' if no match.
+ */
 export const getCategory = (name: string): string => {
   if (!name) return 'General';
   const n = name.toLowerCase();

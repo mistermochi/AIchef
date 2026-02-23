@@ -34,42 +34,74 @@ interface MemberProfile {
   isOwner: boolean;
 }
 
+/**
+ * @interface AuthContextType
+ * @description Defines the shape of the Authentication Context, including user state, profile management, AI health monitoring, and household (Home) management.
+ */
 interface AuthContextType {
+  /** The currently authenticated Firebase user for the Chef app. */
   chefUser: User | null;
-  trackerUser: User | null; // Alias
+  /** Alias for chefUser, used in tracking contexts. */
+  trackerUser: User | null;
   
   // Profile
+  /** The extended user profile containing preferences and settings. */
   profile: UserProfile;
+  /** Updates the local profile state. */
   updateProfile: (p: Partial<UserProfile>) => void;
+  /** Persists the current profile to Firestore. */
   saveProfile: () => Promise<void>;
+  /** Updates the user's display name in both Firebase Auth and Firestore. */
   updateUserDisplayName: (name: string) => Promise<void>;
+  /** Generates a string summary of user preferences for AI context. */
   getProfileContext: () => string;
   
   // AI Status
+  /** Whether AI features are currently usable based on user settings and health checks. */
   isAIEnabled: boolean;
+  /** The current health status of the Gemini AI connection. */
   aiHealth: 'unknown' | 'checking' | 'healthy' | 'auth_error' | 'quota_error' | 'network_error' | 'region_restricted' | 'unhealthy';
+  /** Error message associated with AI health issues. */
   aiErrorMsg: string;
+  /** Triggers a health check of the AI service. */
   checkHealth: () => Promise<void>;
+  /** Manually reports an AI-related error to the context. */
   reportError: (type: AuthContextType['aiHealth'], msg: string) => void;
+  /** Opens the AI Studio key selector (if available in the environment). */
   openKeySelector: () => Promise<void>;
 
   // Homes
+  /** ID of the currently active household/home. */
   currentHomeId: string | null;
+  /** Data object for the current home. */
   currentHome: HomeData | null;
+  /** List of members in the current home. */
   homeMembers: MemberProfile[];
+  /** Creates a new home and sets it as current. */
   createHome: (name: string) => Promise<void>;
+  /** Joins an existing home by its ID. */
   joinHome: (id: string) => Promise<void>;
 
   // Auth Actions
+  /** Logs in a user with email and password. */
   login: (e: string, p: string) => Promise<void>;
+  /** Registers a new user with email and password. */
   register: (e: string, p: string) => Promise<void>;
+  /** Logs out the current user and clears local state. */
   logout: () => Promise<void>;
+  /** Current authentication error message. */
   authError: string;
+  /** Success or feedback message from auth actions. */
   authMessage: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * @component AuthProvider
+ * @description Provides authentication and user profile state to the entire application.
+ * Manages Firebase Auth listeners, Firestore profile sync, and household data subscriptions.
+ */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [chefUser, setChefUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile>(DEFAULT_PROFILE);
@@ -340,6 +372,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+/**
+ * Hook to consume the AuthContext.
+ * @returns {AuthContextType} The authentication context value.
+ * @throws {Error} If used outside of an AuthProvider.
+ */
 export const useAuthContext = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuthContext must be used within AuthProvider');

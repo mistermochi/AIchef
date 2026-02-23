@@ -1,12 +1,28 @@
 
-import React, { useState } from 'react';
-import { ShoppingCart, Trash2, Layers, Cpu, X, ListChecks, Settings2, Minus, Plus, CookingPot, Utensils } from 'lucide-react';
-import { OrchestratorOverlay } from '../components/shopping/OrchestratorOverlay';
+import React, { useState, Suspense } from 'react';
+import { ShoppingCart, Trash2, Layers, Cpu, X, ListChecks, Settings2, Minus, Plus, CookingPot, Utensils, Loader2 } from 'lucide-react';
+const OrchestratorOverlay = React.lazy(() => import('../components/shopping/OrchestratorOverlay').then(m => ({ default: m.OrchestratorOverlay })));
 import { Button, SectionCard, IconButton, ViewHeader, CheckableIngredient, EmptyState, HeaderAction, HeaderActionSeparator, ActionBar, PageLayout, ConfirmButton } from '../components/UI';
 import { useCartContext } from '../context/CartContext';
 import { useUIContext } from '../context/UIContext';
 import { useAuthContext } from '../context/AuthContext';
 
+/**
+ * @view ShoppingView
+ * @description The Shopping List and Cooking Orchestrator view.
+ * It displays a consolidated list of ingredients from recipes added to the cart.
+ *
+ * Features:
+ * - Ingredient Consolidation: Merges identical ingredients across different recipes and calculates total quantities.
+ * - Progress Tracking: Check off ingredients as you shop.
+ * - Recipe Sources: Manage which recipes are contributing to the shopping list and adjust their scaling factors.
+ * - Orchestrator: Launches an AI-generated multi-recipe cooking plan based on the ingredients in the list.
+ *
+ * Interactions:
+ * - {@link useCartContext}: For managing the shopping cart state, ingredient checking, and orchestration logic.
+ * - {@link useUIContext}: To navigate back to the cookbook if the list is empty.
+ * - {@link useAuthContext}: To check if AI features like the Orchestrator are enabled.
+ */
 export const ShoppingView: React.FC = () => {
   const { 
     cart: shoppingCart, clearCart, removeFromCart,
@@ -142,11 +158,17 @@ export const ShoppingView: React.FC = () => {
       )}
 
       {showOrchestrator && orchestrationPlan && (
-        <OrchestratorOverlay 
-          plan={orchestrationPlan}
-          shoppingCart={shoppingCart} 
-          onClose={() => setShowOrchestrator(false)} 
-        />
+        <Suspense fallback={
+          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+            <Loader2 className="w-10 h-10 animate-spin text-white" />
+          </div>
+        }>
+          <OrchestratorOverlay
+            plan={orchestrationPlan}
+            shoppingCart={shoppingCart}
+            onClose={() => setShowOrchestrator(false)}
+          />
+        </Suspense>
       )}
     </>
   );

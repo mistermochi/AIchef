@@ -21,6 +21,21 @@ const SLOT_LABELS: Record<MealSlot, string> = {
     dinner: 'Dinner'
 };
 
+/**
+ * @view PlanView
+ * @description The Meal Planner view.
+ * It provides a weekly calendar interface where users can organize recipes into different meal slots (Breakfast, Lunch, Tea, Dinner).
+ *
+ * Features:
+ * - Weekly Navigation: Scroll through weeks and view day-by-day plans.
+ * - Auto-Plan: Uses AI to generate a weekly meal plan based on the cookbook.
+ * - Cart Sync: Synchronizes planned meals with the shopping cart for ingredient aggregation.
+ * - Meal Management: Add, edit, or remove recipes from specific dates and slots.
+ *
+ * Interactions:
+ * - {@link usePlanController}: Manages the complex state of the weekly grid and meal plans.
+ * - {@link useRecipeContext}: For selecting recipes from the cookbook and setting active recipes.
+ */
 export const PlanView: React.FC = () => {
   const { state, actions } = usePlanController();
   const { savedRecipes, setActiveRecipe } = useRecipeContext();
@@ -267,7 +282,7 @@ export const PlanView: React.FC = () => {
                                     <ArrowRight className="w-4 h-4 text-content-tertiary group-hover:text-primary transition-colors" />
                                 </button>
                             ))}
-                            {savedRecipes.length === 0 && <EmptyState title="Cookbook Empty" description="Add recipes first." />}
+                            {savedRecipes.length === 0 && <EmptyState icon={<Calendar />} title="Cookbook Empty" description="Add recipes first." />}
                         </div>
                       </>
                   ) : (

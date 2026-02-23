@@ -23,7 +23,14 @@ export interface CookingSessionProps {
   onClose: () => void;
 }
 
-// GENERIC HOOK: Decoupled from Context
+/**
+ * @hook useCookingSession
+ * @description A generic, context-decoupled hook for managing a cooking session.
+ * It handles step-by-step navigation, voice commands, timers, and screen wake lock.
+ *
+ * @param {CookingSessionProps} props - Configuration for the cooking session.
+ * @returns {Object} { state, actions }
+ */
 export function useCookingSession({ recipe, onClose }: CookingSessionProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [showIngredients, setShowIngredients] = useState(false);
@@ -197,7 +204,18 @@ export function useCookingSession({ recipe, onClose }: CookingSessionProps) {
   };
 }
 
-// Wrapper used in RecipeModal context
+/**
+ * @hook useMakeController
+ * @description A specialized version of `useCookingSession` that integrates with the `RecipeSessionContext`.
+ * It is used in the "Make" mode of the Recipe Modal.
+ *
+ * Interactions:
+ * - {@link useRecipeSessionContext}: For accessing the current recipe and controlling hands-free mode.
+ * - {@link useVoiceControl}: For hands-free interaction.
+ * - {@link useWakeLock}: To prevent the device screen from turning off while cooking.
+ *
+ * @returns {Object} Same as `useCookingSession`.
+ */
 export function useMakeController() {
   const { recipe, setIsHandsFree } = useRecipeSessionContext();
   return useCookingSession({ 

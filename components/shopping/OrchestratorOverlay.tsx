@@ -17,6 +17,21 @@ interface OrchestratorOverlayProps {
   onClose: () => void;
 }
 
+/**
+ * @component OrchestratorOverlay
+ * @description An advanced UI overlay that guides the user through an AI-generated multi-recipe cooking plan.
+ * It translates the complex orchestration plan into a linear sequence of steps and integrates with the cooking session controller.
+ *
+ * Features:
+ * - Plan Summary: Shows an AI-generated overview of the cooking strategy.
+ * - Timeline View: A vertical timeline of prep, cook, and wait steps.
+ * - Contextual Ingredients: Shows relevant ingredients for each step, filtered from the consolidated shopping list.
+ * - "Cook Now" Mode: Launches a voice-controlled hands-free session for the entire orchestration plan.
+ *
+ * Interactions:
+ * - {@link useCartContext}: For accessing the consolidated ingredient list.
+ * - {@link useCookingSession}: To manage the actual cooking state (voice, steps, timers).
+ */
 export const OrchestratorOverlay: React.FC<OrchestratorOverlayProps> = ({ plan, shoppingCart, onClose }) => {
   const [expandedIngredients, setExpandedIngredients] = useState<Set<string>>(new Set());
   const [isMakeMode, setIsMakeMode] = useState(false);

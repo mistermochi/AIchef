@@ -1,14 +1,16 @@
 
 import { TestContext } from '../utils/testRunner';
+import { CartContextType } from '../context/CartContext';
+import { Recipe } from '../types';
 
 // We pass the actual hooks/contexts as arguments to these functions
 // so they can run inside the React Component scope of the TestDashboard
-export const runCartIntegration = async (cartContext: any) => {
+export const runCartIntegration = async (cartContext: CartContextType) => {
   const ctx = new TestContext();
   const { addToCart, clearCart } = cartContext;
 
   await ctx.run('Cart: Add Item', async () => {
-    const mockRecipe = { id: 'test-1', title: 'Test Recipe', ingredients: [] };
+    const mockRecipe: Recipe = { id: 'test-1', title: 'Test Recipe', emoji: '🥗', summary: 'Test summary', ingredients: [], instructions: [], extractedTips: [], aiSuggestions: [] };
     addToCart(mockRecipe, 1);
     // State updates might be async in React, but context updates usually trigger re-renders.
     // In this synchronous test runner within a component, we rely on the implementation being immediate 

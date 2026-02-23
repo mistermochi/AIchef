@@ -5,8 +5,8 @@ import { useUIContext } from './context/UIContext';
 import { useRecipeContext } from './context/RecipeContext';
 import { useAuthContext } from './context/AuthContext';
 import { Navigation } from './components/layout/Navigation';
-import RecipeModal from './components/recipe/RecipeModal';
-import { PageHeader } from './components/UI';
+const RecipeModal = React.lazy(() => import('./components/recipe/RecipeModal'));
+import { PageHeader, ErrorBoundary } from './components/UI';
 
 // Lazy load views
 const HistoryView = React.lazy(() => import('./views/HistoryView').then(module => ({ default: module.HistoryView })));
@@ -23,6 +23,22 @@ const LoadingFallback = () => (
   </div>
 );
 
+/**
+ * @component ChefAIApp
+ * @description The root component of the ChefAI application.
+ * It sets up the main layout, including the sidebar navigation and the main content area.
+ * It also handles dynamic view switching (lazy-loading views) and manages the visibility of the global Recipe Modal.
+ *
+ * Layout:
+ * - {@link Navigation}: Fixed sidebar on desktop, bottom bar on mobile.
+ * - `main`: Dynamic container that renders the currently active view based on `UIContext`.
+ * - {@link RecipeModal}: A global modal that overlays the active view when a recipe is selected.
+ *
+ * Interactions:
+ * - {@link useUIContext}: To determine which view to render.
+ * - {@link useRecipeContext}: To check if a recipe modal should be displayed.
+ * - {@link useAuthContext}: For mobile-specific header actions (profile access).
+ */
 export default function ChefAIApp() {
   const { view, setView } = useUIContext();
   const { activeRecipe } = useRecipeContext();
@@ -72,20 +88,26 @@ export default function ChefAIApp() {
         {/* Workspace with Fluid Transition Wrapper */}
         <main className="flex-1 overflow-hidden relative">
           <div key={view} className="absolute inset-0 overflow-hidden flex flex-col animate-view-enter">
-            <Suspense fallback={<LoadingFallback />}>
-              {view === 'genie' && <GenieView />}
-              {(view === 'cookbook' || view === 'home') && <HistoryView />}
-              {view === 'shopping' && <ShoppingView />}
-              {view === 'tracker' && <TrackerView />}
-              {view === 'profile' && <ProfileView />}
-              {view === 'test' && <TestDashboardView />}
-              {view === 'plan' && <PlanView />}
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingFallback />}>
+                {view === 'genie' && <GenieView />}
+                {(view === 'cookbook' || view === 'home') && <HistoryView />}
+                {view === 'shopping' && <ShoppingView />}
+                {view === 'tracker' && <TrackerView />}
+                {view === 'profile' && <ProfileView />}
+                {view === 'test' && <TestDashboardView />}
+                {view === 'plan' && <PlanView />}
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </main>
       </div>
 
-      {activeRecipe && <RecipeModal />}
+      {activeRecipe && (
+        <Suspense fallback={null}>
+          <RecipeModal />
+        </Suspense>
+      )}
     </div>
   );
 }

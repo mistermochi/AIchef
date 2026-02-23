@@ -3,6 +3,7 @@ import React, { useState, useMemo, useDeferredValue } from 'react';
 import { Search, Database, ShoppingCart, Check, ChevronRight, Store, ArrowLeft, Tag, Package, Loader2 } from 'lucide-react';
 import { Purchase } from '../../types';
 import { CATEGORY_EMOJIS, fmtCurrency, getPerItemPrice, fmtDate } from '../../utils/tracker';
+import { Timestamp } from 'firebase/firestore';
 import { Input, EmptyState, Button, Badge } from '../UI';
 import { useCartContext } from '../../context/CartContext';
 
@@ -16,7 +17,7 @@ interface ProductSummary {
   bestPrice: number;
   bestUnitLabel: string;
   bestStore: string;
-  bestDate: any;
+  bestDate: Timestamp | Date | string | null | undefined;
   bestPurchaseId: string;
   variantCount: number; // how many purchases history
 }

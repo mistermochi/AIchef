@@ -38,7 +38,7 @@ export const MetaSection: React.FC<MetaSectionProps> = ({
 
   if (!data) return null;
 
-  const updateField = (field: keyof Recipe, value: any) => {
+  const updateField = <K extends keyof Recipe>(field: K, value: Recipe[K]) => {
     if (readOnly || !context) return;
     context.setRecipe(prev => prev ? ({ ...prev, [field]: value }) : null);
   };

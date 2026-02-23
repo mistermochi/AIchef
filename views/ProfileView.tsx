@@ -15,8 +15,28 @@ import { useBackupRestore } from '../hooks/useBackupRestore';
 import { useUIContext } from '../context/UIContext';
 import { useDataMigration } from '../hooks/useDataMigration';
 import { usePWA } from '../hooks/usePWA';
-import { DIETARY_LIST, APPLIANCE_LIST } from '../types';
+import { DIETARY_LIST, APPLIANCE_LIST } from '../constants/app';
 
+/**
+ * @view ProfileView
+ * @description The user profile and settings view.
+ * It manages user preferences (dietary, appliances, skill level), authentication,
+ * household management, data backup/restore, and system settings (dark mode, haptics).
+ *
+ * Features:
+ * - Account Management: Sign in, register, or manage display name.
+ * - Culinary Profile: Set dietary restrictions, appliances, and custom AI instructions.
+ * - Household: Create or join a shared household (Home) using invite codes.
+ * - Studio Settings: Toggle AI features, Dark Mode, Haptics, and Auto-Wake Lock.
+ * - Data Management: Export/Import cookbook (JSON) and tracker (CSV) data.
+ * - AI Connectivity: Monitor Gemini API health and manage API keys.
+ *
+ * Interactions:
+ * - {@link useAuthContext}: For almost all user and household-related state and actions.
+ * - {@link useBackupRestore}: For exporting and importing data files.
+ * - {@link useUIContext}: For global UI settings like Dark Mode.
+ * - {@link usePWA}: For handling app installation.
+ */
 export const ProfileView: React.FC = () => {
   const { 
     chefUser, profile, updateProfile, saveProfile, updateUserDisplayName,

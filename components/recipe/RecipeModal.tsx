@@ -46,7 +46,20 @@ const RecipeModalContent: React.FC<{ close: () => void }> = ({ close }) => {
   );
 };
 
-// Main wrapper that provides the context
+/**
+ * @component RecipeModal
+ * @description The main modal for viewing, editing, and cooking a recipe.
+ * It uses the `RecipeSessionProvider` to manage local state for the recipe session.
+ *
+ * Features:
+ * - Recipe View: Structured display of recipe meta, ingredients, and instructions.
+ * - Hands-Free Mode: Switches to `MakeView` for voice-controlled cooking.
+ * - Persistence: Integrates with `RecipeSessionContext` for saving and deleting recipes.
+ *
+ * Interactions:
+ * - {@link useRecipeContext}: For accessing and closing the active recipe.
+ * - {@link RecipeSessionProvider}: Provides the session-specific state to child components.
+ */
 const RecipeModal: React.FC = () => {
   const { activeRecipe, setActiveRecipe } = useRecipeContext();
 

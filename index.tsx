@@ -30,9 +30,9 @@ if ('serviceWorker' in navigator) {
 
     // Construct absolute path using Vite's injected base URL
     // e.g. /AIchef/service-worker.js
-    const swUrl = `${(import.meta as any).env.BASE_URL}service-worker.js`;
+    const swUrl = `${import.meta.env.BASE_URL}service-worker.js`;
     
-    navigator.serviceWorker.register(swUrl, { scope: (import.meta as any).env.BASE_URL })
+    navigator.serviceWorker.register(swUrl, { scope: import.meta.env.BASE_URL })
       .then((registration) => {
         console.log('SW registered with scope:', registration.scope);
       })
