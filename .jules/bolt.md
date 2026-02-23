@@ -1,0 +1,3 @@
+## 2025-05-22 - [Optimizing List Performance & Infinite Scroll]
+**Learning:** Redundant `IntersectionObserver` instances on the same element are a common anti-pattern in this codebase's list components. Additionally, the `useLocalStorage` hook was returning an unstable `setValue` function, causing cascading re-renders in every component consuming any context that used it.
+**Action:** Consolidate infinite scroll logic into a single robust hook that handles both local display limits and remote load callbacks. Always wrap state setters from custom hooks in `useCallback` when they are used in context actions to maintain stability.

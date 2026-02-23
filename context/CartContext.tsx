@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
 import { ShoppingListItem, OrchestrationPlan, Ingredient, Recipe } from '../types';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import * as gemini from '../services/geminiService';
@@ -60,8 +60,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [orchestrationPlan, setOrchestrationPlan] = useState<OrchestrationPlan | null>(null);
   const [orchestrationLoading, setOrchestrationLoading] = useState(false);
 
-  // --- ACTIONS ---
-  const addToCart = (recipe: Recipe, factor: number) => {
+  // --- ACTIONS (Memoized) ---
+  const addToCart = useCallback((recipe: Recipe, factor: number) => {
     setCart(prev => [...prev, {
       id: Math.random().toString(36).substring(2, 9),
       recipeId: recipe.id,
@@ -70,27 +70,27 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       scalingFactor: factor,
       originalRecipe: recipe
     }]);
-  };
+  }, [setCart]);
 
-  const removeFromCart = (id: string) => setCart(p => p.filter(i => i.id !== id));
+  const removeFromCart = useCallback((id: string) => setCart(p => p.filter(i => i.id !== id)), [setCart]);
   
-  const updateCartItemFactor = (id: string, f: number) => {
+  const updateCartItemFactor = useCallback((id: string, f: number) => {
     if (f <= 0) return;
     setCart(p => p.map(i => i.id === id ? { ...i, scalingFactor: f } : i));
-  };
+  }, [setCart]);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCart([]);
     setOrchestrationPlan(null);
-  };
+  }, [setCart]);
 
-  const toggleIngredientCheck = (key: string) => {
+  const toggleIngredientCheck = useCallback((key: string) => {
     setChecked(prev => {
       const s = new Set(prev);
       if (s.has(key)) s.delete(key); else s.add(key);
       return Array.from(s);
     });
-  };
+  }, [setChecked]);
 
   const consolidatedList = useMemo(() => {
     return consolidateShoppingList(cart);
@@ -106,7 +106,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { doneCount: done, toBuyCount: consolidatedList.length - done };
   }, [consolidatedList, checked]);
 
-  const generateOrchestrationAction = async () => {
+  const generateOrchestrationAction = useCallback(async () => {
     const recipes = cart.map(i => i.originalRecipe).filter(Boolean) as Recipe[];
     if (recipes.length === 0 || !isAIEnabled) return;
     setOrchestrationLoading(true);
@@ -114,15 +114,34 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const plan = await gemini.generateOrchestrationPlan(recipes);
       setOrchestrationPlan(plan);
     } catch (e: any) { console.error(e); } finally { setOrchestrationLoading(false); }
-  };
+  }, [cart, isAIEnabled]);
+
+  const checkedSet = useMemo(() => new Set(checked), [checked]);
+
+  const contextValue = useMemo(() => ({
+    cart,
+    addToCart,
+    removeFromCart,
+    updateCartItemFactor,
+    clearCart,
+    checkedIngredients: checkedSet,
+    toggleIngredientCheck,
+    consolidatedList,
+    toBuyCount: stats.toBuyCount,
+    doneCount: stats.doneCount,
+    orchestrationPlan,
+    setOrchestrationPlan,
+    orchestrationLoading,
+    generateOrchestrationAction
+  }), [
+    cart, addToCart, removeFromCart, updateCartItemFactor, clearCart,
+    checkedSet, toggleIngredientCheck,
+    consolidatedList, stats,
+    orchestrationPlan, orchestrationLoading, generateOrchestrationAction
+  ]);
 
   return (
-    <CartContext.Provider value={{
-      cart, addToCart, removeFromCart, updateCartItemFactor, clearCart,
-      checkedIngredients: new Set(checked), toggleIngredientCheck,
-      consolidatedList, toBuyCount: stats.toBuyCount, doneCount: stats.doneCount,
-      orchestrationPlan, setOrchestrationPlan, orchestrationLoading, generateOrchestrationAction
-    }}>
+    <CartContext.Provider value={contextValue}>
       {children}
     </CartContext.Provider>
   );

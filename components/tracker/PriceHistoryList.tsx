@@ -1,5 +1,5 @@
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { History, Loader2, CalendarDays } from 'lucide-react';
 import { Purchase, Product } from '../../types';
 import { CATEGORY_EMOJIS, getPerItemPrice, fmtCurrency, fmtDate, toDate } from '../../utils/tracker';
@@ -22,28 +22,12 @@ export const PriceHistoryList: React.FC<PriceHistoryListProps> = ({
   hasMore = false, 
   onLoadMore 
 }) => {
-  // Use generic infinite scroll hook for local rendering optimization
-  const { displayLimit, observerTarget } = useInfiniteScroll(purchases, PAGE_SIZE);
-
-  // Trigger server load when reaching the end of the locally rendered list
-  useEffect(() => {
-    // If we've rendered everything available locally AND the server has more
-    if (!(displayLimit >= purchases.length && hasMore && onLoadMore)) return;
-
-    const observer = new IntersectionObserver(
-        (entries) => {
-            if (entries[0].isIntersecting && displayLimit >= purchases.length) {
-                onLoadMore();
-            }
-        },
-        { threshold: 0.1 }
-    );
-    
-    const el = document.getElementById('infinite-scroll-trigger');
-    if (el) observer.observe(el);
-    
-    return () => observer.disconnect();
-  }, [displayLimit, purchases.length, hasMore, onLoadMore]);
+  // ⚡ Optimization: Unified infinite scroll handler for both local expansion and remote loading
+  const { displayLimit, observerTarget } = useInfiniteScroll(
+    purchases,
+    PAGE_SIZE,
+    hasMore ? onLoadMore : undefined
+  );
 
   // Sort purchases: Date DESC -> Category ASC -> Name ASC
   const sortedPurchases = useMemo(() => {
@@ -160,7 +144,6 @@ export const PriceHistoryList: React.FC<PriceHistoryListProps> = ({
       {/* Observer Target & Loading State */}
       <div 
         ref={observerTarget} // Attach the hook's ref here so it auto-expands local limit
-        id="infinite-scroll-trigger" // ID for the secondary effect to attach
         className="p-12 flex justify-center items-center"
       >
         {/* Show loader if we have more locally OR more on server */}
