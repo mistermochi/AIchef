@@ -4,7 +4,7 @@ import { Loader2, UserCircle } from 'lucide-react';
 import { useUIContext } from './providers/UIContext';
 import { useRecipeContext } from '../entities/recipe/model/RecipeContext';
 import { useAuthContext } from '../entities/user/model/AuthContext';
-import { Navigation } from '../shared/ui/layout/Navigation';
+import { Navigation } from './ui/Navigation';
 const RecipeModal = React.lazy(() => import('../features/cookbook/ui/RecipeModal'));
 import { PageHeader, ErrorBoundary } from '../shared/ui';
 

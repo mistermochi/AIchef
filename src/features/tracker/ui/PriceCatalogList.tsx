@@ -3,7 +3,7 @@ import React, { useState, useMemo, useDeferredValue } from 'react';
 import { Search, Database, ShoppingCart, Check, ChevronRight, Store, ArrowLeft, Tag, Package, Loader2 } from 'lucide-react';
 import { Purchase } from '../../../entities/tracker/model/types';
 import { getPerItemPrice } from '../../../entities/tracker/model/trackerModel';
-import { CATEGORY_EMOJIS } from '../../../entities/tracker/config';
+import { CATEGORY_EMOJIS } from '../../../shared/config/app';
 import { fmtCurrency } from '../../../shared/lib/format';
 import { fmtDate } from '../../../shared/lib/date';
 import { Timestamp } from 'firebase/firestore';
@@ -163,6 +163,7 @@ export const PriceCatalogList: React.FC<{
           <Input 
             startIcon={<Search className="w-4 h-4" />} 
             endIcon={isStale ? <Loader2 className="w-3 h-3 animate-spin" /> : undefined}
+            onClear={() => setSearch('')}
             placeholder="Filter products..." 
             value={search} 
             onChange={(e) => setSearch(e.target.value)} 
@@ -189,6 +190,7 @@ export const PriceCatalogList: React.FC<{
       <Input 
         startIcon={<Search className="w-4 h-4" />} 
         endIcon={isStale ? <Loader2 className="w-3 h-3 animate-spin" /> : undefined}
+        onClear={() => setSearch('')}
         placeholder="Find item..." 
         value={search} 
         onChange={(e) => setSearch(e.target.value)} 

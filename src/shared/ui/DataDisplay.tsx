@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Check, Trash2, Plus } from 'lucide-react';
-import { useHaptics } from '../../shared/lib/hooks/useHaptics';
+import { useHaptics } from '../lib/hooks/useHaptics';
 
 // --- TYPEWRITER ---
 export const Typewriter: React.FC<{ text: string; speed?: number; className?: string; animate?: boolean }> = ({ text, speed = 15, className = '', animate = true }) => {

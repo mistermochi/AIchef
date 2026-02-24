@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { ChefHat, BookOpen, ShoppingCart, UserCircle, Wand2, Tag, Terminal, Calendar, Settings, LogIn } from 'lucide-react';
-import { useUIContext } from '../../../app/providers/UIContext';
-import { useAuthContext } from '../../../entities/user/model/AuthContext';
-import { useHaptics } from '../../lib/hooks/useHaptics';
+import { useUIContext } from '../providers/UIContext';
+import { useAuthContext } from '../../entities/user/model/AuthContext';
+import { useHaptics } from '../../shared/lib/hooks/useHaptics';
 
 const NavButton = ({ active, icon, onClick, label }: { active: boolean, icon: React.ReactNode, onClick: () => void, label: string }) => {
   const { trigger } = useHaptics();

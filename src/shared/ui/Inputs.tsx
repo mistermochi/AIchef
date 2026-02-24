@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect } from 'react';
-import { ArrowUp, Sparkles } from 'lucide-react';
-import { useHaptics } from '../../shared/lib/hooks/useHaptics';
+import { ArrowUp, Sparkles, X } from 'lucide-react';
+import { useHaptics } from '../lib/hooks/useHaptics';
 
 // --- PROMPT INPUT ---
 
@@ -96,21 +96,37 @@ export const PromptInput: React.FC<PromptInputProps> = ({
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   startIcon?: React.ReactNode;
   endIcon?: React.ReactNode;
+  onClear?: () => void;
 }
 
-export const Input: React.FC<InputProps> = ({ className = '', startIcon, endIcon, ...props }) => {
+export const Input: React.FC<InputProps> = ({ className = '', startIcon, endIcon, onClear, ...props }) => {
+  const { trigger } = useHaptics();
+  const hasValue = !!(props.value && props.value.toString().length > 0);
+
   return (
-    <div className="relative w-full">
+    <div className="relative w-full group/input">
       {startIcon && (
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-content-tertiary dark:text-content-tertiary-dark pointer-events-none">
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-content-tertiary dark:text-content-tertiary-dark pointer-events-none transition-colors group-focus-within/input:text-primary">
           {React.cloneElement(startIcon as React.ReactElement<{ size?: number }>, { size: 16 })}
         </div>
       )}
       <input
-        className={`w-full bg-surface dark:bg-surface-dark border border-outline dark:border-outline-dark rounded-lg py-2 text-sm outline-none focus:border-primary dark:focus:border-primary-dark focus:ring-1 focus:ring-primary dark:focus:ring-primary-dark transition-all placeholder:text-content-secondary dark:placeholder:text-content-secondary-dark shadow-sm text-content dark:text-content-dark disabled:opacity-50 ${startIcon ? 'pl-10' : 'pl-4'} ${endIcon ? 'pr-10' : 'pr-4'} ${className}`}
+        className={`w-full bg-surface dark:bg-surface-dark border border-outline dark:border-outline-dark rounded-lg py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus:border-primary dark:focus:border-primary-dark transition-all placeholder:text-content-secondary dark:placeholder:text-content-secondary-dark shadow-sm text-content dark:text-content-dark disabled:opacity-50 ${startIcon ? 'pl-10' : 'pl-4'} ${onClear && hasValue ? 'pr-9' : (endIcon ? 'pr-10' : 'pr-4')} ${className}`}
         {...props}
       />
-      {endIcon && (
+      {onClear && hasValue && (
+        <button
+          onClick={() => {
+            trigger('light');
+            onClear();
+          }}
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-content-tertiary hover:text-content hover:bg-surface-variant dark:hover:bg-surface-variant-dark transition-all active:scale-90 animate-in fade-in zoom-in duration-200"
+          title="Clear input"
+        >
+          <X size={14} />
+        </button>
+      )}
+      {endIcon && !(onClear && hasValue) && (
         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-content-tertiary dark:text-content-tertiary-dark pointer-events-none">
           {React.cloneElement(endIcon as React.ReactElement<{ size?: number }>, { size: 16 })}
         </div>
@@ -150,9 +166,9 @@ export const Switch: React.FC<SwitchProps> = ({ checked, onChange, className = '
     <button 
       type="button"
       onClick={handleToggle}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${checked ? 'bg-primary dark:bg-primary-dark' : 'bg-outline dark:bg-outline-dark'} ${className}`}
+      className={`group relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-all duration-200 ease-in-out active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-surface-dark ${checked ? 'bg-primary dark:bg-primary-dark' : 'bg-outline dark:bg-outline-dark'} ${className}`}
     >
-      <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+      <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out group-active:scale-75 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
     </button>
   );
 };

@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 import { History, Loader2, CalendarDays } from 'lucide-react';
 import { Purchase, Product } from '../../../entities/tracker/model/types';
 import { getPerItemPrice } from '../../../entities/tracker/model/trackerModel';
-import { CATEGORY_EMOJIS } from '../../../entities/tracker/config';
+import { CATEGORY_EMOJIS } from '../../../shared/config/app';
 import { fmtCurrency } from '../../../shared/lib/format';
 import { fmtDate, toDate } from '../../../shared/lib/date';
 import { SectionCard, EmptyState, ListRow } from '../../../shared/ui';

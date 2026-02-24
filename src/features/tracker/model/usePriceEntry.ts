@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getCategory, calcNormalizedPrice } from '../../../entities/tracker/model/trackerModel';
-import { STORES } from '../../../entities/tracker/config';
+import { STORES } from '../../../shared/config/app';
 import { fmtDateInput } from '../../../shared/lib/date';
 import { LineItem } from '../ui/types';
 import { Product } from '../../../entities/tracker/model/types';

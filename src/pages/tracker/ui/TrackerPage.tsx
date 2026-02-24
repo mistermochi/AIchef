@@ -10,7 +10,7 @@ import { MetaSection } from '../../../entities/recipe/ui/MetaSection';
 import { fmtCurrency } from '../../../shared/lib/format';
 import { fmtDate } from '../../../shared/lib/date';
 import { getPerItemPrice } from '../../../entities/tracker/model/trackerModel';
-import { CATEGORY_EMOJIS } from '../../../entities/tracker/config';
+import { CATEGORY_EMOJIS } from '../../../shared/config/app';
 import { useTracker } from '../../../features/tracker/model/useTracker';
 import { Purchase } from '../../../entities/tracker/model/types';
 import { Recipe } from '../../../shared/model/types';

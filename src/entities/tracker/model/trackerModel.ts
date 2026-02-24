@@ -1,5 +1,5 @@
 
-import { MULTIPLIERS, KEYWORD_MAP } from '../config';
+import { MULTIPLIERS, KEYWORD_MAP } from '../../../shared/config/app';
 
 /**
  * CORE LOGIC: Calculates a comparable price score across different units.

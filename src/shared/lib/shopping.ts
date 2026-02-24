@@ -1,6 +1,6 @@
 
 import { Ingredient, ShoppingListItem } from '../model/types';
-import { MULTIPLIERS, UNIT_TYPES } from '../../entities/tracker/config';
+import { MULTIPLIERS, UNIT_TYPES } from '../config/app';
 
 export const consolidateShoppingList = (cart: ShoppingListItem[]): Ingredient[] => {
   const list: Record<string, Ingredient> = {};

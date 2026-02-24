@@ -89,6 +89,7 @@ export const CookbookPage: React.FC = () => {
                 placeholder={placeholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onClear={() => setSearchTerm('')}
               />
             </div>
             {/* Desktop Add Button */}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Store, Calendar, ChevronDown } from 'lucide-react';
-import { STORES } from '../../../entities/tracker/config';
+import { STORES } from '../../../shared/config/app';
 import { Input, SectionCard } from '../../../shared/ui';
 
 interface MetadataProps {
