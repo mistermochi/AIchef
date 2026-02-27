@@ -1,203 +1,101 @@
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useTrackerContext } from '../../context/TrackerContext';
 import { useAuthContext } from '../../context/AuthContext';
 import { useRecipeContext } from '../../context/RecipeContext';
-import { searchDeals } from '../../services/geminiService';
+import { searchDeals } from '../../shared/api/ai';
 import { Recipe, Purchase } from '../../types';
 import { toDate } from '../../utils/tracker';
 
-export type TrackerModal = 
-  | { type: 'none' }
-  | { type: 'log' }
-  | { type: 'edit'; id: string }
-  | { type: 'detail'; pid: string; productName: string };
-
 /**
  * @hook useTrackerController
- * @description The controller for the Tracker (Price Tracker) view.
- * It manages the UI state (tabs, modals), handles file scanning for receipts,
- * interacts with the TrackerContext for data persistence, and uses Gemini AI for deal searching.
- *
- * Interactions:
- * - {@link useTrackerContext}: For fetching products and purchases, and performing CRUD operations.
- * - {@link useAuthContext}: To check if AI is enabled and report AI-related errors.
- * - {@link useRecipeContext}: For linking products to saved recipes and setting active recipes.
- * - {@link searchDeals}: Service call to fetch online price insights.
- *
- * @returns {Object} { state, actions, refs, computed }
+ * @description Controller for the Price Tracker view.
+ * Manages purchase history, deal searching, and product price analysis.
  */
 export function useTrackerController() {
-  const { products, purchases, loading, error, savePurchase, savePurchasesBatch, deletePurchase, loadMorePurchases, hasMore } = useTrackerContext();
+  const {
+    purchases,
+    products,
+    loading: repoLoading,
+    addPurchase,
+    deletePurchase,
+    getCheapestStore
+  } = useTrackerContext();
+
+  const { recipes } = useRecipeContext();
   const { isAIEnabled, reportError } = useAuthContext();
-  const { savedRecipes, setActiveRecipe } = useRecipeContext();
 
-  const [activeTab, setActiveTab] = useState<'history' | 'catalog'>('catalog');
-  const [modal, setModal] = useState<TrackerModal>({ type: 'none' });
+  const [isSearching, setIsSearching] = useState(false);
+  const [deals, setDeals] = useState<any[]>([]);
+  const [sources, setSources] = useState<any[]>([]);
 
-  // Scan Logic
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [pendingScanFile, setPendingScanFile] = useState<File | undefined>(undefined);
-
-  // Deal Search Logic
-  const [dealResults, setDealResults] = useState<any[]>([]);
-  const [dealSources, setDealSources] = useState<any[]>([]);
-  const [searchingDeals, setSearchingDeals] = useState(false);
-  const [dealError, setDealError] = useState('');
-
-  // Form Logic
-  const [triggerSubmit, setTriggerSubmit] = useState<number>(0);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isFormValid, setIsFormValid] = useState(false);
-
-  // Effects
-  useEffect(() => {
-    setIsFormValid(false);
-    setTriggerSubmit(0);
-    if (modal.type !== 'detail') {
-      setDealResults([]);
-      setDealSources([]);
-      setDealError('');
-    }
-    if (modal.type === 'none') {
-        setPendingScanFile(undefined);
-    }
-  }, [modal.type]);
-
-  // Actions
-  const closeModal = () => setModal({ type: 'none' });
-
-  const handleScanClick = () => {
+  /**
+   * Searches for online deals and prices for a specific product.
+   * Uses Gemini AI with Google Search grounding.
+   */
+  const handleSearchDeals = useCallback(async (productName: string) => {
     if (!isAIEnabled) return;
-    if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-        fileInputRef.current.click();
-    }
-  };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!isAIEnabled) return;
-    const file = e.target.files?.[0];
-    if (file) {
-        setPendingScanFile(file);
-        if (modal.type !== 'log') setModal({ type: 'log' });
-    }
-  };
-
-  const handleSave = async (data: Partial<Purchase> | Partial<Purchase>[]) => {
-    if (isSaving || (modal.type !== 'log' && modal.type !== 'edit')) return;
-    setIsSaving(true);
-    let success = false;
+    setIsSearching(true);
+    setDeals([]);
     try {
-      if (modal.type === 'edit') {
-        success = await savePurchase(data as Partial<Purchase>, true, modal.id);
+      const res = await searchDeals(productName);
+      setDeals(res.items);
+      setSources(res.sources);
+    } catch (err: any) {
+      reportError('unhealthy', err.message);
+    } finally {
+      setIsSearching(false);
+    }
+  }, [isAIEnabled, reportError]);
+
+  /**
+   * Calculates the estimated cost of a recipe based on tracked purchase data.
+   */
+  const getRecipeCostEstimate = useCallback((recipe: Recipe) => {
+    let total = 0;
+    let missingCount = 0;
+
+    recipe.ingredients.forEach(ing => {
+      const genericName = ing.name.toLowerCase(); // simplified
+      const product = products.find(p =>
+        p.name.toLowerCase() === genericName ||
+        p.genericName?.toLowerCase() === genericName
+      );
+
+      if (product) {
+         const latestPurchase = purchases
+           .filter(p => p.productName === product.name)
+           .sort((a, b) => toDate(b.date).getTime() - toDate(a.date).getTime())[0];
+
+         if (latestPurchase) {
+            total += (latestPurchase.normalizedPrice * ing.quantity);
+         } else {
+            missingCount++;
+         }
       } else {
-        success = await savePurchasesBatch(Array.isArray(data) ? data : [data as Partial<Purchase>]);
+        missingCount++;
       }
-    } catch (e) { console.error(e); }
-    setIsSaving(false);
-    if (success) {
-      if (modal.type === 'log') setActiveTab('history');
-      closeModal();
-    }
-  };
-
-  const handleDelete = async () => {
-    if (modal.type !== 'edit' || !modal.id) return;
-    setIsSaving(true);
-    await deletePurchase(modal.id);
-    setIsSaving(false);
-    closeModal();
-  };
-
-  const fetchAIInsight = async (productName: string) => {
-    if (!isAIEnabled) return;
-    setSearchingDeals(true);
-    setDealError('');
-    try {
-      const result = await searchDeals(productName);
-      setDealResults(result.items || []);
-      setDealSources(result.sources || []);
-    } catch (e: any) { 
-        setDealError(e.message || 'AI search failed');
-        const msg = e.message.toLowerCase();
-        if (msg.includes('auth') || msg.includes('key')) reportError('auth_error', e.message);
-        else if (msg.includes('limit') || msg.includes('quota')) reportError('quota_error', e.message);
-        else if (msg.includes('region')) reportError('region_restricted', e.message);
-        else reportError('unhealthy', e.message);
-    } finally { 
-        setSearchingDeals(false); 
-    }
-  };
-
-  const openRecipe = (recipe: Recipe) => {
-    setActiveRecipe(recipe);
-  };
-
-  // Computed
-  const editFormData = useMemo(() => modal.type === 'edit' ? purchases.find(x => x.id === modal.id) : undefined, [modal, purchases]);
-  
-  const detailInfo = useMemo(() => {
-    if (modal.type !== 'detail') return null;
-    
-    // Normalize logic: The identifier is now the normalized product name
-    const normalizedTargetName = modal.productName.trim().toLowerCase();
-
-    // 1. Try to find a synthetic "product" object from the context
-    let prod = products.find(x => x.name.trim().toLowerCase() === normalizedTargetName);
-    
-    // 2. Filter History: Robustly match ONLY by Name
-    const history = purchases.filter(x => {
-        const pName = x.productName?.trim()?.toLowerCase();
-        return pName === normalizedTargetName;
     });
 
-    // 3. Sort by Date Descending to ensure index 0 is truly the latest
-    const sortedHistory = [...history].sort((a, b) => {
-        const dateA = toDate(a.date).getTime();
-        const dateB = toDate(b.date).getTime();
-        return dateB - dateA;
-    });
-
-    // 4. Derive "Latest" from the sorted history, NOT the pid passed in modal state
-    // The pid passed might be the "Best Price" item ID from the catalog view
-    const lastPurchase = sortedHistory[0];
-
-    // 5. Fallback if product list is stale
-    if (!prod && lastPurchase) {
-       prod = { 
-           id: normalizedTargetName, // ID is just the name key
-           name: lastPurchase.productName, 
-           category: lastPurchase.category,
-           genericName: lastPurchase.genericName
-       };
-    }
-
-    // 6. Find Related Recipes using Golden Tag (Generic Name)
-    const searchTag = (prod?.genericName || prod?.name || '').trim().toLowerCase();
-    const relatedRecipes = searchTag ? savedRecipes.filter(r => 
-       r.ingredients?.some(ing => ing.name.toLowerCase().includes(searchTag))
-    ) : [];
-
-    return { lastPurchase, prod, history: sortedHistory, relatedRecipes };
-  }, [modal, purchases, products, savedRecipes]);
+    return {
+      total,
+      isPartial: missingCount > 0,
+      missingCount
+    };
+  }, [purchases, products]);
 
   return {
-    state: {
-      activeTab, modal, loading, error, products, purchases,
-      pendingScanFile, isAIEnabled, hasMore,
-      dealResults, dealSources, searchingDeals, dealError,
-      isSaving, isFormValid, triggerSubmit
-    },
-    actions: {
-      setActiveTab, setModal, closeModal,
-      handleScanClick, handleFileSelect,
-      handleSave, handleDelete, fetchAIInsight,
-      openRecipe, loadMorePurchases,
-      setTriggerSubmit: () => setTriggerSubmit(p => p + 1),
-      setIsFormValid
-    },
-    refs: { fileInputRef },
-    computed: { editFormData, detailInfo }
+    purchases,
+    products,
+    loading: repoLoading,
+    isSearching,
+    deals,
+    sources,
+    addPurchase,
+    deletePurchase,
+    searchDeals: handleSearchDeals,
+    getRecipeCost: getRecipeCostEstimate,
+    getCheapestStore
   };
 }

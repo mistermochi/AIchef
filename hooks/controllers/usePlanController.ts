@@ -1,178 +1,101 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useCallback } from 'react';
+import { useMealPlanRepository } from '../data/useMealPlanRepository';
 import { useAuthContext } from '../../context/AuthContext';
 import { useRecipeContext } from '../../context/RecipeContext';
 import { useCartContext } from '../../context/CartContext';
-import { useMealPlanRepository } from '../data/useMealPlanRepository';
 import { MealPlanEntry, MealSlot, Recipe } from '../../types';
-import { generateMealPlan } from '../../services/geminiService';
+import { generateMealPlan } from '../../shared/api/ai';
 
 /**
  * @hook usePlanController
- * @description The controller for the Meal Planner view.
- * It manages the navigation of weeks, fetching meal plans from the repository,
- * and performing actions like adding/removing meals, generating AI plans, and syncing to the cart.
- *
- * Interactions:
- * - {@link useAuthContext}: For home ID, profile context, and AI status.
- * - {@link useRecipeContext}: For accessing the cookbook.
- * - {@link useCartContext}: For adding recipes to the shopping cart.
- * - {@link useMealPlanRepository}: For Firestore CRUD operations on meal plans.
- * - {@link generateMealPlan}: Service call for AI-assisted planning.
- *
- * @returns {Object} { state, actions }
+ * @description Controller for the Meal Planner view.
+ * Coordinates between UI state, MealPlanRepository, and AI services.
  */
 export function usePlanController() {
-  const { currentHomeId, getProfileContext, isAIEnabled } = useAuthContext();
-  const { savedRecipes } = useRecipeContext();
+  const { recipes } = useRecipeContext();
   const { addToCart } = useCartContext();
-  const repo = useMealPlanRepository(currentHomeId);
+  const { getProfileContext, isAIEnabled, reportError } = useAuthContext();
+  const {
+    mealPlan,
+    loading: repoLoading,
+    addEntry,
+    updateEntry,
+    deleteEntry,
+    clearWeek
+  } = useMealPlanRepository();
 
-  // State: Week Cursor (Start Date of the week - Monday)
-  // Default to current week's Monday
-  const [startOfWeek, setStartOfWeek] = useState(() => {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-    const mon = new Date(d.setDate(diff));
-    mon.setHours(0,0,0,0);
-    return mon;
-  });
-
-  const [weekPlans, setWeekPlans] = useState<MealPlanEntry[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [syncing, setSyncing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Helper: Format YYYY-MM-DD
-  const fmt = (d: Date) => d.toISOString().split('T')[0];
+  /**
+   * Generates a 7-day meal plan using AI.
+   * Matches AI suggestions with existing recipes in the cookbook.
+   */
+  const handleAutoGenerate = useCallback(async () => {
+    if (!isAIEnabled || recipes.length < 3) return;
 
-  // Subscription
-  useEffect(() => {
-    const end = new Date(startOfWeek);
-    end.setDate(end.getDate() + 6);
-    
-    const unsub = repo.subscribeToWeek(fmt(startOfWeek), fmt(end), (data) => {
-      setWeekPlans(data);
-    });
-    return () => unsub();
-  }, [startOfWeek, currentHomeId]);
+    setIsGenerating(true);
+    setError(null);
 
-  // Actions
-  const nextWeek = () => {
-    const next = new Date(startOfWeek);
-    next.setDate(next.getDate() + 7);
-    setStartOfWeek(next);
-  };
+    try {
+      const prefs = getProfileContext();
+      const rawPlan = await generateMealPlan(recipes, prefs);
 
-  const prevWeek = () => {
-    const prev = new Date(startOfWeek);
-    prev.setDate(prev.getDate() - 7);
-    setStartOfWeek(prev);
-  };
+      // Map AI response to database entries
+      const entries: Omit<MealPlanEntry, 'id'>[] = rawPlan.map((item: any) => {
+        const recipe = recipes.find(r => r.title.toLowerCase().includes(item.recipeName.toLowerCase()));
+        return {
+          date: new Date(Date.now() + item.dayOffset * 86400000).toISOString().split('T')[0],
+          slot: item.slot as MealSlot,
+          recipeId: recipe?.id,
+          customTitle: recipe ? undefined : item.recipeName,
+          emoji: item.emoji || (recipe?.emoji) || '🍽️',
+          servings: 2,
+          isCooked: false
+        };
+      });
 
-  const addMeal = async (date: string, slot: MealSlot, recipe: Recipe, servings: number = 2) => {
-    const entry: MealPlanEntry = {
-      date,
-      slot,
-      customTitle: recipe.title,
-      emoji: recipe.emoji,
-      servings,
-      isCooked: false
-    };
-    // Ensure undefined is not passed to Firestore
-    if (recipe.id) {
-        entry.recipeId = recipe.id;
-    }
-    await repo.addEntry(entry);
-  };
-
-  const removeMeal = async (id: string) => {
-    await repo.removeEntry(id);
-  };
-  
-  const updateEntry = async (id: string, updates: Partial<MealPlanEntry>) => {
-      await repo.updateEntry(id, updates);
-  };
-
-  const generateWeek = async () => {
-      if (!isAIEnabled) return;
-      setIsGenerating(true);
-      try {
-          const pref = getProfileContext();
-          const aiPlans = await generateMealPlan(savedRecipes.slice(0, 50), pref); // Limit context size
-          
-          const batch: MealPlanEntry[] = [];
-          
-          // Map AI results to actual entries
-          aiPlans.forEach((p: any) => {
-              const d = new Date(startOfWeek);
-              d.setDate(d.getDate() + (p.dayOffset || 0));
-              
-              // Attempt to match with existing recipe
-              const matched = savedRecipes.find(r => r.title.toLowerCase() === p.recipeName.toLowerCase());
-              
-              const entry: MealPlanEntry = {
-                  date: fmt(d),
-                  slot: (p.slot || 'dinner').toLowerCase() as MealSlot,
-                  customTitle: p.recipeName,
-                  emoji: p.emoji || '🥘',
-                  servings: 2,
-                  isCooked: false
-              };
-
-              if (matched?.id) {
-                  entry.recipeId = matched.id;
-              }
-              
-              batch.push(entry);
-          });
-          
-          await repo.batchAdd(batch);
-      } catch (e) {
-          console.error(e);
-      } finally {
-          setIsGenerating(false);
+      // Clear existing and add new
+      // Note: In production, we'd batch this.
+      await clearWeek();
+      for (const entry of entries) {
+        await addEntry(entry);
       }
-  };
+    } catch (err: any) {
+      setError(err.message);
+      reportError('unhealthy', err.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [recipes, getProfileContext, isAIEnabled, addEntry, clearWeek, reportError]);
 
-  const syncToCart = async () => {
-    setSyncing(true);
-    // Aggregate ingredients
-    weekPlans.forEach(plan => {
-        let recipe = savedRecipes.find(r => r.id === plan.recipeId);
-        if (recipe) {
-            const factor = Math.max(0.5, plan.servings / 2); 
-            addToCart(recipe, factor);
-        }
-    });
-    // Fake delay for UX
-    await new Promise(r => setTimeout(r, 800));
-    setSyncing(false);
-  };
+  /**
+   * Scales a planned meal and adds its ingredients to the shopping cart.
+   */
+  const handleAddToShoppingList = useCallback(async (entry: MealPlanEntry) => {
+    let recipe: Recipe | undefined;
 
-  // Computed: Grid Data Structure
-  const grid = useMemo(() => {
-     const days = [];
-     for(let i=0; i<7; i++) {
-         const d = new Date(startOfWeek);
-         d.setDate(d.getDate() + i);
-         const dateStr = fmt(d);
-         const dayPlans = weekPlans.filter(p => p.date === dateStr);
-         days.push({
-             date: d,
-             dateStr,
-             dayName: d.toLocaleDateString('en-US', { weekday: 'short' }),
-             dayNum: d.getDate(),
-             breakfast: dayPlans.filter(p => p.slot === 'breakfast'),
-             lunch: dayPlans.filter(p => p.slot === 'lunch'),
-             dinner: dayPlans.filter(p => p.slot === 'dinner'),
-         });
-     }
-     return days;
-  }, [startOfWeek, weekPlans]);
+    if (entry.recipeId) {
+      recipe = recipes.find(r => r.id === entry.recipeId);
+    }
+
+    if (recipe) {
+      addToCart(recipe, entry.servings / 2); // Assuming base servings is 2
+      // Mark as "In Cart" or similar if we had that state
+    }
+  }, [recipes, addToCart]);
 
   return {
-    state: { startOfWeek, weekPlans, isGenerating, syncing, grid, loading: repo.loading },
-    actions: { nextWeek, prevWeek, addMeal, removeMeal, updateEntry, generateWeek, syncToCart }
+    mealPlan,
+    loading: repoLoading || isGenerating,
+    isGenerating,
+    error,
+    autoGenerate: handleAutoGenerate,
+    addEntry,
+    updateEntry,
+    deleteEntry,
+    clearWeek,
+    addToShoppingList: handleAddToShoppingList
   };
 }

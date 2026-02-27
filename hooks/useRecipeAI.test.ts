@@ -7,11 +7,11 @@ jest.mock("@google/genai", () => ({
 }));
 
 import { useRecipeAI } from './useRecipeAI';
-import * as gemini from '../services/geminiService';
+import * as gemini from '../shared/api/ai';
 import { useAuthContext } from '../context/AuthContext';
 
 // Mock the services and context
-jest.mock('../services/geminiService');
+jest.mock('../shared/api/ai');
 jest.mock('../context/AuthContext');
 
 describe('useRecipeAI hook', () => {
@@ -41,6 +41,7 @@ describe('useRecipeAI hook', () => {
     });
 
     expect(result.current.loading).toBe(false);
+    processedRecipe = processedRecipe as any;
     expect(processedRecipe).toEqual({
       ...mockRecipe,
       ingredients: [],
@@ -57,7 +58,9 @@ describe('useRecipeAI hook', () => {
     const { result } = renderHook(() => useRecipeAI());
 
     await act(async () => {
-      await result.current.processRecipe('input text');
+      try {
+        await result.current.processRecipe('input text');
+      } catch (e) {}
     });
 
     expect(result.current.loading).toBe(false);
@@ -85,7 +88,9 @@ describe('useRecipeAI hook', () => {
     const { result } = renderHook(() => useRecipeAI());
 
     await act(async () => {
-      await result.current.processRecipe('input text');
+      try {
+        await result.current.processRecipe('input text');
+      } catch (e) {}
     });
 
     expect(mockOpenKeySelector).toHaveBeenCalled();

@@ -19,7 +19,7 @@ import {
 } from 'firebase/firestore';
 import { chefAuth, chefDb, CHEF_APP_ID } from '../firebase';
 import { UserProfile, DEFAULT_PROFILE } from '../types';
-import { validateAIConnection } from '../services/geminiService';
+import { validateAIConnection } from '../shared/api/ai';
 
 interface HomeData {
   name: string;
@@ -238,6 +238,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
        return;
     }
     
+    // Sync localStorage for AIService
+    localStorage.setItem('chefai_provider', profile.aiProvider || 'gemini');
+
     setAiHealth('checking');
     try {
       const res = await validateAIConnection();
@@ -246,7 +249,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       setAiHealth('unhealthy');
     }
-  }, [profile.aiEnabled]);
+  }, [profile.aiEnabled, profile.aiProvider]);
 
   const reportError = useCallback((type: AuthContextType['aiHealth'], msg: string) => {
      setAiHealth(type);
