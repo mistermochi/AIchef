@@ -117,10 +117,9 @@ export const AIConnectivity: React.FC = () => {
           <div>
             <label className="text-2xs font-bold text-danger uppercase tracking-widest mb-2 block">Danger Zone</label>
             <ConfirmButton
-              fullWidth
               variant="ghost"
               confirmVariant="danger"
-              className="border border-danger/20 text-danger hover:bg-danger-container/10 justify-start px-4"
+              className="w-full border border-danger/20 text-danger hover:bg-danger-container/10 justify-start px-4"
               icon={<Trash2 className="w-4 h-4" />}
               label="Clear Local Cache"
               confirmLabel="Confirm Clear?"

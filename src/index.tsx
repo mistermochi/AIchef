@@ -1,4 +1,5 @@
 import ReactDOM from 'react-dom/client';
+import './index.css';
 import ChefAIApp from './app/App';
 import { AuthProvider } from './entities/user/model/AuthContext';
 import { UIProvider } from './app/providers/UIContext';

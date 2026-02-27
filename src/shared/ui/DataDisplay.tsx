@@ -340,30 +340,7 @@ export const IngredientRow: React.FC<{ name: string; quantity: number; unit: str
   return <BaseRow actions={actions}><p className="text-sm font-medium text-content dark:text-content-dark">{name}</p></BaseRow>;
 });
 
-// --- BADGE & EMPTY STATE ---
-export interface BadgeProps {
-  label: React.ReactNode;
-  icon?: React.ReactNode;
-  variant?: 'primary' | 'neutral' | 'success' | 'warning';
-  className?: string;
-  onClick?: () => void;
-}
-
-export const Badge: React.FC<BadgeProps> = ({ label, icon, variant = 'primary', className = '', onClick }) => {
-  const variants = {
-    primary: "bg-primary-container dark:bg-primary-container-dark text-primary dark:text-primary-dark border-primary/20",
-    neutral: "bg-surface-variant dark:bg-surface-variant-dark text-content-secondary dark:text-content-secondary-dark border-outline dark:border-outline-dark",
-    success: "bg-success-container dark:bg-success-container-dark text-success-dark border-success/20",
-    warning: "bg-warning-container dark:bg-warning-container-dark text-warning-on-container border-warning/20",
-  };
-  return (
-    <span onClick={onClick} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-2xs font-bold uppercase border transition-all ${variants[variant]} ${className} ${onClick ? 'cursor-pointer hover:opacity-80 active:scale-95' : ''}`}>
-      {icon && React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: "w-3.5 h-3.5" })}
-      {label}
-    </span>
-  );
-};
-
+// --- EMPTY STATE ---
 export interface EmptyStateProps {
   icon: React.ReactNode;
   title: string;
