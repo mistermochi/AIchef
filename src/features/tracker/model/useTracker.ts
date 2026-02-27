@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useTrackerContext } from '../../../entities/tracker/model/TrackerContext';
 import { useAuthContext } from '../../../entities/user/model/AuthContext';
 import { useRecipeContext } from '../../../entities/recipe/model/RecipeContext';
-import { searchDeals } from '../../../shared/api/geminiService';
+import { getAIService } from '../../../shared/api/aiServiceFactory';
 import { Recipe } from '../../../shared/model/types';
 import { Purchase } from '../../../entities/tracker/model/types';
 import { toDate } from '../../../shared/lib/date';
@@ -30,7 +30,7 @@ export type TrackerModal =
  */
 export function useTracker() {
   const { products, purchases, loading, error, savePurchase, savePurchasesBatch, deletePurchase, loadMorePurchases, hasMore } = useTrackerContext();
-  const { isAIEnabled, reportError } = useAuthContext();
+  const { isAIEnabled, reportError, profile } = useAuthContext();
   const { savedRecipes, setActiveRecipe } = useRecipeContext();
 
   const [activeTab, setActiveTab] = useState<'history' | 'catalog'>('catalog');
@@ -116,7 +116,8 @@ export function useTracker() {
     setSearchingDeals(true);
     setDealError('');
     try {
-      const result = await searchDeals(productName);
+      const ai = getAIService(profile.aiProvider);
+      const result = await ai.searchDeals(productName);
       setDealResults(result.items || []);
       setDealSources(result.sources || []);
     } catch (e: any) { 

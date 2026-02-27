@@ -93,6 +93,7 @@ export interface UserProfile {
   currency: string;
   customInstructions: string;
   aiEnabled: boolean;
+  aiProvider: 'gemini' | 'mistral';
 }
 
 export const DEFAULT_PROFILE: UserProfile = {
@@ -106,5 +107,6 @@ export const DEFAULT_PROFILE: UserProfile = {
   autoWakeLock: true,
   currency: 'USD',
   customInstructions: '',
-  aiEnabled: true
+  aiEnabled: true,
+  aiProvider: 'gemini'
 };

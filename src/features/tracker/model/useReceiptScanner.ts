@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { extractReceiptData } from '../../../shared/api/geminiService';
+import { getAIService } from '../../../shared/api/aiServiceFactory';
 import { compressImage } from '../../../shared/lib/helpers';
 import { useAuthContext } from '../../../entities/user/model/AuthContext';
 // @ts-ignore
@@ -14,7 +14,7 @@ export interface ScanResult {
 }
 
 export function useReceiptScanner() {
-  const { reportError } = useAuthContext();
+  const { reportError, profile } = useAuthContext();
   const [isScanning, setIsScanning] = useState(false);
   const [scanError, setScanError] = useState('');
   const [aiReasoning, setAiReasoning] = useState('');
@@ -50,7 +50,8 @@ export function useReceiptScanner() {
       });
       
       const compressed = await compressImage(base64);
-      const data = await extractReceiptData(compressed, 'image/jpeg');
+      const ai = getAIService(profile.aiProvider);
+      const data = await ai.extractReceiptData(compressed, 'image/jpeg');
       
       if (data.analysis_steps) setAiReasoning(data.analysis_steps);
       
