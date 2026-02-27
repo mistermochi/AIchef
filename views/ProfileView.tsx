@@ -53,14 +53,24 @@ export const ProfileView: React.FC = () => {
   const recipeFileRef = useRef<HTMLInputElement>(null);
   const trackerFileRef = useRef<HTMLInputElement>(null);
 
-  const [passValue, setPassValue] = React.useState(() => {
-    return localStorage.getItem('chefai_pass') || '';
+  const [geminiKey, setGeminiKey] = React.useState(() => {
+    return localStorage.getItem('chefai_gemini_key') || localStorage.getItem('chefai_pass') || '';
   });
 
-  // Update localStorage whenever passValue changes
+  const [mistralKey, setMistralKey] = React.useState(() => {
+    return localStorage.getItem('chefai_mistral_key') || '';
+  });
+
+  // Update localStorage whenever keys change
   useEffect(() => {
-    localStorage.setItem('chefai_pass', passValue);
-  }, [passValue]);
+    localStorage.setItem('chefai_gemini_key', geminiKey);
+    // Backward compatibility
+    localStorage.setItem('chefai_pass', geminiKey);
+  }, [geminiKey]);
+
+  useEffect(() => {
+    localStorage.setItem('chefai_mistral_key', mistralKey);
+  }, [mistralKey]);
 	
   // Household Local State
   const [joinId, setJoinId] = useState('');
@@ -99,6 +109,8 @@ export const ProfileView: React.FC = () => {
     switch (aiHealth) {
       case 'checking': return <Badge label="Checking..." variant="neutral" icon={<RefreshCw className="w-3 h-3 animate-spin" />} />;
       case 'healthy': return <Badge label="Active" variant="success" />;
+      case 'auth_error': return <Badge label="Auth Error" variant="danger" icon={<Key className="w-3 h-3" />} />;
+      case 'quota_error': return <Badge label="Quota Exceeded" variant="warning" icon={<AlertTriangle className="w-3 h-3" />} />;
       case 'region_restricted': return <Badge label="Geo-Restricted" variant="warning" icon={<Globe2 className="w-3 h-3" />} />;
       case 'unhealthy': return <Badge label="Error" variant="warning" icon={<AlertTriangle className="w-3 h-3" />} />;
       default: return <Badge label="Unknown" variant="neutral" />;
@@ -660,38 +672,78 @@ export const ProfileView: React.FC = () => {
                <div className="space-y-6">
                   {/* API KEY */}
                   <div className="p-4 bg-surface-variant dark:bg-surface-variant-dark rounded-xl border border-outline dark:border-outline-dark">
-                    <div className="flex items-start justify-between gap-4">
-                       <div className="flex items-start gap-3">
-                          <div className={`p-2 rounded-lg shrink-0 ${isAIEnabled ? 'bg-success-container text-success' : (aiHealth === 'unhealthy' || aiHealth === 'region_restricted' ? 'bg-warning-container text-warning' : 'bg-danger-container text-danger')}`}>
-                            {(aiHealth === 'unhealthy' || aiHealth === 'region_restricted') ? <AlertTriangle className="w-5 h-5" /> : (isAIEnabled ? <CheckCircle className="w-5 h-5" /> : <Key className="w-5 h-5" />)}
+                    <div className="space-y-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                            <div className={`p-2 rounded-lg shrink-0 ${isAIEnabled ? 'bg-success-container text-success' : (aiHealth === 'unhealthy' || aiHealth === 'region_restricted' || aiHealth === 'auth_error' || aiHealth === 'quota_error' ? 'bg-warning-container text-warning' : 'bg-danger-container text-danger')}`}>
+                              {(aiHealth === 'unhealthy' || aiHealth === 'region_restricted' || aiHealth === 'auth_error' || aiHealth === 'quota_error') ? <AlertTriangle className="w-5 h-5" /> : (isAIEnabled ? <CheckCircle className="w-5 h-5" /> : <Key className="w-5 h-5" />)}
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-content dark:text-content-dark flex items-center gap-2">AI Studio {getStatusBadge()}</h4>
+                                <p className="text-xs text-content-secondary dark:text-content-secondary-dark mt-1">
+                                  {aiErrorMsg ? aiErrorMsg : "Required for Recipe Processing and Genie."}
+                                </p>
+                            </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-2xs font-bold text-content-tertiary uppercase tracking-widest mb-2 block">Active Provider</label>
+                          <div className="flex bg-surface dark:bg-surface-dark rounded-lg p-1 border border-outline dark:border-outline-dark">
+                            {(['gemini', 'mistral'] as const).map(p => (
+                              <button
+                                key={p}
+                                onClick={() => updateProfile({ aiProvider: p })}
+                                className={`flex-1 py-1.5 text-xs font-bold uppercase rounded-md transition-all ${profile.aiProvider === p ? 'bg-primary dark:bg-primary-dark text-white shadow-sm' : 'text-content-tertiary hover:bg-surface-variant dark:hover:bg-surface-variant-dark'}`}
+                              >
+                                {p}
+                              </button>
+                            ))}
                           </div>
-                          <div>
-                             <h4 className="text-sm font-bold text-content dark:text-content-dark flex items-center gap-2">Gemini API {getStatusBadge()}</h4>
-                             <p className="text-xs text-content-secondary dark:text-content-secondary-dark mt-1">
-                               {aiErrorMsg ? aiErrorMsg : "Required for Recipe Processing and Genie."}
-                             </p>
+                        </div>
+
+                        {profile.aiProvider === 'gemini' ? (
+                          <div className="animate-in fade-in slide-in-from-top-1">
+                            <label className="text-2xs font-bold text-content-tertiary uppercase tracking-widest mb-2 block">Gemini API Key</label>
+                            <Input
+                                value={geminiKey}
+                                onChange={(e) => setGeminiKey(e.target.value)}
+                                placeholder="Enter Google AI Key"
+                                className="bg-surface dark:bg-surface-dark"
+                                type="password"
+                                startIcon={<Key className="w-4 h-4 text-content-tertiary" />}
+                            />
+                            <div className="mt-3 flex gap-2">
+                              <Button size="sm" fullWidth onClick={openKeySelector} variant="secondary" icon={<Key className="w-3 h-3" />}>Auto-Select</Button>
+                              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="flex-1">
+                                <Button size="sm" fullWidth variant="ghost" icon={<ExternalLink className="w-3 h-3" />}>Get Key</Button>
+                              </a>
+                            </div>
                           </div>
-                       </div>
-                    </div>
-                    <div className="mt-4 flex gap-3">
-                       <Button size="sm" fullWidth onClick={openKeySelector} variant={isAIEnabled ? 'secondary' : 'primary'} icon={<Key className="w-3 h-3" />}>
-                         {isAIEnabled ? 'Change Key' : 'Connect Key'}
-                       </Button>
-                       {(aiHealth === 'unhealthy' || aiHealth === 'region_restricted') && (
-                         <Button size="sm" variant="ghost" icon={<RefreshCw className="w-3 h-3" />} onClick={checkHealth}>Retry</Button>
-                       )}
-                       <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="flex-1">
-                          <Button size="sm" fullWidth variant="ghost" icon={<ExternalLink className="w-3 h-3" />}>Billing</Button>
-                       </a>
-                    </div>
-                    <div className="mt-4 pt-4 border-t border-outline/10">
-                        <Input 
-                            value={passValue}
-                            onChange={(e) => setPassValue(e.target.value)}
-                            placeholder="pass"
-                            className="bg-surface dark:bg-surface-dark"
-                            startIcon={<Key className="w-4 h-4 text-content-tertiary" />}
-                        />
+                        ) : (
+                          <div className="animate-in fade-in slide-in-from-top-1">
+                            <label className="text-2xs font-bold text-content-tertiary uppercase tracking-widest mb-2 block">Mistral API Key</label>
+                            <Input
+                                value={mistralKey}
+                                onChange={(e) => setMistralKey(e.target.value)}
+                                placeholder="Enter Mistral API Key"
+                                className="bg-surface dark:bg-surface-dark"
+                                type="password"
+                                startIcon={<Key className="w-4 h-4 text-content-tertiary" />}
+                            />
+                            <div className="mt-3">
+                              <a href="https://console.mistral.ai/api-keys/" target="_blank" rel="noopener noreferrer">
+                                <Button size="sm" fullWidth variant="ghost" icon={<ExternalLink className="w-3 h-3" />}>Get Mistral Key</Button>
+                              </a>
+                            </div>
+                          </div>
+                        )}
+
+                        {(aiHealth !== 'healthy' && aiHealth !== 'unknown' && aiHealth !== 'checking') && (
+                          <Button size="sm" fullWidth variant="ghost" className="text-primary" icon={<RefreshCw className="w-3 h-3" />} onClick={checkHealth}>Retry Connection</Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                   

@@ -344,7 +344,7 @@ export const IngredientRow: React.FC<{ name: string; quantity: number; unit: str
 export interface BadgeProps {
   label: React.ReactNode;
   icon?: React.ReactNode;
-  variant?: 'primary' | 'neutral' | 'success' | 'warning';
+  variant?: 'primary' | 'neutral' | 'success' | 'warning' | 'danger';
   className?: string;
   onClick?: () => void;
 }
@@ -355,6 +355,7 @@ export const Badge: React.FC<BadgeProps> = ({ label, icon, variant = 'primary', 
     neutral: "bg-surface-variant dark:bg-surface-variant-dark text-content-secondary dark:text-content-secondary-dark border-outline dark:border-outline-dark",
     success: "bg-success-container dark:bg-success-container-dark text-success-dark border-success/20",
     warning: "bg-warning-container dark:bg-warning-container-dark text-warning-on-container border-warning/20",
+    danger: "bg-danger-container dark:bg-danger-container-dark text-danger-dark border-danger/20",
   };
   return (
     <span onClick={onClick} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-2xs font-bold uppercase border transition-all ${variants[variant]} ${className} ${onClick ? 'cursor-pointer hover:opacity-80 active:scale-95' : ''}`}>

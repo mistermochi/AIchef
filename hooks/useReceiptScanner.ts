@@ -1,83 +1,79 @@
 
+
 import { useState, useCallback } from 'react';
-import { extractReceiptData } from '../services/geminiService';
+import { extractReceiptData } from '../shared/api/ai';
 import { compressImage } from '../utils/helpers';
 import { useAuthContext } from '../context/AuthContext';
 // @ts-ignore
 import heic2any from 'heic2any';
 
-export interface ScanResult {
-  store?: string;
-  date?: string;
-  items?: any[];
-  analysis_steps?: string;
+export interface ScannedReceipt {
+  store: string;
+  date: string;
+  items: Array<{
+    name: string;
+    generic_name: string;
+    category: string;
+    price: number;
+    quantity?: number;
+    unit?: string;
+    count?: number;
+    note?: string;
+  }>;
+  subtotal: number;
 }
 
+/**
+ * @hook useReceiptScanner
+ * @description Hook to handle receipt image processing and OCR extraction.
+ */
 export function useReceiptScanner() {
-  const { reportError } = useAuthContext();
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanError, setScanError] = useState('');
-  const [aiReasoning, setAiReasoning] = useState('');
+  const [scanning, setScanning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { isAIEnabled, reportError } = useAuthContext();
 
-  const scanReceipt = useCallback(async (file: File): Promise<ScanResult | null> => {
-    setIsScanning(true);
-    setScanError('');
-    setAiReasoning('');
+  const scanReceipt = useCallback(async (file: File): Promise<ScannedReceipt | null> => {
+    if (!isAIEnabled) return null;
     
-    try {
-      let imageFile = file;
+    setScanning(true);
+    setError(null);
 
-      // Detect and convert HEIC files
-      if (file.name.toLowerCase().endsWith('.heic') || file.type === 'image/heic' || file.type === 'image/heif') {
-         try {
-           const convertedBlob = await heic2any({
-             blob: file,
-             toType: "image/jpeg",
-             quality: 0.8
-           });
-           const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-           imageFile = new File([blob], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
-         } catch (e) {
-            console.warn("HEIC conversion failed, attempting raw upload", e);
-         }
+    try {
+      let processFile = file;
+
+      // 1. Handle HEIC conversion if needed
+      if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')) {
+         const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.7 });
+         processFile = new File([blob as Blob], 'receipt.jpg', { type: 'image/jpeg' });
       }
 
-      const base64 = await new Promise<string>((res, rej) => { 
-        const r = new FileReader(); 
-        r.onload = (ev) => res(ev.target?.result as string); 
-        r.onerror = () => rej(new Error("File read failed"));
-        r.readAsDataURL(imageFile); 
-      });
+      // 2. Compress image for AI payload (max 1MB)
+      const compressedBase64 = await compressImage(processFile, 0.8, 1600);
       
-      const compressed = await compressImage(base64);
-      const data = await extractReceiptData(compressed, 'image/jpeg');
+      // 3. Extract data via AI
+      const data = await extractReceiptData(compressedBase64, 'image/jpeg');
       
-      if (data.analysis_steps) setAiReasoning(data.analysis_steps);
-      
-      return data;
-    } catch (err: any) {
-      console.error(err);
-      setScanError(err.message || 'Failed to scan receipt');
-      
-      const msg = err.message.toLowerCase();
-      if (msg.includes('auth') || msg.includes('key')) reportError('auth_error', err.message);
-      else if (msg.includes('limit') || msg.includes('quota')) reportError('quota_error', err.message);
-      else if (msg.includes('region')) reportError('region_restricted', err.message);
-      else reportError('unhealthy', err.message);
+      if (!data || !data.items) {
+        throw new Error("No data extracted from receipt.");
+      }
 
+      return {
+        store: data.store || 'Unknown Store',
+        date: data.date || new Date().toISOString().split('T')[0],
+        items: data.items,
+        subtotal: data.subtotal_detected || 0
+      };
+
+    } catch (err: any) {
+      console.error("Receipt Scan Error:", err);
+      const msg = err.message || "Failed to process receipt.";
+      setError(msg);
+      reportError('unhealthy', msg);
       return null;
     } finally {
-      setIsScanning(false);
+      setScanning(false);
     }
-  }, [reportError]);
+  }, [isAIEnabled, reportError]);
 
-  const clearError = useCallback(() => setScanError(''), []);
-
-  return { 
-    isScanning, 
-    scanError, 
-    aiReasoning, 
-    scanReceipt,
-    clearError 
-  };
+  return { scanReceipt, scanning, error };
 }
