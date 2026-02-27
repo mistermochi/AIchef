@@ -6,16 +6,24 @@ import { useAuthContext } from '../../../entities/user/model/AuthContext';
 
 export const AIConnectivity: React.FC = () => {
   const {
-    isAIEnabled, aiHealth, aiErrorMsg, checkHealth, openKeySelector, profile
+    isAIEnabled, aiHealth, aiErrorMsg, checkHealth, openKeySelector, profile, updateProfile
   } = useAuthContext();
 
-  const [passValue, setPassValue] = React.useState(() => {
+  const [geminiKey, setGeminiKey] = React.useState(() => {
     return localStorage.getItem('chefai_pass') || '';
   });
 
+  const [mistralKey, setMistralKey] = React.useState(() => {
+    return localStorage.getItem('mistral_api_key') || '';
+  });
+
   useEffect(() => {
-    localStorage.setItem('chefai_pass', passValue);
-  }, [passValue]);
+    localStorage.setItem('chefai_pass', geminiKey);
+  }, [geminiKey]);
+
+  useEffect(() => {
+    localStorage.setItem('mistral_api_key', mistralKey);
+  }, [mistralKey]);
 
   useEffect(() => {
     if (aiHealth === 'unknown') {
@@ -45,29 +53,61 @@ export const AIConnectivity: React.FC = () => {
                     {(aiHealth === 'unhealthy' || aiHealth === 'region_restricted') ? <AlertTriangle className="w-5 h-5" /> : (isAIEnabled ? <CheckCircle className="w-5 h-5" /> : <Key className="w-5 h-5" />)}
                   </div>
                   <div>
-                     <h4 className="text-sm font-bold text-content dark:text-content-dark flex items-center gap-2">Gemini API {getStatusBadge()}</h4>
+                     <h4 className="text-sm font-bold text-content dark:text-content-dark flex items-center gap-2">
+                       {profile.aiProvider === 'gemini' ? 'Gemini API' : 'Mistral API'} {getStatusBadge()}
+                     </h4>
                      <p className="text-xs text-content-secondary dark:text-content-secondary-dark mt-1">
                        {aiErrorMsg ? aiErrorMsg : "Required for Recipe Processing and Genie."}
                      </p>
                   </div>
                </div>
             </div>
-            <div className="mt-4 flex gap-3">
-               <Button size="sm" fullWidth onClick={openKeySelector} variant={isAIEnabled ? 'secondary' : 'primary'} icon={<Key className="w-3 h-3" />}>
-                 {isAIEnabled ? 'Change Key' : 'Connect Key'}
-               </Button>
-               {(aiHealth === 'unhealthy' || aiHealth === 'region_restricted') && (
-                 <Button size="sm" variant="ghost" icon={<RefreshCw className="w-3 h-3" />} onClick={checkHealth}>Retry</Button>
-               )}
-               <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button size="sm" fullWidth variant="ghost" icon={<ExternalLink className="w-3 h-3" />}>Billing</Button>
-               </a>
+            <div className="mt-4 space-y-3">
+               <div className="flex gap-2">
+                 <Button
+                   size="sm"
+                   variant={profile.aiProvider === 'gemini' ? 'primary' : 'ghost'}
+                   className="flex-1"
+                   onClick={() => updateProfile({ aiProvider: 'gemini' })}
+                 >
+                   Gemini
+                 </Button>
+                 <Button
+                   size="sm"
+                   variant={profile.aiProvider === 'mistral' ? 'primary' : 'ghost'}
+                   className="flex-1"
+                   onClick={() => updateProfile({ aiProvider: 'mistral' })}
+                 >
+                   Mistral
+                 </Button>
+               </div>
+
+               <div className="flex gap-3">
+                  <Button size="sm" fullWidth onClick={openKeySelector} variant={isAIEnabled ? 'secondary' : 'primary'} icon={<Key className="w-3 h-3" />}>
+                    {isAIEnabled ? 'Change Key' : 'Connect Key'}
+                  </Button>
+                  {(aiHealth === 'unhealthy' || aiHealth === 'region_restricted') && (
+                    <Button size="sm" variant="ghost" icon={<RefreshCw className="w-3 h-3" />} onClick={checkHealth}>Retry</Button>
+                  )}
+                  {profile.aiProvider === 'gemini' && (
+                    <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="flex-1">
+                       <Button size="sm" fullWidth variant="ghost" icon={<ExternalLink className="w-3 h-3" />}>Billing</Button>
+                    </a>
+                  )}
+                  {profile.aiProvider === 'mistral' && (
+                    <a href="https://console.mistral.ai/billing/" target="_blank" rel="noopener noreferrer" className="flex-1">
+                       <Button size="sm" fullWidth variant="ghost" icon={<ExternalLink className="w-3 h-3" />}>Billing</Button>
+                    </a>
+                  )}
+               </div>
             </div>
             <div className="mt-4 pt-4 border-t border-outline/10">
                 <Input
-                    value={passValue}
-                    onChange={(e) => setPassValue(e.target.value)}
-                    placeholder="pass"
+                    label={profile.aiProvider === 'gemini' ? "Gemini API Key" : "Mistral API Key"}
+                    value={profile.aiProvider === 'gemini' ? geminiKey : mistralKey}
+                    onChange={(e) => profile.aiProvider === 'gemini' ? setGeminiKey(e.target.value) : setMistralKey(e.target.value)}
+                    placeholder={profile.aiProvider === 'gemini' ? "Enter Gemini key" : "Enter Mistral key"}
+                    type="password"
                     className="bg-surface dark:bg-surface-dark"
                     startIcon={<Key className="w-4 h-4 text-content-tertiary" />}
                 />

@@ -3,11 +3,11 @@ import { useState } from 'react';
 import { collection, getDocs, writeBatch, doc } from 'firebase/firestore';
 import { trackerDb, CHEF_APP_ID } from '../../../shared/api/firebase';
 import { useAuthContext } from '../../../entities/user/model/AuthContext';
-import { batchClassifyProducts } from '../../../shared/api/geminiService';
+import { getAIService } from '../../../shared/api/aiServiceFactory';
 import { calcNormalizedPrice } from '../../../entities/tracker/model/trackerModel';
 
 export function useDataMigration() {
-  const { trackerUser, isAIEnabled, currentHomeId } = useAuthContext();
+  const { trackerUser, isAIEnabled, currentHomeId, profile } = useAuthContext();
   const [migrating, setMigrating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [total, setTotal] = useState(0);
@@ -59,7 +59,8 @@ export function useDataMigration() {
         
         try {
           // AI Call for Names
-          const mappings = await batchClassifyProducts(chunk);
+          const ai = getAIService(profile.aiProvider);
+          const mappings = await ai.batchClassifyProducts(chunk);
           
           // Write Batch to Firestore
           const dbBatch = writeBatch(trackerDb);

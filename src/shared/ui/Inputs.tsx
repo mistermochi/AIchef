@@ -94,17 +94,19 @@ export const PromptInput: React.FC<PromptInputProps> = ({
 // --- STANDARD INPUTS ---
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
   startIcon?: React.ReactNode;
   endIcon?: React.ReactNode;
   onClear?: () => void;
 }
 
-export const Input: React.FC<InputProps> = ({ className = '', startIcon, endIcon, onClear, ...props }) => {
+export const Input: React.FC<InputProps> = ({ className = '', label, startIcon, endIcon, onClear, ...props }) => {
   const { trigger } = useHaptics();
   const hasValue = !!(props.value && props.value.toString().length > 0);
 
   return (
     <div className="relative w-full group/input">
+      {label && <label className="text-2xs font-bold text-content-tertiary dark:text-content-tertiary-dark uppercase tracking-widest mb-1.5 block px-1">{label}</label>}
       {startIcon && (
         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-content-tertiary dark:text-content-tertiary-dark pointer-events-none transition-colors group-focus-within/input:text-primary">
           {React.cloneElement(startIcon as React.ReactElement<{ size?: number }>, { size: 16 })}

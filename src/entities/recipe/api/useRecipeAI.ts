@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import * as gemini from '../../../shared/api/geminiService';
+import { getAIService } from '../../../shared/api/aiServiceFactory';
 import { useAuthContext } from '../../../entities/user/model/AuthContext';
 import { Recipe, GenieIdea } from '../model/types';
 import { mapAIError } from '../../../shared/lib/ai';
@@ -17,8 +17,9 @@ import { mapAIError } from '../../../shared/lib/ai';
  * @returns {Object} An object containing state and AI action functions.
  */
 export function useRecipeAI() {
-  const { isAIEnabled, openKeySelector, getProfileContext, reportError } = useAuthContext();
-  
+  const { isAIEnabled, openKeySelector, getProfileContext, reportError, profile } = useAuthContext();
+  const ai = getAIService(profile.aiProvider);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -45,7 +46,7 @@ export function useRecipeAI() {
     setError('');
     const prefs = getProfileContext();
     try {
-      const res = await gemini.processRecipe(input, prefs);
+      const res = await ai.processRecipe(input, prefs);
       return { 
         ...res, 
         ingredients: res.ingredients||[], 
@@ -72,7 +73,7 @@ export function useRecipeAI() {
     setGenieIdeas([]);
     const prefs = getProfileContext();
     try {
-      const ideas = await gemini.generateGenieIdeas(input, prefs);
+      const ideas = await ai.generateGenieIdeas(input, prefs);
       setGenieIdeas(ideas);
     } catch (e: any) { 
       handleAIError(e); 
@@ -92,7 +93,7 @@ export function useRecipeAI() {
     setLoading(true);
     setError('');
     try {
-      return await gemini.refineRecipe(recipe, prompt);
+      return await ai.refineRecipe(recipe, prompt);
     } catch (e: any) {
       handleAIError(e);
       return [];

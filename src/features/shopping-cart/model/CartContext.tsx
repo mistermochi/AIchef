@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useMemo, useCallback } from
 import { ShoppingListItem } from '../../../shared/model/types';
 import { OrchestrationPlan, Ingredient, Recipe } from '../../../entities/recipe/model/types';
 import { useLocalStorage } from '../../../shared/lib/hooks/useLocalStorage';
-import * as gemini from '../../../shared/api/geminiService';
+import { getAIService } from '../../../shared/api/aiServiceFactory';
 import { useAuthContext } from '../../../entities/user/model/AuthContext';
 import { consolidateShoppingList } from '../../../shared/lib/shopping';
 
@@ -55,7 +55,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
  * It also coordinates with Gemini AI to generate orchestration plans for multiple recipes.
  */
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAIEnabled } = useAuthContext();
+  const { isAIEnabled, profile } = useAuthContext();
   const [cart, setCart] = useLocalStorage<ShoppingListItem[]>('chefai_cart', []);
   const [checked, setChecked] = useLocalStorage<string[]>('chefai_checked', []);
   const [orchestrationPlan, setOrchestrationPlan] = useState<OrchestrationPlan | null>(null);
@@ -112,10 +112,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (recipes.length === 0 || !isAIEnabled) return;
     setOrchestrationLoading(true);
     try {
-      const plan = await gemini.generateOrchestrationPlan(recipes);
+      const ai = getAIService(profile.aiProvider);
+      const plan = await ai.generateOrchestrationPlan(recipes);
       setOrchestrationPlan(plan);
     } catch (e: any) { console.error(e); } finally { setOrchestrationLoading(false); }
-  }, [cart, isAIEnabled]);
+  }, [cart, isAIEnabled, profile.aiProvider]);
 
   const checkedSet = useMemo(() => new Set(checked), [checked]);
 

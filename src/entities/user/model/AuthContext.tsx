@@ -19,7 +19,7 @@ import {
 } from 'firebase/firestore';
 import { chefDb, chefAuth, CHEF_APP_ID } from '../../../shared/api/firebase';
 import { UserProfile, DEFAULT_PROFILE } from '../../../shared/model/types';
-import { validateAIConnection } from '../../../shared/api/geminiService';
+import { getAIService } from '../../../shared/api/aiServiceFactory';
 
 interface HomeData {
   name: string;
@@ -240,13 +240,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setAiHealth('checking');
     try {
-      const res = await validateAIConnection();
+      const ai = getAIService(profile.aiProvider);
+      const res = await ai.validateAIConnection();
       setAiHealth(res.status);
       setAiErrorMsg(res.message);
     } catch (e) {
       setAiHealth('unhealthy');
     }
-  }, [profile.aiEnabled]);
+  }, [profile.aiEnabled, profile.aiProvider]);
 
   const reportError = useCallback((type: AuthContextType['aiHealth'], msg: string) => {
      setAiHealth(type);
@@ -323,11 +324,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const openKeySelector = async () => {
-    if ((window as any).aistudio && (window as any).aistudio.openSelectKey) {
+    if (profile.aiProvider === 'gemini' && (window as any).aistudio && (window as any).aistudio.openSelectKey) {
         await (window as any).aistudio.openSelectKey();
         checkHealth();
     } else {
-        alert("API Key selection not available in this environment.");
+        // For Mistral or if Gemini environment tool is missing, prompt manually or via settings
+        const keyName = profile.aiProvider === 'gemini' ? 'chefai_pass' : 'mistral_api_key';
+        const newKey = prompt(`Enter ${profile.aiProvider === 'gemini' ? 'Gemini' : 'Mistral'} API Key:`);
+        if (newKey) {
+          localStorage.setItem(keyName, newKey);
+          checkHealth();
+        }
     }
   };
 
