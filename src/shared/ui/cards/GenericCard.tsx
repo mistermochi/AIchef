@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { BaseCard } from './BaseCard';
+import { cn } from "@/shared/lib/utils";
 
 /**
  * @component Card
@@ -8,7 +9,7 @@ import { BaseCard } from './BaseCard';
  */
 export const Card: React.FC<React.HTMLAttributes<HTMLDivElement> & { onClick?: () => void }> = ({ children, className = '', onClick, style, ...props }) => (
   <div className={className} style={style} {...props}>
-    <BaseCard noPadding className="group cursor-pointer hover:ring-2 hover:ring-primary/50 dark:hover:ring-primary-dark/50 transition-all active:scale-[0.98] h-full" onClick={onClick}>
+    <BaseCard noPadding className="group cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all active:scale-[0.98] h-full" onClick={onClick}>
        {children}
     </BaseCard>
   </div>
@@ -19,7 +20,7 @@ export const Card: React.FC<React.HTMLAttributes<HTMLDivElement> & { onClick?: (
  * @description A container for card media (images or fallback emojis).
  */
 export const CardMedia: React.FC<{ src?: string | null; fallbackEmoji?: string; children?: React.ReactNode }> = ({ src, fallbackEmoji, children }) => (
-  <div className="relative aspect-[4/3] bg-surface-variant dark:bg-surface-variant-dark overflow-hidden shrink-0">
+  <div className="relative aspect-[4/3] bg-muted overflow-hidden shrink-0">
     {src ? (
       <img
         src={src}
@@ -29,7 +30,7 @@ export const CardMedia: React.FC<{ src?: string | null; fallbackEmoji?: string; 
         decoding="async"
       />
     ) : (
-      <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-content-tertiary dark:text-content-tertiary-dark">
+      <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
         <span className="text-6xl select-none">{fallbackEmoji || '🥘'}</span>
       </div>
     )}
@@ -49,11 +50,12 @@ export const CardFloatingAction: React.FC<{
 }> = ({ icon, onClick, active }) => (
   <button
     onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
-    className={`absolute bottom-3 right-3 p-2.5 rounded-full shadow-lg transition-transform active:scale-90 flex items-center justify-center ${
+    className={cn(
+      "absolute bottom-3 right-3 p-2.5 rounded-full shadow-lg transition-transform active:scale-90 flex items-center justify-center",
       active
-        ? 'bg-success text-white'
-        : 'bg-surface dark:bg-surface-dark text-primary dark:text-primary-dark hover:bg-primary-container dark:hover:bg-primary-container-dark'
-    }`}
+        ? 'bg-success text-success-foreground'
+        : 'bg-background text-primary hover:bg-primary/10'
+    )}
   >
     {icon}
   </button>
@@ -74,7 +76,7 @@ export const CardContent: React.FC<{ children: React.ReactNode }> = ({ children 
  * @description A styled title component for cards.
  */
 export const CardTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <h3 className="font-bold text-lg text-content dark:text-content-dark google-sans line-clamp-1 group-hover:text-primary dark:group-hover:text-primary-dark transition-colors">
+  <h3 className="font-bold text-lg text-foreground google-sans line-clamp-1 group-hover:text-primary transition-colors">
     {children}
   </h3>
 );
@@ -84,7 +86,7 @@ export const CardTitle: React.FC<{ children: React.ReactNode }> = ({ children })
  * @description A styled description component for cards with line-clamping.
  */
 export const CardDescription: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p className="text-xs text-content-secondary dark:text-content-secondary-dark line-clamp-2 leading-relaxed">
+  <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
     {children}
   </p>
 );
@@ -94,7 +96,7 @@ export const CardDescription: React.FC<{ children: React.ReactNode }> = ({ child
  * @description The footer area of a card, usually containing actions or metadata.
  */
 export const CardFooter: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="mt-auto px-4 pb-4 pt-3 border-t border-outline/50 dark:border-outline-dark/50 relative">
+  <div className="mt-auto px-4 pb-4 pt-3 border-t border-border relative">
     {children}
   </div>
 );

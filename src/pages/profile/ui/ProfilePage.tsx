@@ -1,9 +1,7 @@
-
 import React from 'react';
 import { Save } from 'lucide-react';
-import {
-  PageLayout, ViewHeader, Button
-} from '../../../shared/ui';
+import { PageLayout, ViewHeader } from '../../../shared/ui';
+import { Button } from "@/shared/ui/button";
 import { useAuthContext } from '../../../entities/user/model/AuthContext';
 import { AuthForm } from '../../../features/auth-form/ui/AuthForm';
 import { HouseholdManagement } from '../../../features/household-management/ui/HouseholdManagement';
@@ -26,7 +24,12 @@ export const ProfilePage: React.FC = () => {
         <ViewHeader
           title="Chef Identity"
           subtitle="Customize your AI kitchen companion."
-          actions={<Button onClick={saveProfile} icon={<Save className="w-4 h-4" />}>Save Changes</Button>}
+          actions={
+            <Button onClick={saveProfile} size="sm">
+              <Save className="w-4 h-4 mr-2" />
+              Save Changes
+            </Button>
+          }
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start pb-20">

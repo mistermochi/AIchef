@@ -1,9 +1,11 @@
 
 import React from 'react';
 import { ChefHat, Utensils, BrainCircuit } from 'lucide-react';
-import { SectionCard, Input, Badge, Textarea } from '../../../shared/ui';
-import { useAuthContext } from '../../../entities/user/model/AuthContext';
-import { DIETARY_LIST, APPLIANCE_LIST } from '../../../shared/config/app';
+import { Input, Badge, Textarea, Label } from '@/shared/ui';
+import { Card, CardHeader, CardTitle, CardContent } from '@/shared/ui/card';
+import { useAuthContext } from '@/entities/user/model/AuthContext';
+import { DIETARY_LIST, APPLIANCE_LIST } from '@/shared/config/app';
+import { cn } from '@/shared/lib/utils';
 
 export const ProfileSettings: React.FC = () => {
   const { profile, updateProfile } = useAuthContext();
@@ -15,95 +17,130 @@ export const ProfileSettings: React.FC = () => {
   };
 
   return (
-    <>
-      <SectionCard title="The Chef" icon={<ChefHat />}>
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-2xs font-bold text-content-tertiary uppercase tracking-widest mb-2 block">Units</label>
-              <div className="flex bg-surface-variant dark:bg-surface-variant-dark rounded-lg p-1 border border-outline dark:border-outline-dark">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <ChefHat className="w-5 h-5 text-primary" />
+            The Chef
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Units</Label>
+              <div className="flex bg-muted rounded-lg p-1 border">
                  {['metric', 'imperial'].map(u => (
-                   <button key={u} onClick={() => updateProfile({ measurements: u as any })} className={`flex-1 py-1.5 text-xs font-bold uppercase rounded-md transition-all ${profile.measurements === u ? 'bg-white dark:bg-primary-dark text-primary dark:text-surface shadow-sm' : 'text-content-tertiary'}`}>
+                   <button
+                     key={u}
+                     onClick={() => updateProfile({ measurements: u as any })}
+                     className={cn(
+                       "flex-1 py-1.5 text-xs font-bold uppercase rounded-md transition-all",
+                       profile.measurements === u
+                        ? "bg-background text-primary shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                     )}
+                   >
                      {u}
                    </button>
                  ))}
               </div>
             </div>
-            <div>
-              <label className="text-2xs font-bold text-content-tertiary uppercase tracking-widest mb-2 block">Default Servings</label>
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Default Servings</Label>
               <Input
                 type="number"
                 value={profile.defaultServings}
                 onChange={(e) => updateProfile({ defaultServings: parseInt(e.target.value) || 2 })}
-                className="h-[38px]"
               />
             </div>
           </div>
 
-          <div>
-             <label className="text-2xs font-bold text-content-tertiary uppercase tracking-widest mb-2 block">Dietary Restrictions</label>
+          <div className="space-y-3">
+             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Dietary Restrictions</Label>
              <div className="flex flex-wrap gap-2">
                 {DIETARY_LIST.map(diet => (
                   <Badge
                     key={diet}
                     label={diet}
                     variant={profile.dietary.includes(diet) ? 'primary' : 'neutral'}
-                    className="cursor-pointer select-none"
                     onClick={() => toggleArrayItem('dietary', diet)}
                   />
                 ))}
              </div>
           </div>
 
-          <div>
-            <label className="text-2xs font-bold text-content-tertiary uppercase tracking-widest mb-2 block">Dislikes & Allergies</label>
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Dislikes & Allergies</Label>
             <Input
               placeholder="e.g. No cilantro, peanut allergy..."
               value={profile.dislikes}
               onChange={(e) => updateProfile({ dislikes: e.target.value })}
             />
           </div>
-        </div>
-      </SectionCard>
+        </CardContent>
+      </Card>
 
-      <SectionCard title="The Kitchen" icon={<Utensils />}>
-         <div className="space-y-6">
-            <div>
-              <label className="text-2xs font-bold text-content-tertiary uppercase tracking-widest mb-2 block">Available Appliances</label>
-              <div className="flex flex-wrap gap-2">
-                  {APPLIANCE_LIST.map(app => (
-                    <Badge
-                      key={app}
-                      label={app}
-                      variant={profile.appliances.includes(app) ? 'primary' : 'neutral'}
-                      className="cursor-pointer select-none"
-                      onClick={() => toggleArrayItem('appliances', app)}
-                    />
-                  ))}
-              </div>
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Utensils className="w-5 h-5 text-primary" />
+            The Kitchen
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-3">
+            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Available Appliances</Label>
+            <div className="flex flex-wrap gap-2">
+                {APPLIANCE_LIST.map(app => (
+                  <Badge
+                    key={app}
+                    label={app}
+                    variant={profile.appliances.includes(app) ? 'primary' : 'neutral'}
+                    onClick={() => toggleArrayItem('appliances', app)}
+                  />
+                ))}
             </div>
+          </div>
 
-            <div>
-               <label className="text-2xs font-bold text-content-tertiary uppercase tracking-widest mb-2 block">Skill Level</label>
-               <div className="flex bg-surface-variant dark:bg-surface-variant-dark rounded-lg p-1 border border-outline dark:border-outline-dark">
-                 {['beginner', 'pro'].map(level => (
-                   <button key={level} onClick={() => updateProfile({ skillLevel: level as any })} className={`flex-1 py-1.5 text-xs font-bold uppercase rounded-md transition-all ${profile.skillLevel === level ? 'bg-white dark:bg-primary-dark text-primary dark:text-surface shadow-sm' : 'text-content-tertiary'}`}>
-                     {level}
-                   </button>
-                 ))}
-              </div>
+          <div className="space-y-2">
+             <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Skill Level</Label>
+             <div className="flex bg-muted rounded-lg p-1 border">
+               {['beginner', 'pro'].map(level => (
+                 <button
+                   key={level}
+                   onClick={() => updateProfile({ skillLevel: level as any })}
+                   className={cn(
+                     "flex-1 py-1.5 text-xs font-bold uppercase rounded-md transition-all",
+                     profile.skillLevel === level
+                      ? "bg-background text-primary shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                   )}
+                 >
+                   {level}
+                 </button>
+               ))}
             </div>
-         </div>
-      </SectionCard>
+          </div>
+        </CardContent>
+      </Card>
 
-      <SectionCard title="Custom Instructions" icon={<BrainCircuit />}>
-        <Textarea
-          className="h-32 bg-surface-variant dark:bg-surface-variant-dark resize-none"
-          placeholder="Any other rules for the AI? (e.g. 'I love spicy food', 'Prefer quick meals')"
-          value={profile.customInstructions}
-          onChange={(e) => updateProfile({ customInstructions: e.target.value })}
-        />
-      </SectionCard>
-    </>
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <BrainCircuit className="w-5 h-5 text-primary" />
+            Custom Instructions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            className="min-h-[120px] resize-none"
+            placeholder="Any other rules for the AI? (e.g. 'I love spicy food', 'Prefer quick meals')"
+            value={profile.customInstructions}
+            onChange={(e) => updateProfile({ customInstructions: e.target.value })}
+          />
+        </CardContent>
+      </Card>
+    </div>
   );
 };

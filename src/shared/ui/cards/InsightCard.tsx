@@ -19,12 +19,12 @@ export const InsightCard: React.FC<InsightCardProps> = ({ title, description, va
          <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-4 mb-2">
                <div className="space-y-1">
-                  <div className="text-sm font-bold text-content-tertiary dark:text-content-tertiary-dark uppercase tracking-wider">{title}</div>
-                  {value && <div className="text-2xl font-bold text-content dark:text-content-dark google-sans">{value}</div>}
+                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.15em]">{title}</div>
+                  {value && <div className="text-2xl font-bold text-foreground google-sans">{value}</div>}
                </div>
                {action}
             </div>
-            {description && <div className="text-sm text-content-secondary dark:text-content-secondary-dark leading-relaxed">{description}</div>}
+            {description && <div className="text-sm text-muted-foreground leading-relaxed">{description}</div>}
             {trend && <div className="flex items-center gap-1 mt-2 text-xs font-bold text-success"><TrendingUp className="w-3 h-3" /> {trend}</div>}
          </div>
       </div>
