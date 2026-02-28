@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { FAB, FABProps } from '../Buttons';
+import { FAB, FABProps } from '../button';
 
 /**
  * @component GlobalFAB

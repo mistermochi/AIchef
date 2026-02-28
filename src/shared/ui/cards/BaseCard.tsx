@@ -1,19 +1,25 @@
 
 import React from 'react';
+import { Card } from '../card';
+import { cn } from '@/shared/lib/utils';
 
 export interface BaseCardProps extends React.HTMLAttributes<HTMLDivElement> {
   noPadding?: boolean;
 }
 
-export const BaseCard: React.FC<BaseCardProps> = ({ children, className = '', noPadding, ...props }) => {
-  return (
-    <div 
-      className={`bg-surface dark:bg-surface-dark border border-outline dark:border-outline-dark rounded-2xl shadow-sm transition-colors overflow-hidden flex flex-col ${className}`} 
-      {...props}
-    >
-      <div className={`flex-1 flex flex-col min-h-0 w-full ${noPadding ? '' : 'p-4 md:p-6'}`}>
-        {children}
-      </div>
-    </div>
-  );
-};
+export const BaseCard = React.forwardRef<HTMLDivElement, BaseCardProps>(
+  ({ children, className, noPadding, ...props }, ref) => {
+    return (
+      <Card
+        ref={ref}
+        className={className}
+        {...props}
+      >
+        <div className={cn("flex-1 flex flex-col min-h-0 w-full", noPadding ? "" : "p-4 md:p-6")}>
+          {children}
+        </div>
+      </Card>
+    );
+  }
+);
+BaseCard.displayName = "BaseCard";

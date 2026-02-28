@@ -1,5 +1,12 @@
 
 import React from 'react';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "./breadcrumb"
 
 interface PageHeaderProps {
   title: string;
@@ -9,15 +16,29 @@ interface PageHeaderProps {
 
 export const PageHeader: React.FC<PageHeaderProps> = ({ breadcrumbs, action }) => (
   <header className="h-14 border-b border-outline dark:border-outline-dark bg-surface dark:bg-surface-dark flex items-center justify-between px-6 shrink-0 sticky top-0 z-20 transition-colors">
-    <div className="flex items-center gap-2 text-sm font-medium text-content-secondary dark:text-content-secondary-dark">
-      <span>ChefAI Studio</span>
-      {breadcrumbs?.map((crumb, i) => (
-        <React.Fragment key={i}>
-          <span className="text-outline dark:text-content-tertiary-dark text-sm font-normal">/</span>
-          <span className={i === breadcrumbs.length - 1 ? "text-content dark:text-content-dark font-bold" : ""}>{crumb}</span>
-        </React.Fragment>
-      ))}
-    </div>
+    <Breadcrumb>
+      <BreadcrumbList className="text-sm font-medium text-content-secondary dark:text-content-secondary-dark sm:gap-2 gap-1.5">
+        <BreadcrumbItem>
+          <span>ChefAI Studio</span>
+        </BreadcrumbItem>
+        {breadcrumbs?.map((crumb, i) => (
+          <React.Fragment key={i}>
+            <BreadcrumbSeparator className="text-outline dark:text-content-tertiary-dark">
+              <span className="text-sm font-normal">/</span>
+            </BreadcrumbSeparator>
+            <BreadcrumbItem>
+              {i === breadcrumbs.length - 1 ? (
+                <BreadcrumbPage className="text-content dark:text-content-dark font-bold">
+                  {crumb}
+                </BreadcrumbPage>
+              ) : (
+                <span>{crumb}</span>
+              )}
+            </BreadcrumbItem>
+          </React.Fragment>
+        ))}
+      </BreadcrumbList>
+    </Breadcrumb>
     {action}
   </header>
 );

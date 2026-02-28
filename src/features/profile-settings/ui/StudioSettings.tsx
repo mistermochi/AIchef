@@ -39,7 +39,7 @@ export const StudioSettings: React.FC = () => {
               <div className="text-xs text-content-secondary dark:text-content-secondary-dark">Enable Generative AI capabilities</div>
             </div>
           </div>
-          <Switch checked={profile.aiEnabled ?? true} onChange={(v) => updateProfile({ aiEnabled: v })} />
+          <Switch checked={profile.aiEnabled ?? true} onCheckedChange={(v) => updateProfile({ aiEnabled: v })} />
         </div>
 
         <div onClick={() => setDarkMode(!darkMode)} className="flex items-center justify-between py-3 cursor-pointer group">
@@ -52,7 +52,7 @@ export const StudioSettings: React.FC = () => {
               <div className="text-xs text-content-secondary dark:text-content-secondary-dark">High contrast interface</div>
             </div>
           </div>
-          <Switch checked={darkMode} onChange={setDarkMode} />
+          <Switch checked={darkMode} onCheckedChange={setDarkMode} />
         </div>
 
         <div onClick={() => updateProfile({ haptics: !profile.haptics })} className="flex items-center justify-between py-3 cursor-pointer group">
@@ -65,7 +65,7 @@ export const StudioSettings: React.FC = () => {
               <div className="text-xs text-content-secondary dark:text-content-secondary-dark">Vibration feedback on interaction</div>
             </div>
           </div>
-          <Switch checked={profile.haptics} onChange={(v) => updateProfile({ haptics: v })} />
+          <Switch checked={profile.haptics} onCheckedChange={(v) => updateProfile({ haptics: v })} />
         </div>
 
         <div onClick={() => updateProfile({ autoWakeLock: !profile.autoWakeLock })} className="flex items-center justify-between py-3 cursor-pointer group">
@@ -78,7 +78,7 @@ export const StudioSettings: React.FC = () => {
               <div className="text-xs text-content-secondary dark:text-content-secondary-dark">Keep screen on during cooking</div>
             </div>
           </div>
-          <Switch checked={profile.autoWakeLock} onChange={(v) => updateProfile({ autoWakeLock: v })} />
+          <Switch checked={profile.autoWakeLock} onCheckedChange={(v) => updateProfile({ autoWakeLock: v })} />
         </div>
       </div>
     </SectionCard>
