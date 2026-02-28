@@ -51,15 +51,15 @@ export const ModalHeader: React.FC<{
   className?: string;
 }> = ({ title, subtitle, actions, onClose, className = '' }) => {
   return (
-    <div className={cn("h-14 border-b border-outline dark:border-outline-dark bg-surface dark:bg-surface-dark flex items-center justify-between px-4 sm:px-6 shrink-0 z-50 transition-colors", className)}>
+    <div className={cn("h-14 border-b border-border bg-background flex items-center justify-between px-4 sm:px-6 shrink-0 z-50 transition-colors", className)}>
       <div className="flex items-center gap-3 min-w-0 overflow-hidden flex-1 mr-4">
          <div className="min-w-0 flex flex-col justify-center">
             {typeof title === 'string' ? (
-                <DialogTitle className="text-sm font-bold text-content dark:text-content-dark google-sans truncate leading-tight">{title}</DialogTitle>
+                <DialogTitle className="text-sm font-bold text-foreground google-sans truncate leading-tight">{title}</DialogTitle>
             ) : title}
             
             {subtitle && (
-                <div className="text-xs text-content-secondary dark:text-content-secondary-dark truncate font-medium mt-0.5">{subtitle}</div>
+                <div className="text-xs text-muted-foreground truncate font-medium mt-0.5">{subtitle}</div>
             )}
          </div>
       </div>
@@ -69,10 +69,10 @@ export const ModalHeader: React.FC<{
          
          {onClose && (
            <>
-             {actions && <div className="w-px h-6 bg-outline dark:bg-outline-dark mx-1" />}
+             {actions && <div className="w-px h-6 bg-border mx-1" />}
              <button 
                onClick={onClose} 
-               className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg text-content-secondary dark:text-content-secondary-dark transition-colors"
+               className="p-2 hover:bg-muted rounded-lg text-muted-foreground transition-colors"
              >
                <X className="w-5 h-5" />
              </button>
@@ -88,7 +88,7 @@ export const ModalContent: React.FC<{
   className?: string;
   noPadding?: boolean;
 }> = ({ children, className = '', noPadding = false }) => (
-  <div className={cn("flex-1 overflow-y-auto custom-scrollbar bg-surface-variant dark:bg-surface-variant-dark flex flex-col", noPadding ? '' : 'p-4 md:p-8', className)}>
+  <div className={cn("flex-1 overflow-y-auto custom-scrollbar bg-muted/30 flex flex-col", noPadding ? '' : 'p-4 md:p-8', className)}>
     {children}
   </div>
 );
@@ -97,7 +97,7 @@ export const ModalFooter: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ children, className = '' }) => (
-  <DialogFooter className={cn("p-4 bg-surface dark:bg-surface-dark border-t border-outline dark:border-outline-dark shrink-0 sm:justify-start", className)}>
+  <DialogFooter className={cn("p-4 bg-background border-t border-border shrink-0 sm:justify-start", className)}>
     {children}
   </DialogFooter>
 );

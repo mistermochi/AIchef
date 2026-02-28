@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Check, Trash2, Plus } from 'lucide-react';
 import { useHaptics } from '../lib/hooks/useHaptics';
+import { cn } from "@/shared/lib/utils";
 
 // --- TYPEWRITER ---
 export const Typewriter: React.FC<{ text: string; speed?: number; className?: string; animate?: boolean }> = ({ text, speed = 15, className = '', animate = true }) => {
@@ -82,12 +83,14 @@ interface BaseRowProps {
 const BaseRow: React.FC<BaseRowProps> = React.memo(({ leading, children, actions, onDelete, onClick, isChecked, className = '' }) => (
   <div 
     onClick={onClick}
-    className={`flex items-stretch group border-b border-outline/30 dark:border-outline-dark/30 last:border-none transition-colors 
-    ${isChecked ? 'bg-primary-container/30 dark:bg-primary-container-dark/20' : 'hover:bg-surface-variant/50 dark:hover:bg-surface-variant-dark/50'} 
-    ${className}`}
+    className={cn(
+      "flex items-stretch group border-b border-border last:border-none transition-colors",
+      isChecked ? 'bg-primary/10' : 'hover:bg-muted/50',
+      className
+    )}
   >
     {leading && (
-      <div className="w-12 sm:w-14 shrink-0 flex items-center justify-center bg-black/5 dark:bg-white/5 border-r border-outline/30 dark:border-outline-dark/30 text-content-tertiary dark:text-content-tertiary-dark">
+      <div className="w-12 sm:w-14 shrink-0 flex items-center justify-center bg-muted/30 border-r border-border text-muted-foreground">
         {leading}
       </div>
     )}
@@ -100,7 +103,7 @@ const BaseRow: React.FC<BaseRowProps> = React.memo(({ leading, children, actions
         {onDelete && (
           <button 
             onClick={(e) => { e.stopPropagation(); onDelete(); }} 
-            className="p-2 rounded-lg transition-all opacity-100 bg-danger-container/50 text-danger hover:bg-danger-container"
+            className="p-2 rounded-lg transition-all opacity-100 bg-destructive/10 text-destructive hover:bg-destructive/20"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -125,7 +128,7 @@ export function EditableList<T>({ items, renderItem, onAdd, isEditing, addButton
     <div className={className}>
       {items.map((it: T, i: number) => renderItem(it, i, isEditing))}
       {isEditing && (
-        <button onClick={onAdd} className="w-full py-4 bg-surface-variant/50 dark:bg-surface-variant-dark/30 text-primary dark:text-primary-dark text-xs font-bold uppercase hover:bg-primary-container dark:hover:bg-primary-container-dark border-t border-outline/30 dark:border-outline-dark/30 flex items-center justify-center gap-2 transition-colors">
+        <button onClick={onAdd} className="w-full py-4 bg-muted/50 text-primary text-xs font-bold uppercase hover:bg-primary/10 border-t border-border flex items-center justify-center gap-2 transition-colors">
           <Plus className="w-4 h-4" /> {addButtonLabel}
         </button>
       )}
@@ -163,11 +166,11 @@ export const ListRow: React.FC<ListRowProps> = React.memo(({
         value={typeof content === 'string' ? content : ''}
         onChange={(e) => onChange?.(e.target.value)}
         placeholder={placeholder}
-        className="w-full bg-surface dark:bg-surface-dark border border-outline dark:border-outline-dark rounded-lg p-3 text-sm outline-none shadow-sm focus:border-primary transition-all resize-none"
+        className="w-full bg-background border border-input rounded-lg p-3 text-sm outline-none shadow-sm focus:ring-1 focus:ring-primary transition-all resize-none"
         rows={Math.max(2, Math.min(5, (typeof content === 'string' ? content : '').split('\n').length))}
       />
     ) : (
-      <div className="text-sm text-content-secondary dark:text-content-secondary-dark font-medium leading-relaxed whitespace-pre-wrap">{content}</div>
+      <div className="text-sm text-muted-foreground font-medium leading-relaxed whitespace-pre-wrap">{content}</div>
     )}
   </BaseRow>
 ));
@@ -184,16 +187,16 @@ export const IngredientInput: React.FC<{
 }> = React.memo(({ name, quantity, unit, onChange, onDelete }) => {
   const actions = (
     <div className="flex items-center gap-2">
-       <div className="flex items-center justify-center min-w-[80px] px-2.5 py-1.5 rounded-lg border transition-all bg-surface-variant dark:bg-surface-variant-dark border-outline dark:border-outline-dark">
-          <input type="number" value={quantity} onChange={(e) => onChange('quantity', parseFloat(e.target.value)||0)} className="w-10 text-right bg-transparent outline-none font-bold text-primary dark:text-primary-dark text-sm" />
-          <input value={unit} onChange={(e) => onChange('unit', e.target.value)} className="w-8 ml-1 bg-transparent outline-none text-content-secondary dark:text-content-secondary-dark text-xs font-mono" />
+       <div className="flex items-center justify-center min-w-[80px] px-2.5 py-1.5 rounded-lg border transition-all bg-muted/50 border-border">
+          <input type="number" value={quantity} onChange={(e) => onChange('quantity', parseFloat(e.target.value)||0)} className="w-10 text-right bg-transparent outline-none font-bold text-primary text-sm" />
+          <input value={unit} onChange={(e) => onChange('unit', e.target.value)} className="w-8 ml-1 bg-transparent outline-none text-muted-foreground text-xs font-mono" />
        </div>
     </div>
   );
 
   return (
     <BaseRow onDelete={onDelete} actions={actions}>
-      <input value={name} onChange={(e) => onChange('name', e.target.value)} className="w-full text-sm font-medium bg-transparent outline-none text-content dark:text-content-dark" placeholder="Item Name" />
+      <input value={name} onChange={(e) => onChange('name', e.target.value)} className="w-full text-sm font-medium bg-transparent outline-none text-foreground" placeholder="Item Name" />
     </BaseRow>
   );
 });
@@ -216,15 +219,18 @@ export const IngredientScaler: React.FC<{
     <div className="flex items-center gap-2">
       <div 
         onClick={(e) => { e.stopPropagation(); onScaleClick(); }}
-        className={`flex items-center justify-center min-w-[80px] px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer ${isScaling ? 'border-primary ring-2 ring-primary/20 bg-surface dark:bg-surface-dark' : 'bg-primary-container dark:bg-primary-container-dark border-transparent'}`}
+        className={cn(
+          "flex items-center justify-center min-w-[80px] px-2.5 py-1.5 rounded-lg border transition-all cursor-pointer",
+          isScaling ? 'border-primary ring-2 ring-primary/20 bg-background' : 'bg-primary/10 border-transparent'
+        )}
       >
         {isScaling ? (
           <>
-            <input autoFocus type="number" value={scaleInputValue} onChange={(e) => onScaleChange?.(e.target.value)} onBlur={onScaleBlur} className="w-12 text-right bg-transparent outline-none font-bold text-primary dark:text-primary-dark text-sm" />
-            <span className="text-content-secondary dark:text-content-secondary-dark text-xs font-mono ml-1">{unit}</span>
+            <input autoFocus type="number" value={scaleInputValue} onChange={(e) => onScaleChange?.(e.target.value)} onBlur={onScaleBlur} className="w-12 text-right bg-transparent outline-none font-bold text-primary text-sm" />
+            <span className="text-muted-foreground text-xs font-mono ml-1">{unit}</span>
           </>
         ) : (
-          <span className="text-xs font-bold font-mono text-primary dark:text-primary-dark">
+          <span className="text-xs font-bold font-mono text-primary">
             <CountUp value={displayQty} /> <span className="font-normal lowercase">{unit}</span>
           </span>
         )}
@@ -234,7 +240,7 @@ export const IngredientScaler: React.FC<{
 
   return (
     <BaseRow actions={actions}>
-      <p className="text-sm font-medium text-content dark:text-content-dark truncate">{name}</p>
+      <p className="text-sm font-medium text-foreground truncate">{name}</p>
     </BaseRow>
   );
 });
@@ -304,15 +310,24 @@ export const CheckableIngredient: React.FC<{
   const leading = (
     <div 
       onClick={(e) => { e.stopPropagation(); handleToggle(); }}
-      className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-300 cursor-pointer ${displayChecked ? 'bg-primary border-primary' : 'bg-surface dark:bg-surface-dark border-outline dark:border-outline-dark'}`}
+      className={cn(
+        "w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-300 cursor-pointer",
+        displayChecked ? 'bg-primary border-primary' : 'bg-background border-input'
+      )}
     >
-      {displayChecked && <Check className="w-4 h-4 text-white animate-in zoom-in duration-300" strokeWidth={3} />}
+      {displayChecked && <Check className="w-4 h-4 text-primary-foreground animate-in zoom-in duration-300" strokeWidth={3} />}
     </div>
   );
 
   const actions = (
-    <div className={`flex items-center justify-center min-w-[80px] px-2.5 py-1.5 rounded-lg border transition-all duration-500 ${displayChecked ? 'border-outline dark:border-outline-dark opacity-40 grayscale' : 'bg-primary-container dark:bg-primary-container-dark border-transparent'}`}>
-       <span className={`text-xs font-bold font-mono ${displayChecked ? 'text-content-tertiary' : 'text-primary dark:text-primary-dark'}`}>
+    <div className={cn(
+      "flex items-center justify-center min-w-[80px] px-2.5 py-1.5 rounded-lg border transition-all duration-500",
+      displayChecked ? 'border-border opacity-40 grayscale' : 'bg-primary/10 border-transparent'
+    )}>
+       <span className={cn(
+         "text-xs font-bold font-mono",
+         displayChecked ? 'text-muted-foreground' : 'text-primary'
+       )}>
           {Number(displayQty.toFixed(2))} <span className="font-normal lowercase">{unit}</span>
        </span>
     </div>
@@ -321,10 +336,16 @@ export const CheckableIngredient: React.FC<{
   return (
     <BaseRow leading={leading} isChecked={displayChecked} onClick={handleToggle} actions={actions}>
       <div className="relative inline-block">
-        <p className={`text-sm font-medium truncate transition-colors duration-500 ${displayChecked ? 'text-content-tertiary dark:text-content-tertiary-dark' : 'text-content dark:text-content-dark'}`}>
+        <p className={cn(
+          "text-sm font-medium truncate transition-colors duration-500",
+          displayChecked ? 'text-muted-foreground' : 'text-foreground'
+        )}>
           {name}
         </p>
-        <div className={`absolute top-1/2 left-0 h-[2px] bg-content-tertiary dark:bg-content-tertiary-dark transition-all duration-500 ease-out pointer-events-none ${displayChecked ? 'w-full opacity-100' : 'w-0 opacity-0'}`} />
+        <div className={cn(
+          "absolute top-1/2 left-0 h-[2px] bg-muted-foreground transition-all duration-500 ease-out pointer-events-none",
+          displayChecked ? 'w-full opacity-100' : 'w-0 opacity-0'
+        )} />
       </div>
     </BaseRow>
   );
@@ -333,11 +354,11 @@ export const CheckableIngredient: React.FC<{
 // 4. SIMPLE ROW (Orchestrator Mode)
 export const IngredientRow: React.FC<{ name: string; quantity: number; unit: string }> = React.memo(({ name, quantity, unit }) => {
   const actions = (
-    <span className="text-xs font-bold font-mono text-content-secondary dark:text-content-secondary-dark bg-surface-variant dark:bg-surface-variant-dark px-2 py-1 rounded">
+    <span className="text-xs font-bold font-mono text-muted-foreground bg-muted/50 px-2 py-1 rounded">
       {Number(quantity.toFixed(2))} {unit}
     </span>
   );
-  return <BaseRow actions={actions}><p className="text-sm font-medium text-content dark:text-content-dark">{name}</p></BaseRow>;
+  return <BaseRow actions={actions}><p className="text-sm font-medium text-foreground">{name}</p></BaseRow>;
 });
 
 // --- EMPTY STATE ---
@@ -350,12 +371,12 @@ export interface EmptyStateProps {
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, description, action, className = '' }) => (
-  <div className={`h-full flex flex-col items-center justify-center animate-fade-in px-4 text-center ${className}`}>
-    <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 bg-surface dark:bg-surface-dark border border-outline dark:border-outline-dark rounded-3xl flex items-center justify-center mb-6 shadow-sm">
-      {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: "w-8 h-8 md:w-10 md:h-10 text-content-tertiary dark:text-content-tertiary-dark" })}
+  <div className={cn("h-full flex flex-col items-center justify-center animate-fade-in px-4 text-center", className)}>
+    <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 bg-background border border-border rounded-3xl flex items-center justify-center mb-6 shadow-sm">
+      {React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: "w-8 h-8 md:w-10 md:h-10 text-muted-foreground" })}
     </div>
-    <h3 className="text-lg md:text-xl font-bold text-content dark:text-content-dark google-sans">{title}</h3>
-    <p className="text-sm text-content-secondary dark:text-content-secondary-dark mt-2 max-w-xs leading-relaxed">{description}</p>
+    <h3 className="text-lg md:text-xl font-bold text-foreground google-sans">{title}</h3>
+    <p className="text-sm text-muted-foreground mt-2 max-w-xs leading-relaxed">{description}</p>
     {action && <div className="mt-8">{action}</div>}
   </div>
 );
