@@ -2,6 +2,7 @@
 import { Mistral } from '@mistralai/mistralai';
 import { Recipe, GenieIdea, OrchestrationPlan } from '../model/types';
 import { SYSTEM_INSTRUCTIONS, PROMPTS } from '../config/prompts';
+import { JSON_SCHEMAS } from '../config/jsonschemas';
 import { mapAIError } from '../lib/ai';
 import { AIService } from './aiService';
 
@@ -42,16 +43,29 @@ async function callAI<T>(config: {
   model: string;
   system: string;
   prompt: string;
+  schemaName?: string;
+  schema?: any;
 }): Promise<T> {
   const client = getClient();
   try {
+    const responseFormat: any = config.schema
+      ? {
+          type: 'json_schema',
+          jsonSchema: {
+            name: config.schemaName || 'response',
+            schema: config.schema,
+            strict: true
+          }
+        }
+      : { type: 'json_object' };
+
     const response = await client.chat.complete({
       model: config.model,
       messages: [
         { role: 'system', content: config.system },
         { role: 'user', content: config.prompt }
       ],
-      responseFormat: { type: 'json_object' }
+      responseFormat
     });
 
     const content = response.choices?.[0]?.message?.content;
@@ -80,8 +94,10 @@ export class MistralService implements AIService {
   async processRecipe(input: string, prefs: string) {
     return callAI<Partial<Recipe>>({
       model: 'mistral-large-latest',
-      prompt: `Please process this recipe: ${input}. Ensure the output follows the required JSON structure.`,
-      system: SYSTEM_INSTRUCTIONS.RECIPE_PROCESSOR(prefs) + "\nOutput valid JSON."
+      prompt: `Please process this recipe: ${input}`,
+      system: SYSTEM_INSTRUCTIONS.RECIPE_PROCESSOR(prefs),
+      schemaName: 'recipe',
+      schema: JSON_SCHEMAS.RECIPE
     });
   }
 
@@ -90,7 +106,9 @@ export class MistralService implements AIService {
     const res = await callAI<{ ideas: GenieIdea[] }>({
       model: 'mistral-small-latest',
       prompt: prompt,
-      system: SYSTEM_INSTRUCTIONS.GENIE(prefs) + "\nReturn a JSON object with an 'ideas' array."
+      system: SYSTEM_INSTRUCTIONS.GENIE(prefs),
+      schemaName: 'genie_ideas',
+      schema: JSON_SCHEMAS.GENIE
     });
     return res.ideas || [];
   }
@@ -99,7 +117,9 @@ export class MistralService implements AIService {
     const res = await callAI<{ suggestions: string[] }>({
       model: 'mistral-large-latest',
       prompt: PROMPTS.REFINE_RECIPE(JSON.stringify(recipe), prompt),
-      system: SYSTEM_INSTRUCTIONS.REFINE + "\nReturn a JSON object with a 'suggestions' array."
+      system: SYSTEM_INSTRUCTIONS.REFINE,
+      schemaName: 'refine_suggestions',
+      schema: JSON_SCHEMAS.REFINE_SUGGESTIONS
     });
     return res.suggestions || [];
   }
@@ -108,7 +128,9 @@ export class MistralService implements AIService {
     return callAI<OrchestrationPlan>({
       model: 'mistral-large-latest',
       prompt: PROMPTS.ORCHESTRATE(JSON.stringify(recipes.map(r => ({ title: r.title, steps: r.instructions })))),
-      system: SYSTEM_INSTRUCTIONS.ORCHESTRATOR + "\nOutput valid JSON."
+      system: SYSTEM_INSTRUCTIONS.ORCHESTRATOR,
+      schemaName: 'orchestration_plan',
+      schema: JSON_SCHEMAS.ORCHESTRATION
     });
   }
 
@@ -116,7 +138,9 @@ export class MistralService implements AIService {
     const res = await callAI<{ plan: any[] }>({
       model: 'mistral-large-latest',
       prompt: PROMPTS.PLAN_WEEK(recipes.map(r => r.title).join(', ')),
-      system: SYSTEM_INSTRUCTIONS.PLANNER(prefs) + "\nReturn a JSON object with a 'plan' array."
+      system: SYSTEM_INSTRUCTIONS.PLANNER(prefs),
+      schemaName: 'meal_plan',
+      schema: JSON_SCHEMAS.MEAL_PLAN
     });
     return res.plan || [];
   }
@@ -134,12 +158,19 @@ export class MistralService implements AIService {
           {
             role: 'user',
             content: [
-              { type: 'text', text: SYSTEM_INSTRUCTIONS.RECEIPT_OCR + "\nOutput valid JSON." },
+              { type: 'text', text: SYSTEM_INSTRUCTIONS.RECEIPT_OCR },
               { type: 'image_url', imageUrl: `data:${mimeType};base64,${base64Image.split(',')[1]}` }
             ]
           }
         ],
-        responseFormat: { type: 'json_object' }
+        responseFormat: {
+          type: 'json_schema',
+          jsonSchema: {
+            name: 'receipt_extraction',
+            schema: JSON_SCHEMAS.RECEIPT_EXTRACTION,
+            strict: true
+          }
+        } as any
       });
 
       const content = response.choices?.[0]?.message?.content;
@@ -155,7 +186,9 @@ export class MistralService implements AIService {
     const res = await callAI<{ mappings: Array<{ original_name: string, generic_name: string }> }>({
       model: 'mistral-small-latest',
       prompt: PROMPTS.BATCH_CLASSIFY(JSON.stringify(productNames)),
-      system: SYSTEM_INSTRUCTIONS.DATA_MIGRATION + "\nReturn a JSON object with a 'mappings' array."
+      system: SYSTEM_INSTRUCTIONS.DATA_MIGRATION,
+      schemaName: 'migration_map',
+      schema: JSON_SCHEMAS.MIGRATION_MAP
     });
     return res.mappings || [];
   }
