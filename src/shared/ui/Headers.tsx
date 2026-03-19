@@ -20,7 +20,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ breadcrumbs, action }) =
         <BreadcrumbItem>
           <span>ChefAI Studio</span>
         </BreadcrumbItem>
-        {breadcrumbs?.map((crumb, i) => (
+        {Array.isArray(breadcrumbs) && breadcrumbs.map((crumb, i) => (
           <React.Fragment key={i}>
             <BreadcrumbSeparator />
             <BreadcrumbItem>

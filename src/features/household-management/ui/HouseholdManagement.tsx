@@ -78,10 +78,10 @@ export const HouseholdManagement: React.FC = () => {
         <div className="space-y-3">
            <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
               <Users className="w-3.5 h-3.5" />
-              Members ({homeMembers.length})
+              Members ({Array.isArray(homeMembers) ? homeMembers.length : 0})
            </Label>
            <div className="rounded-lg border divide-y overflow-hidden">
-              {homeMembers.map(member => (
+              {Array.isArray(homeMembers) && homeMembers.map(member => (
                  <div key={member.uid} className="flex items-center justify-between p-3 bg-muted/20">
                     <div className="flex items-center gap-3">
                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
