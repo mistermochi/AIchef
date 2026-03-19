@@ -333,6 +333,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const newKey = prompt(`Enter ${profile.aiProvider === 'gemini' ? 'Gemini' : 'Mistral'} API Key:`);
         if (newKey) {
           localStorage.setItem(keyName, newKey);
+          // Manually trigger storage event so other components (AIConnectivity) sync up
+          window.dispatchEvent(new Event('storage'));
           checkHealth();
         }
     }

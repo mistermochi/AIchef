@@ -4,11 +4,15 @@ import { mistralService } from './mistralService';
 
 // Mock the Mistral client
 const mockChatComplete = jest.fn();
+const mockListModels = jest.fn();
 jest.mock("@mistralai/mistralai", () => {
   return {
     Mistral: jest.fn().mockImplementation(() => ({
       chat: {
         complete: mockChatComplete,
+      },
+      models: {
+        list: mockListModels,
       }
     }))
   };
@@ -22,9 +26,7 @@ describe('MistralService', () => {
 
   describe('validateAIConnection', () => {
     it('should return healthy when connection is valid', async () => {
-      mockChatComplete.mockResolvedValue({
-        choices: [{ message: { content: 'hi' } }]
-      });
+      mockListModels.mockResolvedValue({ data: [] });
 
       const result = await mistralService.validateAIConnection();
       expect(result.status).toBe('healthy');
@@ -32,7 +34,7 @@ describe('MistralService', () => {
     });
 
     it('should return auth_error when API key is invalid', async () => {
-      mockChatComplete.mockRejectedValue(new Error('401 Unauthorized'));
+      mockListModels.mockRejectedValue(new Error('401 Unauthorized'));
 
       const result = await mistralService.validateAIConnection();
       expect(result.status).toBe('auth_error');

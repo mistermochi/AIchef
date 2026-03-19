@@ -24,6 +24,16 @@ export const AIConnectivity: React.FC = () => {
     return localStorage.getItem('mistral_api_key') || '';
   });
 
+  // Sync internal state if localStorage changes from outside (like via openKeySelector prompt)
+  useEffect(() => {
+    const handleStorage = () => {
+      setGeminiKey(localStorage.getItem('chefai_pass') || '');
+      setMistralKey(localStorage.getItem('mistral_api_key') || '');
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('chefai_pass', geminiKey);
   }, [geminiKey]);
