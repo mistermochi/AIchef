@@ -23,7 +23,8 @@ let cachedKey: string | undefined = undefined;
  * @throws {Error} If the API key is not found in localStorage.
  */
 const getClient = () => {
-	const apiKey = localStorage.getItem('chefai_pass');
+	const rawKey = localStorage.getItem('chefai_pass');
+  const apiKey = rawKey?.trim();
   
   // If the key is null or empty, stop immediately
 	if (!apiKey) {

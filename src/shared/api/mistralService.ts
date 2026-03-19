@@ -21,7 +21,8 @@ let cachedKey: string | undefined = undefined;
  * @throws {Error} If the API key is not found in localStorage.
  */
 const getClient = () => {
-  const apiKey = localStorage.getItem('mistral_api_key');
+  const rawKey = localStorage.getItem('mistral_api_key');
+  const apiKey = rawKey?.trim();
 
   if (!apiKey) {
     throw new Error("Mistral API Key not found in localStorage");
@@ -68,12 +69,8 @@ export class MistralService implements AIService {
   async validateAIConnection(): Promise<{ status: 'healthy' | 'auth_error' | 'quota_error' | 'network_error' | 'region_restricted' | 'unhealthy', message: string }> {
     try {
       const client = getClient();
-      // Simple chat completion to validate key
-      await client.chat.complete({
-        model: 'mistral-small-latest',
-        messages: [{ role: 'user', content: 'hi' }],
-        maxTokens: 1
-      });
+      // Use listModels instead of a full completion for a lighter health check
+      await client.models.list();
       return { status: 'healthy', message: 'Connected' };
     } catch (error: any) {
       return mapAIError(error);
