@@ -42,7 +42,7 @@ describe('MistralService', () => {
   });
 
   describe('processRecipe', () => {
-    it('should parse and return structured recipe', async () => {
+    it('should parse and return structured recipe and use json_schema', async () => {
       const mockRecipe = { title: 'Test Recipe', instructions: ['Step 1'] };
       mockChatComplete.mockResolvedValue({
         choices: [{ message: { content: JSON.stringify(mockRecipe) } }]
@@ -50,7 +50,15 @@ describe('MistralService', () => {
 
       const result = await mistralService.processRecipe('input', 'prefs');
       expect(result.title).toBe('Test Recipe');
-      expect(mockChatComplete).toHaveBeenCalled();
+      expect(mockChatComplete).toHaveBeenCalledWith(expect.objectContaining({
+        responseFormat: expect.objectContaining({
+          type: 'json_schema',
+          jsonSchema: expect.objectContaining({
+            name: 'recipe',
+            strict: true
+          })
+        })
+      }));
     });
   });
 });
