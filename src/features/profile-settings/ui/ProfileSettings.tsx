@@ -11,7 +11,7 @@ export const ProfileSettings: React.FC = () => {
   const { profile, updateProfile } = useAuthContext();
 
   const toggleArrayItem = (field: 'appliances' | 'dietary', value: string) => {
-    const list = profile[field];
+    const list = Array.isArray(profile[field]) ? profile[field] : [];
     const next = list.includes(value) ? list.filter(i => i !== value) : [...list, value];
     updateProfile({ [field]: next });
   };
@@ -63,7 +63,7 @@ export const ProfileSettings: React.FC = () => {
                   <Badge
                     key={diet}
                     label={diet}
-                    variant={profile.dietary.includes(diet) ? 'primary' : 'neutral'}
+                    variant={(Array.isArray(profile.dietary) && profile.dietary.includes(diet)) ? 'primary' : 'neutral'}
                     onClick={() => toggleArrayItem('dietary', diet)}
                   />
                 ))}
@@ -96,7 +96,7 @@ export const ProfileSettings: React.FC = () => {
                   <Badge
                     key={app}
                     label={app}
-                    variant={profile.appliances.includes(app) ? 'primary' : 'neutral'}
+                    variant={(Array.isArray(profile.appliances) && profile.appliances.includes(app)) ? 'primary' : 'neutral'}
                     onClick={() => toggleArrayItem('appliances', app)}
                   />
                 ))}

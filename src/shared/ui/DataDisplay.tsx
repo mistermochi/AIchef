@@ -124,9 +124,11 @@ interface EditableListProps<T> {
 }
 
 export function EditableList<T>({ items, renderItem, onAdd, isEditing, addButtonLabel = "Add Item", className = '' }: EditableListProps<T>) {
+  const safeItems = Array.isArray(items) ? items : [];
+
   return (
     <div className={className}>
-      {items.map((it: T, i: number) => renderItem(it, i, isEditing))}
+      {safeItems.map((it: T, i: number) => renderItem(it, i, isEditing))}
       {isEditing && (
         <button onClick={onAdd} className="w-full py-4 bg-muted/50 text-primary text-xs font-bold uppercase hover:bg-primary/10 border-t border-border flex items-center justify-center gap-2 transition-colors">
           <Plus className="w-4 h-4" /> {addButtonLabel}
