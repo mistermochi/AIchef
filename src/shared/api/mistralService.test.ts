@@ -55,6 +55,7 @@ describe('MistralService', () => {
           type: 'json_schema',
           jsonSchema: expect.objectContaining({
             name: 'recipe',
+            schemaDefinition: expect.any(Object),
             strict: true
           })
         })
