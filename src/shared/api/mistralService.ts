@@ -53,7 +53,7 @@ async function callAI<T>(config: {
           type: 'json_schema',
           jsonSchema: {
             name: config.schemaName || 'response',
-            schema: config.schema,
+            schemaDefinition: config.schema,
             strict: true
           }
         }
@@ -167,7 +167,7 @@ export class MistralService implements AIService {
           type: 'json_schema',
           jsonSchema: {
             name: 'receipt_extraction',
-            schema: JSON_SCHEMAS.RECEIPT_EXTRACTION,
+            schemaDefinition: JSON_SCHEMAS.RECEIPT_EXTRACTION,
             strict: true
           }
         } as any

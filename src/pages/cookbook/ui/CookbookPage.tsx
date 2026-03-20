@@ -209,14 +209,19 @@ export const CookbookPage: React.FC = () => {
                       <div className="space-y-2">
                         <h3 className="text-xl font-bold text-content dark:text-content-dark">Bring Your Own AI Power</h3>
                         <p className="text-sm text-content-secondary dark:text-content-secondary-dark max-w-sm">
-                          ChefAI uses your own Google Gemini API key to process recipes securely.
+                          ChefAI uses your own {profile.aiProvider === 'gemini' ? 'Google Gemini' : 'Mistral AI'} API key to process recipes securely.
                         </p>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
                         <Button fullWidth onClick={openKeySelector} icon={<Key className="w-4 h-4" />}>Select API Key</Button>
                         <Button fullWidth variant="ghost" onClick={handleManual} icon={<PlusCircle className="w-4 h-4" />}>Manual Create</Button>
                       </div>
-                      <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary dark:text-primary-dark hover:underline flex items-center gap-1.5">
+                      <a
+                        href={profile.aiProvider === 'gemini' ? "https://ai.google.dev/gemini-api/docs/billing" : "https://console.mistral.ai/billing/"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-primary dark:text-primary-dark hover:underline flex items-center gap-1.5"
+                      >
                         Learn about billing and project setup <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
