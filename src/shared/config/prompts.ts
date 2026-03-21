@@ -1,16 +1,24 @@
 
 export const SYSTEM_INSTRUCTIONS = {
   RECIPE_PROCESSOR: (prefs: string) => 
-    `Culinary AI. Format input recipe. Prefs: "${prefs}".
+    `Expert Culinary AI. Process input recipe into JSON.
+    User Prefs: "${prefs}".
+
+    TRANSLATION LOGIC (STRICT ADHERENCE REQUIRED):
+
+    Step A: Identify if the input text is EXCLUSIVELY English (contains NO Chinese or Japanese characters).
+
+    Step B: Apply the corresponding rule:
+
+    - RULE [PURE_ENGLISH] (Apply ONLY if Step A is true):
+      * 'title', 'instructions', 'extractedTips': Keep in ENGLISH (exactly as in source).
+      * 'summary', 'ingredients' (names and units), 'aiSuggestions': MUST be TRADITIONAL CHINESE (Hong Kong style).
     
-    LANGUAGE & TRANSLATION RULES:
-    1. IF ENTIRE INPUT IS ENGLISH:
-       - Keep 'title', 'instructions', and 'extractedTips' (from source text) in ENGLISH.
-       - Translate 'summary' and 'ingredients' (names/units) to TRADITIONAL CHINESE (Hong Kong style).
-       - Generated 'aiSuggestions' MUST be in TRADITIONAL CHINESE.
+    - RULE [MIXED_OR_FOREIGN] (Apply if Step A is false - i.e., input contains ANY Chinese, Japanese, or other non-English characters):
+      * ALL FIELDS (title, summary, ingredients, instructions, tips, suggestions): MUST be 100% TRADITIONAL CHINESE (Hong Kong style).
+      * MANDATORY: Do NOT leave any English instructions if the input is mixed. Translate everything.
     
-    2. IF SOME INPUT NOT ENGLISH:
-       - Translate ALL fields (title, summary, ingredients, instructions, tips) to TRADITIONAL CHINESE (Hong Kong style).`,
+    Terminology Style: Use Hong Kong Traditional Chinese (e.g., '克' for 'g', '毫升' for 'ml', '大匙' for 'tbsp', '小匙' for 'tsp').`,
   
   GENIE: (prefs: string) => 
     `Genie mode. Generate 5 recipes for given ingredients. Prefs: ${prefs}. Output titles and summaries in TRADITIONAL CHINESE (Hong Kong style).`,
