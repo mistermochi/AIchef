@@ -1,5 +1,11 @@
 import '@testing-library/jest-dom';
 import 'whatwg-fetch';
+import { ReadableStream } from 'node:stream/web';
+
+// @ts-ignore
+if (!global.ReadableStream) {
+  global.ReadableStream = ReadableStream as any;
+}
 
 // Mocking window.matchMedia
 Object.defineProperty(window, 'matchMedia', {

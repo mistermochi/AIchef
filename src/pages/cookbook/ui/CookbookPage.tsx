@@ -20,7 +20,7 @@ export const CookbookPage: React.FC = () => {
 
   const { processRecipe, loading: aiLoading, error: aiError } = useRecipeAI();
   const { cart: shoppingCart, addToCart, removeFromCart } = useCartContext();
-  const { isAIEnabled, openKeySelector, profile } = useAuthContext();
+  const { isAIEnabled, profile } = useAuthContext();
   const { setView } = useUIContext();
 
   const [placeholder, setPlaceholder] = useState('Search recipes...');
@@ -207,17 +207,17 @@ export const CookbookPage: React.FC = () => {
                         <Key className="w-8 h-8" />
                       </div>
                       <div className="space-y-2">
-                        <h3 className="text-xl font-bold text-content dark:text-content-dark">Bring Your Own AI Power</h3>
+                        <h3 className="text-xl font-bold text-content dark:text-content-dark">Connect Mistral AI</h3>
                         <p className="text-sm text-content-secondary dark:text-content-secondary-dark max-w-sm">
-                          ChefAI uses your own {profile.aiProvider === 'gemini' ? 'Google Gemini' : 'Mistral AI'} API key to process recipes securely.
+                          ChefAI uses your own Mistral API key to process recipes securely. Enter it in settings to begin.
                         </p>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
-                        <Button fullWidth onClick={openKeySelector} icon={<Key className="w-4 h-4" />}>Select API Key</Button>
+                        <Button fullWidth onClick={() => setView('profile')} icon={<Key className="w-4 h-4" />}>Go to Settings</Button>
                         <Button fullWidth variant="ghost" onClick={handleManual} icon={<PlusCircle className="w-4 h-4" />}>Manual Create</Button>
                       </div>
                       <a
-                        href={profile.aiProvider === 'gemini' ? "https://ai.google.dev/gemini-api/docs/billing" : "https://console.mistral.ai/billing/"}
+                        href="https://console.mistral.ai/billing/"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs font-bold text-primary dark:text-primary-dark hover:underline flex items-center gap-1.5"

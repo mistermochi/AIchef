@@ -7,16 +7,20 @@ jest.mock("@google/genai", () => ({
 }));
 
 import { useRecipeAI } from './useRecipeAI';
-import * as gemini from '../../../shared/api/geminiService';
 import { useAuthContext } from '../../../entities/user/model/AuthContext';
+import { getAIService } from '../../../shared/api/aiServiceFactory';
 
 // Mock the services and context
-jest.mock('../../../shared/api/geminiService');
+jest.mock('../../../shared/api/aiServiceFactory');
 jest.mock('../../../entities/user/model/AuthContext');
 
 describe('useRecipeAI hook', () => {
+  const mockAI = {
+    processRecipe: jest.fn(),
+    generateGenieIdeas: jest.fn(),
+    refineRecipe: jest.fn(),
+  };
   const mockReportError = jest.fn();
-  const mockOpenKeySelector = jest.fn();
   const mockGetProfileContext = jest.fn().mockReturnValue('mock prefs');
 
   beforeEach(() => {
@@ -24,14 +28,15 @@ describe('useRecipeAI hook', () => {
     (useAuthContext as jest.Mock).mockReturnValue({
       isAIEnabled: true,
       reportError: mockReportError,
-      openKeySelector: mockOpenKeySelector,
-      getProfileContext: mockGetProfileContext
+      getProfileContext: mockGetProfileContext,
+      profile: { aiProvider: 'gemini' }
     });
+    (getAIService as jest.Mock).mockReturnValue(mockAI);
   });
 
   it('should process a recipe successfully', async () => {
     const mockRecipe = { title: 'Test Recipe', ingredients: [], instructions: [] };
-    (gemini.processRecipe as jest.Mock).mockResolvedValue(mockRecipe);
+    mockAI.processRecipe.mockResolvedValue(mockRecipe);
 
     const { result } = renderHook(() => useRecipeAI());
 
@@ -48,11 +53,11 @@ describe('useRecipeAI hook', () => {
       extractedTips: [],
       aiSuggestions: []
     });
-    expect(gemini.processRecipe).toHaveBeenCalledWith('input text', 'mock prefs');
+    expect(mockAI.processRecipe).toHaveBeenCalledWith('input text', 'mock prefs');
   });
 
   it('should handle AI errors during recipe processing', async () => {
-    (gemini.processRecipe as jest.Mock).mockRejectedValue(new Error('Quota Exceeded'));
+    mockAI.processRecipe.mockRejectedValue(new Error('Quota Exceeded'));
 
     const { result } = renderHook(() => useRecipeAI());
 
@@ -67,7 +72,7 @@ describe('useRecipeAI hook', () => {
 
   it('should generate genie ideas successfully', async () => {
     const mockIdeas = [{ title: 'Idea 1', summary: 'Summary 1', emoji: '🥗' }];
-    (gemini.generateGenieIdeas as jest.Mock).mockResolvedValue(mockIdeas);
+    mockAI.generateGenieIdeas.mockResolvedValue(mockIdeas);
 
     const { result } = renderHook(() => useRecipeAI());
 
@@ -79,8 +84,8 @@ describe('useRecipeAI hook', () => {
     expect(result.current.genieIdeas).toEqual(mockIdeas);
   });
 
-  it('should handle auth errors by opening key selector', async () => {
-    (gemini.processRecipe as jest.Mock).mockRejectedValue(new Error('api_key_not_found'));
+  it('should handle auth errors', async () => {
+    mockAI.processRecipe.mockRejectedValue(new Error('api_key_not_found'));
 
     const { result } = renderHook(() => useRecipeAI());
 
@@ -88,7 +93,6 @@ describe('useRecipeAI hook', () => {
       await result.current.processRecipe('input text');
     });
 
-    expect(mockOpenKeySelector).toHaveBeenCalled();
     expect(mockReportError).toHaveBeenCalledWith('auth_error', 'Invalid or Missing API Key');
   });
 });

@@ -8,6 +8,7 @@ import { AIService } from './aiService';
 
 /**
  * @module GeminiService
+ * @deprecated Use MistralService instead.
  * @description Provides high-level functions to interact with Google Gemini AI models.
  * It handles client initialization, error mapping, and specific AI-driven features like recipe processing and orchestration.
  */

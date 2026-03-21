@@ -108,5 +108,5 @@ export const DEFAULT_PROFILE: UserProfile = {
   currency: 'USD',
   customInstructions: '',
   aiEnabled: true,
-  aiProvider: 'gemini'
+  aiProvider: 'mistral'
 };

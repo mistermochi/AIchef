@@ -17,7 +17,7 @@ import { mapAIError } from '../../../shared/lib/ai';
  * @returns {Object} An object containing state and AI action functions.
  */
 export function useRecipeAI() {
-  const { isAIEnabled, openKeySelector, getProfileContext, reportError, profile } = useAuthContext();
+  const { isAIEnabled, getProfileContext, reportError, profile } = useAuthContext();
   const ai = getAIService(profile.aiProvider);
 
   const [loading, setLoading] = useState(false);
@@ -30,9 +30,6 @@ export function useRecipeAI() {
     const mapped = mapAIError(e);
     reportError(mapped.status, mapped.message);
     setError(mapped.message);
-    if (mapped.status === 'auth_error') {
-      openKeySelector();
-    }
   };
 
   /**
