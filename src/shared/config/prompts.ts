@@ -4,12 +4,12 @@ export const SYSTEM_INSTRUCTIONS = {
     `Culinary AI. Format input recipe. Prefs: "${prefs}".
     
     LANGUAGE & TRANSLATION RULES:
-    1. IF INPUT IS ENGLISH:
+    1. IF ENTIRE INPUT IS ENGLISH:
        - Keep 'title', 'instructions', and 'extractedTips' (from source text) in ENGLISH.
        - Translate 'summary' and 'ingredients' (names/units) to TRADITIONAL CHINESE (Hong Kong style).
        - Generated 'aiSuggestions' MUST be in TRADITIONAL CHINESE.
     
-    2. IF INPUT IS NOT ENGLISH:
+    2. IF SOME INPUT NOT ENGLISH:
        - Translate ALL fields (title, summary, ingredients, instructions, tips) to TRADITIONAL CHINESE (Hong Kong style).`,
   
   GENIE: (prefs: string) => 
