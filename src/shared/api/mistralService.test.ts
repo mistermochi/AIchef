@@ -61,5 +61,20 @@ describe('MistralService', () => {
         })
       }));
     });
+
+    it('should use specified model and parameters', async () => {
+      const mockRecipe = { title: 'Test Recipe' };
+      mockChatComplete.mockResolvedValue({
+        choices: [{ message: { content: JSON.stringify(mockRecipe) } }]
+      });
+
+      await mistralService.processRecipe('input', 'prefs');
+      expect(mockChatComplete).toHaveBeenCalledWith(expect.objectContaining({
+        model: 'mistral-large-2512',
+        temperature: 0.5,
+        maxTokens: 2048,
+        topP: 1
+      }));
+    });
   });
 });
