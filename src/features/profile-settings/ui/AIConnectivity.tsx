@@ -13,21 +13,16 @@ import { useAuthContext } from '../../../entities/user/model/AuthContext';
  */
 export const AIConnectivity: React.FC = () => {
   const {
-    isAIEnabled, aiHealth, aiErrorMsg, checkHealth, openKeySelector, profile, updateProfile
+    isAIEnabled, aiHealth, aiErrorMsg, checkHealth, profile
   } = useAuthContext();
-
-  const [geminiKey, setGeminiKey] = React.useState(() => {
-    return localStorage.getItem('chefai_pass') || '';
-  });
 
   const [mistralKey, setMistralKey] = React.useState(() => {
     return localStorage.getItem('mistral_api_key') || '';
   });
 
-  // Sync internal state if localStorage changes from outside (like via openKeySelector prompt)
+  // Sync internal state if localStorage changes from outside
   useEffect(() => {
     const handleStorage = () => {
-      setGeminiKey(localStorage.getItem('chefai_pass') || '');
       setMistralKey(localStorage.getItem('mistral_api_key') || '');
     };
     window.addEventListener('storage', handleStorage);
@@ -35,12 +30,12 @@ export const AIConnectivity: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('chefai_pass', geminiKey);
-  }, [geminiKey]);
-
-  useEffect(() => {
     localStorage.setItem('mistral_api_key', mistralKey);
-  }, [mistralKey]);
+    // Explicitly check health when key changes for "instant" feedback
+    if (mistralKey.length > 20) {
+      checkHealth();
+    }
+  }, [mistralKey, checkHealth]);
 
   useEffect(() => {
     if (aiHealth === 'unknown') {
@@ -92,9 +87,7 @@ export const AIConnectivity: React.FC = () => {
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h4 className="text-sm font-bold">
-                    {profile.aiProvider === 'gemini' ? 'Gemini API' : 'Mistral API'}
-                  </h4>
+                  <h4 className="text-sm font-bold">Mistral AI API</h4>
                   {getStatusBadge()}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -105,70 +98,35 @@ export const AIConnectivity: React.FC = () => {
           </div>
 
           <div className="mt-4 space-y-3">
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant={profile.aiProvider === 'gemini' ? 'default' : 'ghost'}
-                className="flex-1"
-                onClick={() => updateProfile({ aiProvider: 'gemini' })}
-              >
-                Gemini
-              </Button>
-              <Button
-                size="sm"
-                variant={profile.aiProvider === 'mistral' ? 'default' : 'ghost'}
-                className="flex-1"
-                onClick={() => updateProfile({ aiProvider: 'mistral' })}
-              >
-                Mistral
-              </Button>
-            </div>
-
             <div className="flex gap-2 flex-wrap">
-              <Button
-                size="sm"
-                className="flex-1"
-                onClick={openKeySelector}
-                variant={isAIEnabled ? 'secondary' : 'default'}
-              >
-                <Key className="w-3 h-3 mr-2" />
-                {isAIEnabled ? 'Change Key' : 'Connect Key'}
-              </Button>
-
               {(aiHealth === 'unhealthy' || aiHealth === 'region_restricted') && (
-                <Button size="sm" variant="ghost" onClick={checkHealth}>
-                  <RefreshCw className="w-3 h-3 mr-2" /> Retry
+                <Button size="sm" variant="outline" onClick={checkHealth} className="flex-1">
+                  <RefreshCw className="w-3 h-3 mr-2" /> Retry Connection
                 </Button>
               )}
 
-              {profile.aiProvider === 'gemini' && (
-                <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button size="sm" className="w-full" variant="ghost">
-                    <ExternalLink className="w-3 h-3 mr-2" /> Billing
-                  </Button>
-                </a>
-              )}
-              {profile.aiProvider === 'mistral' && (
-                <a href="https://console.mistral.ai/billing/" target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button size="sm" className="w-full" variant="ghost">
-                    <ExternalLink className="w-3 h-3 mr-2" /> Billing
-                  </Button>
-                </a>
-              )}
+              <a href="https://console.mistral.ai/billing/" target="_blank" rel="noopener noreferrer" className="flex-1">
+                <Button size="sm" className="w-full" variant="ghost">
+                  <ExternalLink className="w-3 h-3 mr-2" /> Mistral Billing
+                </Button>
+              </a>
             </div>
           </div>
 
           <div className="mt-4 pt-4 border-t border-border">
             <div className="space-y-2">
               <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                {profile.aiProvider === 'gemini' ? "Gemini API Key" : "Mistral API Key"}
+                Mistral API Key
               </label>
               <Input
-                value={profile.aiProvider === 'gemini' ? geminiKey : mistralKey}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => profile.aiProvider === 'gemini' ? setGeminiKey(e.target.value) : setMistralKey(e.target.value)}
-                placeholder={profile.aiProvider === 'gemini' ? "Enter Gemini key" : "Enter Mistral key"}
-                type="password"
+                value={mistralKey}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMistralKey(e.target.value)}
+                placeholder="Enter Mistral API Key"
+                type="text"
               />
+              <p className="text-[10px] text-muted-foreground">
+                Your key is stored locally and never sent to our servers.
+              </p>
             </div>
           </div>
         </div>

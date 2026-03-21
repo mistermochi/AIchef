@@ -67,8 +67,6 @@ interface AuthContextType {
   checkHealth: () => Promise<void>;
   /** Manually reports an AI-related error to the context. */
   reportError: (type: AuthContextType['aiHealth'], msg: string) => void;
-  /** Opens the AI Studio key selector (if available in the environment). */
-  openKeySelector: () => Promise<void>;
 
   // Homes
   /** ID of the currently active household/home. */
@@ -323,22 +321,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
      setCurrentHomeId(homeId);
   };
 
-  const openKeySelector = async () => {
-    if (profile.aiProvider === 'gemini' && (window as any).aistudio && (window as any).aistudio.openSelectKey) {
-        await (window as any).aistudio.openSelectKey();
-        checkHealth();
-    } else {
-        // For Mistral or if Gemini environment tool is missing, prompt manually or via settings
-        const keyName = profile.aiProvider === 'gemini' ? 'chefai_pass' : 'mistral_api_key';
-        const newKey = prompt(`Enter ${profile.aiProvider === 'gemini' ? 'Gemini' : 'Mistral'} API Key:`);
-        if (newKey) {
-          localStorage.setItem(keyName, newKey);
-          // Manually trigger storage event so other components (AIConnectivity) sync up
-          window.dispatchEvent(new Event('storage'));
-          checkHealth();
-        }
-    }
-  };
 
   const login = async (e: string, p: string) => {
      setAuthError('');
@@ -372,7 +354,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{
       chefUser, trackerUser: chefUser,
       profile, updateProfile, saveProfile, updateUserDisplayName, getProfileContext,
-      isAIEnabled, aiHealth, aiErrorMsg, checkHealth, reportError, openKeySelector,
+      isAIEnabled, aiHealth, aiErrorMsg, checkHealth, reportError,
       currentHomeId, currentHome, homeMembers, createHome, joinHome,
       login, register, logout, authError, authMessage
     }}>
