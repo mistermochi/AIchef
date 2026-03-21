@@ -98,16 +98,33 @@ export class MistralService implements AIService {
   }
 
   async processRecipe(input: string, prefs: string) {
-    return callAI<Partial<Recipe>>({
-      model: 'mistral-large-2512',
-      prompt: `Please process this recipe: ${input}`,
-      system: SYSTEM_INSTRUCTIONS.RECIPE_PROCESSOR(prefs),
-      schemaName: 'recipe',
-      schema: JSON_SCHEMAS.RECIPE,
-      temperature: 0.5,
-      maxTokens: 2048,
-      topP: 1
-    });
+    const client = getClient();
+    try {
+      const response: any = await (client as any).beta.conversations.start({
+        model: 'mistral-large-2512',
+        inputs: [
+          { role: 'user', content: `Please process this recipe: ${input}` }
+        ],
+        instructions: SYSTEM_INSTRUCTIONS.RECIPE_PROCESSOR(prefs),
+        temperature: 0.5,
+        maxTokens: 2048,
+        topP: 1,
+        responseFormat: {
+          type: "json_schema",
+          jsonSchema: {
+            name: "recipe",
+            schemaDefinition: JSON_SCHEMAS.RECIPE
+          }
+        }
+      });
+
+      const content = response.choices?.[0]?.message?.content;
+      if (typeof content !== 'string') throw new Error("Empty response from Mistral.");
+      return JSON.parse(content.trim()) as Partial<Recipe>;
+    } catch (error: any) {
+      const mapped = mapAIError(error);
+      throw new Error(mapped.message);
+    }
   }
 
   async generateGenieIdeas(ingredients: string, prefs: string): Promise<GenieIdea[]> {
