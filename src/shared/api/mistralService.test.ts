@@ -5,7 +5,6 @@ import { mistralService } from './mistralService';
 // Mock the Mistral client
 const mockChatComplete = jest.fn();
 const mockListModels = jest.fn();
-const mockConversationsStart = jest.fn();
 jest.mock("@mistralai/mistralai", () => {
   return {
     Mistral: jest.fn().mockImplementation(() => ({
@@ -14,11 +13,6 @@ jest.mock("@mistralai/mistralai", () => {
       },
       models: {
         list: mockListModels,
-      },
-      beta: {
-        conversations: {
-          start: mockConversationsStart,
-        }
       }
     }))
   };
@@ -48,21 +42,21 @@ describe('MistralService', () => {
   });
 
   describe('processRecipe', () => {
-    it('should parse and return structured recipe and use beta conversations API', async () => {
+    it('should parse and return structured recipe and use json_schema', async () => {
       const mockRecipe = { title: 'Test Recipe', instructions: ['Step 1'] };
-      mockConversationsStart.mockResolvedValue({
+      mockChatComplete.mockResolvedValue({
         choices: [{ message: { content: JSON.stringify(mockRecipe) } }]
       });
 
       const result = await mistralService.processRecipe('input', 'prefs');
       expect(result.title).toBe('Test Recipe');
-      expect(mockConversationsStart).toHaveBeenCalledWith(expect.objectContaining({
-        model: 'mistral-large-2512',
-        inputs: [{ role: 'user', content: expect.stringContaining('input') }],
+      expect(mockChatComplete).toHaveBeenCalledWith(expect.objectContaining({
         responseFormat: expect.objectContaining({
           type: 'json_schema',
           jsonSchema: expect.objectContaining({
-            name: 'recipe'
+            name: 'recipe',
+            schemaDefinition: expect.any(Object),
+            strict: true
           })
         })
       }));
