@@ -20,7 +20,10 @@ jest.mock('../../../shared/api/firebase', () => ({
 // Mock AuthContext to avoid Firebase dependencies
 jest.mock('../../../entities/user/model/AuthContext', () => ({
   AuthProvider: ({ children }: any) => <div>{children}</div>,
-  useAuthContext: () => ({ isAIEnabled: true })
+  useAuthContext: () => ({
+    isAIEnabled: true,
+    profile: { aiProvider: 'mistral' }
+  })
 }));
 
 describe('CartContext', () => {

@@ -9,7 +9,7 @@ export * from './switch';
 export { Typewriter, CountUp, EditableList, ListRow, IngredientInput, IngredientScaler, CheckableIngredient, IngredientRow, EmptyState } from './DataDisplay';
 export type { EmptyStateProps } from './DataDisplay';
 export * from './Cards';
-export { CardHeader, CardTitle, CardDescription, CardFooter, CardContent } from './card';
+export { Card, CardHeader, CardTitle, CardDescription, CardFooter, CardContent } from './card';
 export * from './dialog';
 export * from './sheet';
 export * from './scroll-area';

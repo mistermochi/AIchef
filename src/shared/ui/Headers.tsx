@@ -8,7 +8,6 @@ import {
 } from "./breadcrumb"
 
 interface PageHeaderProps {
-  title: string;
   breadcrumbs?: string[];
   action?: React.ReactNode;
 }
