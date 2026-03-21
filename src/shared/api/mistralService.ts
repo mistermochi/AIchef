@@ -45,6 +45,9 @@ async function callAI<T>(config: {
   prompt: string;
   schemaName?: string;
   schema?: any;
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
 }): Promise<T> {
   const client = getClient();
   try {
@@ -65,7 +68,10 @@ async function callAI<T>(config: {
         { role: 'system', content: config.system },
         { role: 'user', content: config.prompt }
       ],
-      responseFormat
+      responseFormat,
+      temperature: config.temperature,
+      maxTokens: config.maxTokens,
+      topP: config.topP
     });
 
     const content = response.choices?.[0]?.message?.content;
@@ -93,11 +99,14 @@ export class MistralService implements AIService {
 
   async processRecipe(input: string, prefs: string) {
     return callAI<Partial<Recipe>>({
-      model: 'mistral-large-latest',
+      model: 'mistral-large-2512',
       prompt: `Please process this recipe: ${input}`,
       system: SYSTEM_INSTRUCTIONS.RECIPE_PROCESSOR(prefs),
       schemaName: 'recipe',
-      schema: JSON_SCHEMAS.RECIPE
+      schema: JSON_SCHEMAS.RECIPE,
+      temperature: 0.5,
+      maxTokens: 2048,
+      topP: 1
     });
   }
 
