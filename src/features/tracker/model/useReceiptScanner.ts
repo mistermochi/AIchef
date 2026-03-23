@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { getAIService } from '../../../shared/api/aiServiceFactory';
 import { compressImage } from '../../../shared/lib/helpers';
 import { useAuthContext } from '../../../entities/user/model/AuthContext';
+import { mapAIError } from '../../../shared/lib/ai';
 // @ts-ignore
 import heic2any from 'heic2any';
 
@@ -58,14 +59,9 @@ export function useReceiptScanner() {
       return data;
     } catch (err: any) {
       console.error(err);
-      setScanError(err.message || 'Failed to scan receipt');
-      
-      const msg = err.message.toLowerCase();
-      if (msg.includes('auth') || msg.includes('key')) reportError('auth_error', err.message);
-      else if (msg.includes('limit') || msg.includes('quota')) reportError('quota_error', err.message);
-      else if (msg.includes('region')) reportError('region_restricted', err.message);
-      else reportError('unhealthy', err.message);
-
+      const mapped = mapAIError(err);
+      setScanError(mapped.message);
+      reportError(mapped.status, mapped.message);
       return null;
     } finally {
       setIsScanning(false);

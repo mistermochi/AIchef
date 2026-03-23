@@ -11,7 +11,7 @@ import { mapAIError } from '../../../shared/lib/ai';
  * It manages loading states, handles AI-specific errors, and provides functions for processing, refining, and generating recipe ideas.
  *
  * Interactions:
- * - {@link geminiService}: Calls the underlying AI functions.
+ * - {@link AIService}: Calls the underlying AI functions via the factory.
  * - {@link useAuthContext}: Uses user preferences and reports AI health status.
  *
  * @returns {Object} An object containing state and AI action functions.

@@ -22,7 +22,7 @@ export const mapAIError = (error: any): AIErrorResult => {
     return { status: 'quota_error', message: 'Quota Exceeded' };
   }
 
-  if (msg.includes('api_key') || msg.includes('401') || msg.includes('403') || msg.includes('400') || msg.includes('not found') || msg.includes('auth')) {
+  if (msg.includes('api_key') || msg.includes('401') || msg.includes('403') || msg.includes('not found') || msg.includes('auth')) {
     return { status: 'auth_error', message: 'Invalid or Missing API Key' };
   }
 

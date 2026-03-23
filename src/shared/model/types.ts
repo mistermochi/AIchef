@@ -93,7 +93,7 @@ export interface UserProfile {
   currency: string;
   customInstructions: string;
   aiEnabled: boolean;
-  aiProvider: 'gemini' | 'mistral';
+  aiProvider: 'gemini' | 'mistral' | 'openrouter';
 }
 
 export const DEFAULT_PROFILE: UserProfile = {

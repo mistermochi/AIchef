@@ -7,6 +7,9 @@ import { AIStatus } from '../lib/ai';
  * @description Defines the standard interface for AI providers (e.g., Gemini, Mistral).
  */
 export interface AIService {
+  /** Checks if the service is minimally configured (e.g. has an API key) without network calls. */
+  isConfigured(): boolean;
+
   /** Validates the API connection and key. */
   validateAIConnection(): Promise<{ status: AIStatus; message: string }>;
 
