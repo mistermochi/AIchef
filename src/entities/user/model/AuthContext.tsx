@@ -59,7 +59,7 @@ interface AuthContextType {
   // AI Status
   /** Whether AI features are currently usable based on user settings and health checks. */
   isAIEnabled: boolean;
-  /** The current health status of the Gemini AI connection. */
+  /** The current health status of the active AI connection. */
   aiHealth: 'unknown' | 'checking' | 'healthy' | 'auth_error' | 'quota_error' | 'network_error' | 'region_restricted' | 'unhealthy';
   /** Error message associated with AI health issues. */
   aiErrorMsg: string;
@@ -348,7 +348,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
      setCurrentHomeId(null);
   };
 
-  const isAIEnabled = profile.aiEnabled !== false && aiHealth !== 'unhealthy' && aiHealth !== 'auth_error' && aiHealth !== 'quota_error' && aiHealth !== 'region_restricted';
+  const isAIEnabled = profile.aiEnabled !== false &&
+    aiHealth !== 'unhealthy' &&
+    aiHealth !== 'auth_error' &&
+    aiHealth !== 'quota_error' &&
+    aiHealth !== 'region_restricted' &&
+    getAIService(profile.aiProvider).isConfigured();
 
   return (
     <AuthContext.Provider value={{

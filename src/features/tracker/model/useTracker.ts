@@ -4,6 +4,7 @@ import { useTrackerContext } from '../../../entities/tracker/model/TrackerContex
 import { useAuthContext } from '../../../entities/user/model/AuthContext';
 import { useRecipeContext } from '../../../entities/recipe/model/RecipeContext';
 import { getAIService } from '../../../shared/api/aiServiceFactory';
+import { mapAIError } from '../../../shared/lib/ai';
 import { Recipe } from '../../../shared/model/types';
 import { Purchase } from '../../../entities/tracker/model/types';
 import { toDate } from '../../../shared/lib/date';
@@ -121,12 +122,9 @@ export function useTracker() {
       setDealResults(result.items || []);
       setDealSources(result.sources || []);
     } catch (e: any) { 
-        setDealError(e.message || 'AI search failed');
-        const msg = e.message.toLowerCase();
-        if (msg.includes('auth') || msg.includes('key')) reportError('auth_error', e.message);
-        else if (msg.includes('limit') || msg.includes('quota')) reportError('quota_error', e.message);
-        else if (msg.includes('region')) reportError('region_restricted', e.message);
-        else reportError('unhealthy', e.message);
+        const mapped = mapAIError(e);
+        setDealError(mapped.message);
+        reportError(mapped.status, mapped.message);
     } finally { 
         setSearchingDeals(false); 
     }

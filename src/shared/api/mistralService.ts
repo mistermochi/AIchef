@@ -86,6 +86,11 @@ async function callAI<T>(config: {
 }
 
 export class MistralService implements AIService {
+  isConfigured(): boolean {
+    const rawKey = localStorage.getItem('mistral_api_key');
+    return !!rawKey?.trim();
+  }
+
   async validateAIConnection(): Promise<{ status: 'healthy' | 'auth_error' | 'quota_error' | 'network_error' | 'region_restricted' | 'unhealthy', message: string }> {
     try {
       const client = getClient();

@@ -6,7 +6,7 @@ import { useCartContext } from '../../shopping-cart/model/CartContext';
 import { useMealPlanRepository } from '../../../entities/planner/api/useMealPlanRepository';
 import { MealPlanEntry, MealSlot } from '../../../shared/model/types';
 import { Recipe } from '../../../entities/recipe/model/types';
-import { generateMealPlan } from '../../../shared/api/geminiService';
+import { getAIService } from '../../../shared/api/aiServiceFactory';
 
 /**
  * @hook usePlanController
@@ -24,7 +24,7 @@ import { generateMealPlan } from '../../../shared/api/geminiService';
  * @returns {Object} { state, actions }
  */
 export function usePlan() {
-  const { currentHomeId, getProfileContext, isAIEnabled } = useAuthContext();
+  const { currentHomeId, getProfileContext, isAIEnabled, profile } = useAuthContext();
   const { savedRecipes } = useRecipeContext();
   const { addToCart } = useCartContext();
   const repo = useMealPlanRepository(currentHomeId);
@@ -100,7 +100,8 @@ export function usePlan() {
       setIsGenerating(true);
       try {
           const pref = getProfileContext();
-          const aiPlans = await generateMealPlan(savedRecipes.slice(0, 50), pref); // Limit context size
+          const ai = getAIService(profile.aiProvider);
+          const aiPlans = await ai.generateMealPlan(savedRecipes.slice(0, 50), pref); // Limit context size
           
           const batch: MealPlanEntry[] = [];
           

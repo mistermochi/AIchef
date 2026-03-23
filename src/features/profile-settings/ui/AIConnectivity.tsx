@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { Database, AlertTriangle, CheckCircle, Key, RefreshCw, ExternalLink, Trash2 } from 'lucide-react';
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -13,7 +13,7 @@ import { useAuthContext } from '../../../entities/user/model/AuthContext';
  */
 export const AIConnectivity: React.FC = () => {
   const {
-    isAIEnabled, aiHealth, aiErrorMsg, checkHealth, profile
+    isAIEnabled, aiHealth, aiErrorMsg, checkHealth, reportError, profile
   } = useAuthContext();
 
   const [mistralKey, setMistralKey] = React.useState(() => {
@@ -29,13 +29,19 @@ export const AIConnectivity: React.FC = () => {
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
+  const handleKeyChange = useCallback((newKey: string) => {
+    setMistralKey(newKey);
+    localStorage.setItem('mistral_api_key', newKey);
+    // Reset health to unknown to clear "Resting" state immediately
+    reportError('unknown', '');
+  }, [reportError]);
+
   useEffect(() => {
-    localStorage.setItem('mistral_api_key', mistralKey);
     // Explicitly check health when key changes for "instant" feedback
-    if (mistralKey.length > 20) {
+    if (mistralKey.length > 20 && aiHealth === 'unknown') {
       checkHealth();
     }
-  }, [mistralKey, checkHealth]);
+  }, [mistralKey, checkHealth, aiHealth]);
 
   useEffect(() => {
     if (aiHealth === 'unknown') {
@@ -120,7 +126,7 @@ export const AIConnectivity: React.FC = () => {
               </label>
               <Input
                 value={mistralKey}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMistralKey(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleKeyChange(e.target.value)}
                 placeholder="Enter Mistral API Key"
                 type="text"
               />
