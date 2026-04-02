@@ -51,3 +51,48 @@ export const findDurationInText = (text: string) => {
    }
    return null;
 };
+
+/**
+ * Safely evaluates a simple arithmetic expression.
+ * Supports +, -, *, /, ×, ÷, x and parentheses.
+ * Rounds to 2 decimal places.
+ *
+ * @param expression The string expression to evaluate
+ * @returns The calculated result as a string, or null if evaluation fails or no operators found.
+ */
+export const evaluateArithmetic = (expression: string): string | null => {
+  if (!expression || typeof expression !== 'string') return null;
+
+  // Check if it contains any math operators
+  const hasOperator = /[+\-*\/×÷x]/.test(expression);
+  if (!hasOperator) return null;
+
+  try {
+    // Replace visual operators with standard ones
+    let sanitized = expression
+      .replace(/×/g, '*')
+      .replace(/÷/g, '/')
+      .replace(/x/g, '*');
+
+    // Remove any characters that aren't numbers, operators, decimals or parentheses
+    sanitized = sanitized.replace(/[^0-9.\+\-\*\/\(\)]/g, '');
+
+    // Check if sanitized string still has something to evaluate
+    if (!sanitized.trim()) return null;
+
+    // Evaluate safely
+    // eslint-disable-next-line no-new-func
+    const result = new Function(`return (${sanitized})`)();
+
+    if (typeof result === 'number' && isFinite(result)) {
+        // Round to 2 decimal places
+        // We use Number.EPSILON to ensure precision when rounding
+        return (Math.round((result + Number.EPSILON) * 100) / 100).toString();
+    }
+  } catch (e) {
+    // Math error or syntax error: fail silently as per requirements
+    return null;
+  }
+
+  return null;
+};

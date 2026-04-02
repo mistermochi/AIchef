@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Tag, DollarSign, Scale, Layers, Trash2, MessageSquare, ChevronDown, Check } from 'lucide-react';
 import { Input, Button } from '../../../shared/ui';
 import { CATEGORIES, CATEGORY_EMOJIS, UNITS } from '../../../shared/config/app';
+import { evaluateArithmetic } from '../../../shared/lib/parsers';
 import { LineItem } from './types';
 import { Product } from '../../../entities/tracker/model/types';
 
@@ -25,6 +26,36 @@ export const TrackerLogItem: React.FC<TrackerLogItemProps> = React.memo(({
 }) => {
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const performCalculation = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    const result = evaluateArithmetic(item.price);
+    if (result !== null) {
+      onUpdate({ price: result });
+    }
+  }, [item.price, onUpdate]);
+
+  useEffect(() => {
+    // If it's a math expression, wait 3 seconds to calculate
+    const hasOperator = /[+\-*\/×÷x]/.test(item.price);
+    if (hasOperator) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(performCalculation, 3000);
+    } else {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [item.price, performCalculation]);
 
   const handleNameChange = (val: string) => {
     onUpdate({ name: val });
@@ -129,10 +160,11 @@ export const TrackerLogItem: React.FC<TrackerLogItemProps> = React.memo(({
           <div className="col-span-1">
             <label className="text-2xs font-bold text-content-tertiary uppercase px-1 tracking-widest mb-1.5 block">Total Price</label>
             <Input 
-              type="number" 
+              type="text"
               placeholder="0.00" 
               value={item.price} 
               onChange={(e) => onUpdate({ price: e.target.value })} 
+              onBlur={performCalculation}
               className="text-primary font-bold" 
               startIcon={<DollarSign className="text-primary/60" />}
             />
