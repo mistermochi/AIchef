@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getCategory, calcNormalizedPrice } from '../../../entities/tracker/model/trackerModel';
 import { STORES } from '../../../shared/config/app';
 import { fmtDateInput } from '../../../shared/lib/date';
+import { evaluateArithmetic } from '../../../shared/lib/parsers';
 import { LineItem } from '../ui/types';
 import { Product } from '../../../entities/tracker/model/types';
 import { useReceiptScanner } from './useReceiptScanner';
@@ -72,7 +73,10 @@ export function usePriceEntry({
   // Validation
   useEffect(() => {
     const isMetadataValid = !!metadata.store && (metadata.store !== 'Other' || !!metadata.customStore.trim());
-    const areItemsValid = items.length > 0 && items.every(i => !!i.name.trim() && !!i.price && !isNaN(parseFloat(i.price)));
+    const areItemsValid = items.length > 0 && items.every(i => {
+      const p = evaluateArithmetic(i.price) || i.price;
+      return !!i.name.trim() && !!p && !isNaN(parseFloat(p));
+    });
     onValidationChange?.(isMetadataValid && areItemsValid);
   }, [metadata, items, onValidationChange]);
 
@@ -80,7 +84,7 @@ export function usePriceEntry({
     const finalStore = metadata.store === 'Other' ? metadata.customStore : metadata.store;
     
     const process = (it: LineItem) => {
-      const p = parseFloat(it.price) || 0;
+      const p = parseFloat(evaluateArithmetic(it.price) || it.price) || 0;
       const sQty = parseFloat(it.singleQty) || 0;
       const cnt = parseFloat(it.count) || 1;
       const totalQty = sQty * cnt;
