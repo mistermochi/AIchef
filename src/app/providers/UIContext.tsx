@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { View } from '../../shared/model/types';
 import { useLocalStorage } from '../../shared/lib/hooks/useLocalStorage';
 
@@ -23,7 +23,7 @@ const UIContext = createContext<UIContextType | undefined>(undefined);
 /**
  * @component UIProvider
  * @description Provides global UI state management, including view navigation and dark mode persistence.
- * It also handles applying the `dark` class to the document root for Tailwind CSS dark mode support.
+ * ⚡ Optimization: Context value is memoized with `useMemo` to prevent unnecessary re-renders of consumers.
  */
 export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [view, setView] = useState<View>('cookbook');
@@ -37,8 +37,15 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({ children }
     }
   }, [darkMode]);
 
+  const value = useMemo(() => ({
+    view,
+    setView,
+    darkMode,
+    setDarkMode
+  }), [view, setView, darkMode, setDarkMode]);
+
   return (
-    <UIContext.Provider value={{ view, setView, darkMode, setDarkMode }}>
+    <UIContext.Provider value={value}>
       {children}
     </UIContext.Provider>
   );

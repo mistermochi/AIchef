@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
 import { Recipe } from './types';
 import { useAuthContext } from '../../../entities/user/model/AuthContext';
 import { useSearch } from '../../../shared/lib/hooks/useSearch';
@@ -24,7 +24,7 @@ interface RecipeContextType {
   /** The currently selected recipe (e.g., for viewing in a modal). */
   activeRecipe: Recipe | null;
   /** Function to set the active recipe. */
-  setActiveRecipe: React.Dispatch<React.SetStateAction<Recipe | null>>;
+  setActiveRecipe: (r: Recipe | null) => void;
   
   // Search
   /** The current search term applied to the cookbook. */
@@ -49,6 +49,7 @@ const RecipeContext = createContext<RecipeContextType | undefined>(undefined);
  * @component RecipeProvider
  * @description Manages the cookbook data for the current household.
  * It integrates with the `useRecipeRepository` for data persistence and `useSearch` for client-side filtering.
+ * ⚡ Optimization: Context value is memoized with `useMemo` and functions with `useCallback` to prevent unnecessary re-renders.
  */
 export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentHomeId } = useAuthContext();
@@ -65,24 +66,37 @@ export const RecipeProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   } = useRecipeRepository(currentHomeId);
 
   // UI State: Selection
-  const [activeRecipe, setActiveRecipe] = useState<Recipe | null>(null);
+  const [activeRecipe, setActiveRecipeState] = useState<Recipe | null>(null);
+
+  const setActiveRecipe = useCallback((r: Recipe | null) => {
+    setActiveRecipeState(r);
+  }, []);
 
   // Search Logic
+  const filterFn = useCallback((r: Recipe, term: string) => {
+    const searchData = `${r.title} ${r.ingredients?.map(i => i.name).join(' ') || ''}`.toLowerCase();
+    return searchData.includes(term);
+  }, []);
+
   const { searchTerm, setSearchTerm, filteredItems: filteredRecipes } = useSearch(
     savedRecipes, 
-    (r: Recipe, term: string) => {
-      const searchData = `${r.title} ${r.ingredients?.map(i => i.name).join(' ') || ''}`.toLowerCase();
-      return searchData.includes(term);
-    }
+    filterFn
   );
 
+  const value = useMemo(() => ({
+    savedRecipes, recipesLoading, loadMore, hasMore,
+    activeRecipe, setActiveRecipe,
+    searchTerm, setSearchTerm, filteredRecipes,
+    addRecipe, updateRecipe, deleteRecipe
+  }), [
+    savedRecipes, recipesLoading, loadMore, hasMore,
+    activeRecipe, setActiveRecipe,
+    searchTerm, setSearchTerm, filteredRecipes,
+    addRecipe, updateRecipe, deleteRecipe
+  ]);
+
   return (
-    <RecipeContext.Provider value={{
-      savedRecipes, recipesLoading, loadMore, hasMore,
-      activeRecipe, setActiveRecipe,
-      searchTerm, setSearchTerm, filteredRecipes,
-      addRecipe, updateRecipe, deleteRecipe
-    }}>
+    <RecipeContext.Provider value={value}>
       {children}
     </RecipeContext.Provider>
   );

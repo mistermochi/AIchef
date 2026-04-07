@@ -254,11 +254,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // --- ACTIONS ---
 
-  const updateProfile = (p: Partial<UserProfile>) => {
+  const updateProfile = useCallback((p: Partial<UserProfile>) => {
     setProfile(prev => ({ ...prev, ...p }));
-  };
+  }, []);
 
-  const saveProfile = async () => {
+  const saveProfile = useCallback(async () => {
     if (!chefUser) return;
     try {
       await setDoc(doc(chefDb, 'artifacts', CHEF_APP_ID, 'users', chefUser.uid), { profile }, { merge: true });
@@ -269,9 +269,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e: any) {
       setAuthError(e.message);
     }
-  };
+  }, [chefUser, profile, checkHealth]);
 
-  const updateUserDisplayName = async (name: string) => {
+  const updateUserDisplayName = useCallback(async (name: string) => {
     if (!chefUser) return;
     try {
       await updateFirebaseProfile(chefUser, { displayName: name });
@@ -282,13 +282,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e: any) {
       setAuthError(e.message);
     }
-  };
+  }, [chefUser]);
 
-  const getProfileContext = () => {
+  const getProfileContext = useCallback(() => {
     return `Diet: ${profile.dietary.join(', ')}. Appliances: ${profile.appliances.join(', ')}. Skill: ${profile.skillLevel}. ${profile.customInstructions}`;
-  };
+  }, [profile]);
 
-  const createHome = async (name: string) => {
+  const createHome = useCallback(async (name: string) => {
      if (!chefUser) return;
      const homeRef = await addDoc(collection(chefDb, 'artifacts', CHEF_APP_ID, 'homes'), {
         name,
@@ -299,9 +299,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
      
      await setDoc(doc(chefDb, 'artifacts', CHEF_APP_ID, 'users', chefUser.uid), { currentHomeId: homeRef.id }, { merge: true });
      setCurrentHomeId(homeRef.id);
-  };
+  }, [chefUser]);
 
-  const joinHome = async (homeId: string) => {
+  const joinHome = useCallback(async (homeId: string) => {
      if (!chefUser) return;
      const homeRef = doc(chefDb, 'artifacts', CHEF_APP_ID, 'homes', homeId);
      const homeSnap = await getDoc(homeRef);
@@ -319,10 +319,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
      const userDocRef = doc(chefDb, 'artifacts', CHEF_APP_ID, 'users', chefUser.uid);
      await setDoc(userDocRef, { currentHomeId: homeId }, { merge: true });
      setCurrentHomeId(homeId);
-  };
+  }, [chefUser]);
 
 
-  const login = async (e: string, p: string) => {
+  const login = useCallback(async (e: string, p: string) => {
      setAuthError('');
      try {
        await signInWithEmailAndPassword(chefAuth, e, p);
@@ -330,9 +330,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
        setAuthError(err.message);
        throw err;
      }
-  };
+  }, []);
 
-  const register = async (e: string, p: string) => {
+  const register = useCallback(async (e: string, p: string) => {
      setAuthError('');
      try {
        await createUserWithEmailAndPassword(chefAuth, e, p);
@@ -340,29 +340,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
        setAuthError(err.message);
        throw err;
      }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
      await signOut(chefAuth);
      setProfile(DEFAULT_PROFILE);
      setCurrentHomeId(null);
-  };
+  }, []);
 
-  const isAIEnabled = profile.aiEnabled !== false &&
-    aiHealth !== 'unhealthy' &&
-    aiHealth !== 'auth_error' &&
-    aiHealth !== 'quota_error' &&
-    aiHealth !== 'region_restricted' &&
-    getAIService(profile.aiProvider).isConfigured();
+  const isAIEnabled = useMemo(() => {
+    return profile.aiEnabled !== false &&
+      aiHealth !== 'unhealthy' &&
+      aiHealth !== 'auth_error' &&
+      aiHealth !== 'quota_error' &&
+      aiHealth !== 'region_restricted' &&
+      getAIService(profile.aiProvider).isConfigured();
+  }, [profile.aiEnabled, profile.aiProvider, aiHealth]);
+
+  const value = useMemo(() => ({
+    chefUser, trackerUser: chefUser,
+    profile, updateProfile, saveProfile, updateUserDisplayName, getProfileContext,
+    isAIEnabled, aiHealth, aiErrorMsg, checkHealth, reportError,
+    currentHomeId, currentHome, homeMembers, createHome, joinHome,
+    login, register, logout, authError, authMessage
+  }), [
+    chefUser, profile, updateProfile, saveProfile, updateUserDisplayName, getProfileContext,
+    isAIEnabled, aiHealth, aiErrorMsg, checkHealth, reportError,
+    currentHomeId, currentHome, homeMembers, createHome, joinHome,
+    login, register, logout, authError, authMessage
+  ]);
 
   return (
-    <AuthContext.Provider value={{
-      chefUser, trackerUser: chefUser,
-      profile, updateProfile, saveProfile, updateUserDisplayName, getProfileContext,
-      isAIEnabled, aiHealth, aiErrorMsg, checkHealth, reportError,
-      currentHomeId, currentHome, homeMembers, createHome, joinHome,
-      login, register, logout, authError, authMessage
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
