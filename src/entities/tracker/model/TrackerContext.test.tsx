@@ -37,7 +37,7 @@ describe('TrackerContext', () => {
     jest.clearAllMocks();
     (useAuthContext as jest.Mock).mockReturnValue({
       currentHomeId: 'home1',
-      trackerUser: { uid: 'user1' }
+      chefUser: { uid: 'user1' }
     });
     (useUIContext as jest.Mock).mockReturnValue({
       view: 'tracker'
