@@ -123,6 +123,7 @@ export const CookbookPage: React.FC = () => {
                     <CardFloatingAction 
                       onClick={(e) => handleCartClick(e, recipe)}
                       active={isInCart}
+                      ariaLabel={isInCart ? "Remove from shopping list" : "Add to shopping list"}
                       icon={isInCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
                     />
                   </CardMedia>

@@ -17,14 +17,15 @@ const NavButton = ({ active, icon, onClick, label }: { active: boolean, icon: Re
     <button 
       onClick={handleClick}
       title={label}
-      className={`w-full px-3 py-2 rounded-lg flex items-center transition-colors text-sm font-medium sidebar-item ${
+      aria-label={label}
+      className={`w-full px-3 py-2 rounded-lg flex flex-col md:flex-row items-center transition-colors text-sm font-medium sidebar-item ${
         active 
           ? 'bg-primary-container dark:bg-primary text-primary dark:text-white' 
           : 'text-content-secondary dark:text-content-secondary-dark hover:bg-surface-variant dark:hover:bg-surface-variant-dark'
-      } ${label ? 'gap-3' : 'justify-center'}`}
+      } gap-1 md:gap-3`}
     >
       {React.cloneElement(icon as React.ReactElement<any>, { className: 'w-5 h-5' })}
-      {label && <span className="truncate">{label}</span>}
+      {label && <span className="truncate text-[10px] md:text-sm">{label}</span>}
     </button>
   );
 };
@@ -101,11 +102,11 @@ export const Navigation: React.FC = () => {
 
       {/* Mobile Navigation Bottom Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface dark:bg-surface-dark border-t border-outline dark:border-outline-dark flex justify-around items-center py-2 px-2 pb-[calc(8px+env(safe-area-inset-bottom))] z-50 shadow-lg transition-colors">
-        <NavButton active={view === 'cookbook'} icon={<BookOpen />} onClick={() => setView('cookbook')} label="" />
-        <NavButton active={view === 'plan'} icon={<Calendar />} onClick={() => setView('plan')} label="" />
-        <NavButton active={view === 'genie'} icon={<Wand2 />} onClick={() => setView('genie')} label="" />
-        <NavButton active={view === 'tracker'} icon={<Tag />} onClick={() => setView('tracker')} label="" />
-        <NavButton active={view === 'shopping'} icon={<ShoppingCart />} onClick={() => setView('shopping')} label="" />
+        <NavButton active={view === 'cookbook'} icon={<BookOpen />} onClick={() => setView('cookbook')} label="Cookbook" />
+        <NavButton active={view === 'plan'} icon={<Calendar />} onClick={() => setView('plan')} label="Meal Planner" />
+        <NavButton active={view === 'genie'} icon={<Wand2 />} onClick={() => setView('genie')} label="Kitchen Genie" />
+        <NavButton active={view === 'tracker'} icon={<Tag />} onClick={() => setView('tracker')} label="Price Tracker" />
+        <NavButton active={view === 'shopping'} icon={<ShoppingCart />} onClick={() => setView('shopping')} label="Shopping List" />
       </nav>
     </>
   );

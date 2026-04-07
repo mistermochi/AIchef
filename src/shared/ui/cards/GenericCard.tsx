@@ -2,6 +2,7 @@
 import React from 'react';
 import { BaseCard } from './BaseCard';
 import { cn } from "@/shared/lib/utils";
+import { useHaptics } from "../../lib/hooks/useHaptics";
 
 /**
  * @component Card
@@ -47,19 +48,31 @@ export const CardFloatingAction: React.FC<{
   onClick?: (e: React.MouseEvent) => void;
   active?: boolean;
   activeColor?: string;
-}> = ({ icon, onClick, active }) => (
-  <button
-    onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
-    className={cn(
-      "absolute bottom-3 right-3 p-2.5 rounded-full shadow-lg transition-transform active:scale-90 flex items-center justify-center",
-      active
-        ? 'bg-success text-success-foreground'
-        : 'bg-background text-primary hover:bg-primary/10'
-    )}
-  >
-    {icon}
-  </button>
-);
+  ariaLabel?: string;
+}> = ({ icon, onClick, active, ariaLabel }) => {
+  const { trigger } = useHaptics();
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    trigger(active ? 'light' : 'medium');
+    onClick?.(e);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      aria-label={ariaLabel}
+      className={cn(
+        "absolute bottom-3 right-3 p-2.5 rounded-full shadow-lg transition-transform active:scale-90 flex items-center justify-center",
+        active
+          ? 'bg-success text-success-foreground'
+          : 'bg-background text-primary hover:bg-primary/10'
+      )}
+    >
+      {icon}
+    </button>
+  );
+};
 
 /**
  * @component CardContent
