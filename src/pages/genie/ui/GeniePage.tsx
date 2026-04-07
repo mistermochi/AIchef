@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { Sparkles, CookingPot, Zap, Mic, Plus, Bot } from 'lucide-react';
-import { ViewHeader, Badge, PromptInput, EmptyState, PageLayout, Button } from '../../../shared/ui';
+import { ViewHeader, Badge, PromptInput, EmptyState, PageLayout, Button, IconButton } from '../../../shared/ui';
 import { GenieCard, GenieSkeleton } from '../../../features/recipe-genie/ui/GenieCard';
 import { useRecipeContext } from '../../../entities/recipe/model/RecipeContext';
 import { useAuthContext } from '../../../entities/user/model/AuthContext';
@@ -141,9 +141,9 @@ export const GeniePage: React.FC = () => {
                 className="text-lg shadow-xl"
                 actions={
                   <>
-                    <button type="button" className="p-2 text-content-secondary dark:text-content-secondary-dark hover:bg-surface dark:hover:bg-surface-dark rounded-lg transition-colors" title="Rewrite"><Sparkles className="w-5 h-5 opacity-60" /></button>
-                    <button type="button" className="p-2 text-content-secondary dark:text-content-secondary-dark hover:bg-surface dark:hover:bg-surface-dark rounded-lg transition-colors" title="Voice input"><Mic className="w-5 h-5 opacity-60" /></button>
-                    <button type="button" className="p-2 text-content-secondary dark:text-content-secondary-dark hover:bg-surface dark:hover:bg-surface-dark rounded-lg transition-colors" title="Add context"><Plus className="w-5 h-5 opacity-60" /></button>
+                    <IconButton icon={<Sparkles className="w-5 h-5 opacity-60" />} title="Rewrite" aria-label="Rewrite prompt" />
+                    <IconButton icon={<Mic className="w-5 h-5 opacity-60" />} title="Voice input" aria-label="Voice input" />
+                    <IconButton icon={<Plus className="w-5 h-5 opacity-60" />} title="Add context" aria-label="Add context" />
                   </>
                 }
               />

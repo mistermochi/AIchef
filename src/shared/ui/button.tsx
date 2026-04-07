@@ -70,6 +70,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={props.disabled || loading}
         onClick={handleClick}
+        aria-label={props['aria-label'] || label}
         {...props}
       >
         {loading ? (

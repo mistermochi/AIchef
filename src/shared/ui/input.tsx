@@ -2,6 +2,7 @@ import * as React from "react"
 
 import { cn } from "@/shared/lib/utils"
 import { X, Sparkles, ArrowUp } from "lucide-react"
+import { useHaptics } from "../lib/hooks/useHaptics"
 
 const Input = React.forwardRef<
   HTMLInputElement,
@@ -13,6 +14,7 @@ const Input = React.forwardRef<
   }
 >(({ className, type, label, startIcon, endIcon, onClear, ...props }, ref) => {
   const hasValue = !!(props.value && props.value.toString().length > 0);
+  const { trigger } = useHaptics();
 
   return (
     <div className="relative w-full group/input">
@@ -39,10 +41,12 @@ const Input = React.forwardRef<
           type="button"
           onClick={(e) => {
             e.preventDefault();
+            trigger('light');
             onClear();
           }}
           className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-content-tertiary hover:text-content hover:bg-surface-variant dark:hover:bg-surface-variant-dark transition-all active:scale-90 animate-in fade-in zoom-in duration-200"
           title="Clear input"
+          aria-label="Clear input"
         >
           <X size={14} />
         </button>
@@ -75,6 +79,7 @@ interface PromptInputProps {
 export const PromptInput = React.forwardRef<HTMLTextAreaElement, PromptInputProps>(({
   value, onChange, onSubmit, loading, placeholder, disabled, error, actions, className = '', autoFocus
 }, ref) => {
+  const { trigger } = useHaptics();
   const internalRef = React.useRef<HTMLTextAreaElement>(null);
   const textareaRef = (ref as any) || internalRef;
 
@@ -125,8 +130,12 @@ export const PromptInput = React.forwardRef<HTMLTextAreaElement, PromptInputProp
             {actions && <div className="w-2"></div>}
             
             <button
-              onClick={onSubmit}
+              onClick={() => {
+                trigger('medium');
+                onSubmit();
+              }}
               disabled={disabled || loading || !value.trim()}
+              aria-label={loading ? "AI is processing" : "Submit prompt"}
               className={cn(
                 "w-10 h-10 text-white rounded-lg flex items-center justify-center transition-all disabled:bg-surface-variant dark:disabled:bg-surface-variant-dark disabled:text-content-tertiary dark:disabled:text-content-tertiary-dark active:scale-95 shrink-0 shadow-sm",
                 loading ? 'bg-transparent text-primary dark:text-primary-dark' : 'bg-primary dark:bg-primary-dark hover:bg-primary-hover dark:hover:bg-primary-hover-dark'

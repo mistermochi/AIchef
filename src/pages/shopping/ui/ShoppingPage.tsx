@@ -134,7 +134,7 @@ export const ShoppingPage: React.FC = () => {
             noPadding={true}
             title="Selected Recipes"
             icon={<Layers />}
-            action={<IconButton size="sm" icon={<X className="w-5 h-5"/>} onClick={() => setShowSources(false)} />}
+            action={<IconButton size="sm" icon={<X className="w-5 h-5"/>} onClick={() => setShowSources(false)} aria-label="Close sources" />}
             className="w-full lg:max-w-md rounded-t-3xl lg:rounded-2xl shadow-2xl animate-slide-up max-h-[80vh] flex flex-col" 
             onClick={e => e.stopPropagation()}
           >
@@ -143,14 +143,32 @@ export const ShoppingPage: React.FC = () => {
                 <div key={item.id} className="p-4 flex flex-col gap-3">
                   <div className="flex justify-between items-start">
                     <span className="text-sm font-bold text-content dark:text-content-dark truncate pr-4">{item.title}</span>
-                    <button onClick={() => removeFromCart(item.id)} className="text-danger dark:text-danger-dark"><Trash2 className="w-4 h-4"/></button>
+                    <button
+                      onClick={() => removeFromCart(item.id)}
+                      className="text-danger dark:text-danger-dark p-1 hover:bg-danger/10 rounded-md transition-colors"
+                      aria-label={`Remove ${item.title} from cart`}
+                    >
+                      <Trash2 className="w-4 h-4"/>
+                    </button>
                   </div>
                   <div className="flex items-center justify-between bg-surface-variant dark:bg-surface-variant-dark p-1.5 rounded-lg border border-outline dark:border-outline-dark">
                     <span className="text-xs font-bold text-content-tertiary dark:text-content-tertiary-dark px-2 uppercase">Scale Factor</span>
                     <div className="flex items-center gap-1 bg-surface dark:bg-surface-dark rounded-md border border-outline dark:border-outline-dark shadow-sm">
-                      <button onClick={() => updateCartItemFactor(item.id, item.scalingFactor - 0.5)} className="p-1.5"><Minus className="w-4 h-4 text-content-secondary dark:text-content-secondary-dark"/></button>
+                      <button
+                        onClick={() => updateCartItemFactor(item.id, item.scalingFactor - 0.5)}
+                        className="p-1.5 hover:bg-surface-variant dark:hover:bg-surface-variant-dark rounded-l-md transition-colors"
+                        aria-label="Decrease scaling factor"
+                      >
+                        <Minus className="w-4 h-4 text-content-secondary dark:text-content-secondary-dark"/>
+                      </button>
                       <span className="text-xs font-mono font-bold w-12 text-center text-primary dark:text-primary-dark">{item.scalingFactor}x</span>
-                      <button onClick={() => updateCartItemFactor(item.id, item.scalingFactor + 0.5)} className="p-1.5"><Plus className="w-4 h-4 text-content-secondary dark:text-content-secondary-dark"/></button>
+                      <button
+                        onClick={() => updateCartItemFactor(item.id, item.scalingFactor + 0.5)}
+                        className="p-1.5 hover:bg-surface-variant dark:hover:bg-surface-variant-dark rounded-r-md transition-colors"
+                        aria-label="Increase scaling factor"
+                      >
+                        <Plus className="w-4 h-4 text-content-secondary dark:text-content-secondary-dark"/>
+                      </button>
                     </div>
                   </div>
                 </div>
