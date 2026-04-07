@@ -7,7 +7,7 @@ import { getAIService } from '../../../shared/api/aiServiceFactory';
 import { calcNormalizedPrice } from '../../../entities/tracker/model/trackerModel';
 
 export function useDataMigration() {
-  const { trackerUser, isAIEnabled, currentHomeId, profile } = useAuthContext();
+  const { chefUser, isAIEnabled, currentHomeId, profile } = useAuthContext();
   const [migrating, setMigrating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [total, setTotal] = useState(0);
@@ -15,7 +15,7 @@ export function useDataMigration() {
 
   // AI Cleanup Migration (Fixes legacy price data & re-classifies names)
   const runMigration = async () => {
-    if (!trackerUser || !isAIEnabled || !currentHomeId) return;
+    if (!chefUser || !isAIEnabled || !currentHomeId) return;
     
     setMigrating(true);
     setProgress(0);

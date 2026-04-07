@@ -34,8 +34,8 @@ if ('serviceWorker' in navigator) {
     const swUrl = `${import.meta.env.BASE_URL}service-worker.js`;
     
     navigator.serviceWorker.register(swUrl, { scope: import.meta.env.BASE_URL })
-      .then((registration) => {
-        console.log('SW registered with scope:', registration.scope);
+      .then((_registration) => {
+        // SW registered
       })
       .catch((error) => {
         console.warn('SW registration failed:', error);

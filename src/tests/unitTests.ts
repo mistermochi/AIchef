@@ -101,10 +101,3 @@ export const runShoppingTests = async () => {
   return ctx.results;
 };
 
-// Legacy single entry point (if needed)
-export const runUnitTests = async () => {
-    const math = await runMathTests();
-    const parser = await runParserTests();
-    const shopping = await runShoppingTests();
-    return [...math, ...parser, ...shopping];
-};

@@ -8,7 +8,7 @@ import { Recipe } from '../../../entities/recipe/model/types';
 import { calcNormalizedPrice } from '../../../entities/tracker/model/trackerModel';
 
 export function useBackupRestore() {
-  const { chefUser, trackerUser } = useAuthContext();
+  const { chefUser } = useAuthContext();
   const [processing, setProcessing] = useState(false);
   const [status, setStatus] = useState('');
 
@@ -91,7 +91,7 @@ export function useBackupRestore() {
   // --- TRACKER (CSV) ---
 
   const exportTracker = async () => {
-    if (!trackerUser) return;
+    if (!chefUser) return;
     setProcessing(true);
     setStatus('Exporting purchases...');
     try {
@@ -132,7 +132,7 @@ export function useBackupRestore() {
   };
 
   const restoreTracker = async (file: File) => {
-    if (!trackerUser) return;
+    if (!chefUser) return;
     setProcessing(true);
     setStatus('Parsing CSV...');
     try {
@@ -161,7 +161,7 @@ export function useBackupRestore() {
           const normalizedPrice = calcNormalizedPrice(p, q, u);
 
           const payload = {
-            userId: trackerUser.uid,
+            userId: chefUser.uid,
             productName: item.productName,
             category: item.category || 'General',
             price: p,

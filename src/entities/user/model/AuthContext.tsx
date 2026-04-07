@@ -41,8 +41,6 @@ interface MemberProfile {
 interface AuthContextType {
   /** The currently authenticated Firebase user for the Chef app. */
   chefUser: User | null;
-  /** Alias for chefUser, used in tracking contexts. */
-  trackerUser: User | null;
   
   // Profile
   /** The extended user profile containing preferences and settings. */
@@ -358,7 +356,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [profile.aiEnabled, profile.aiProvider, aiHealth]);
 
   const value = useMemo(() => ({
-    chefUser, trackerUser: chefUser,
+    chefUser,
     profile, updateProfile, saveProfile, updateUserDisplayName, getProfileContext,
     isAIEnabled, aiHealth, aiErrorMsg, checkHealth, reportError,
     currentHomeId, currentHome, homeMembers, createHome, joinHome,

@@ -40,7 +40,7 @@ const TrackerContext = createContext<TrackerContextType | undefined>(undefined);
  * Only activates (starts fetching) when the user navigates to a relevant view to save resources.
  */
 export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { currentHomeId, trackerUser } = useAuthContext();
+  const { currentHomeId, chefUser } = useAuthContext();
   const { view } = useUIContext();
   
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -140,11 +140,11 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [purchases]);
 
   const savePurchase = useCallback(async (data: Partial<Purchase>, isEdit: boolean, id?: string) => {
-    if (!currentHomeId || !trackerUser) return false;
+    if (!currentHomeId || !chefUser) return false;
     const ref = collection(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'purchases');
     try {
       const { id: _, ...cleanData } = data;
-      const payload = { ...cleanData, userId: trackerUser.uid };
+      const payload = { ...cleanData, userId: chefUser.uid };
       if (isEdit && id) {
         await setDoc(doc(ref, id), payload, { merge: true });
       } else {
@@ -152,21 +152,21 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       return true;
     } catch (e) { console.error("Tracker Save Error:", e); return false; }
-  }, [currentHomeId, trackerUser]);
+  }, [currentHomeId, chefUser]);
 
   const savePurchasesBatch = useCallback(async (items: Partial<Purchase>[]) => {
-    if (!currentHomeId || !trackerUser || items.length === 0) return false;
+    if (!currentHomeId || !chefUser || items.length === 0) return false;
     const batch = writeBatch(trackerDb);
     const ref = collection(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'purchases');
     try {
       items.forEach(item => {
         const { id: _, ...cleanItem } = item;
-        batch.set(doc(ref), { ...cleanItem, timestamp: new Date(), userId: trackerUser.uid });
+        batch.set(doc(ref), { ...cleanItem, timestamp: new Date(), userId: chefUser.uid });
       });
       await batch.commit();
       return true;
     } catch (e) { console.error("Batch error", e); return false; }
-  }, [currentHomeId, trackerUser]);
+  }, [currentHomeId, chefUser]);
 
   const deletePurchase = useCallback((id: string) => {
       if (!currentHomeId) return Promise.reject("No Home");
