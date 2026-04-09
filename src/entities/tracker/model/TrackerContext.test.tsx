@@ -29,7 +29,8 @@ jest.mock('firebase/firestore', () => ({
   setDoc: jest.fn(),
   addDoc: jest.fn(),
   writeBatch: jest.fn(),
-  deleteDoc: jest.fn()
+  deleteDoc: jest.fn(),
+  getDocs: jest.fn(() => Promise.resolve({ docs: [] }))
 }));
 
 describe('TrackerContext', () => {

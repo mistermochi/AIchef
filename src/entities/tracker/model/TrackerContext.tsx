@@ -1,18 +1,38 @@
 
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { collection, onSnapshot, query, orderBy, limit, doc, setDoc, addDoc, writeBatch, deleteDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, limit, doc, setDoc, addDoc, writeBatch, deleteDoc, getDocs } from 'firebase/firestore';
 import { trackerDb, CHEF_APP_ID } from '../../../shared/api/firebase';
 import { Product, Purchase } from './types';
 import { useAuthContext } from '../../../entities/user/model/AuthContext';
 import { useUIContext } from '../../../app/providers/UIContext';
 
 /**
+ * @interface CatalogProduct
+ * @description Optimized summary of a product for the Catalog view.
+ */
+export interface CatalogProduct {
+  id: string; // normalized key
+  name: string;
+  genericName: string;
+  category: string;
+  bestPrice: number;
+  bestUnitLabel: string;
+  bestStore: string;
+  bestDate: any;
+  bestPurchaseId: string;
+  variantCount: number;
+  lastNormalizedPrice: number; // for comparison logic
+}
+
+/**
  * @interface TrackerContextType
  * @description Defines the shape of the Tracker Context, which manages grocery purchase history and product price tracking.
  */
 interface TrackerContextType {
-  /** Aggregated list of unique products derived from purchase history. */
+  /** Aggregated list of unique products derived from purchase history (Paginated/Partial). */
   products: Product[];
+  /** Full list of unique products for the Catalog view, loaded from a summary document. */
+  catalog: CatalogProduct[];
   /** List of individual purchase records. */
   purchases: Purchase[];
   /** Indicates if data is currently being fetched from Firestore. */
@@ -29,6 +49,8 @@ interface TrackerContextType {
   savePurchasesBatch: (items: Partial<Purchase>[]) => Promise<boolean>;
   /** Deletes a specific purchase record by ID. */
   deletePurchase: (id: string) => Promise<void>;
+  /** Forces a complete rebuild of the catalog summary from all purchase history. */
+  rebuildCatalog: () => Promise<void>;
 }
 
 const TrackerContext = createContext<TrackerContextType | undefined>(undefined);
@@ -44,6 +66,7 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const { view } = useUIContext();
   
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasActivated, setHasActivated] = useState(false);
@@ -58,6 +81,29 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setHasActivated(true);
     }
   }, [view, hasActivated]);
+
+  // Load Catalog Summary
+  useEffect(() => {
+    if (!currentHomeId || !hasActivated) {
+        setCatalog([]);
+        return;
+    }
+
+    const summaryRef = doc(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'summaries', 'tracker');
+    const unsub = onSnapshot(summaryRef, (snap) => {
+        if (snap.exists()) {
+            const data = snap.data();
+            const products = (data.products || []) as CatalogProduct[];
+            setCatalog(products);
+        } else {
+            // Summary doesn't exist, we'll need to build it
+            setCatalog([]);
+            rebuildCatalog();
+        }
+    });
+
+    return () => unsub();
+  }, [currentHomeId, hasActivated]);
 
   // Load Purchases
   useEffect(() => {
@@ -121,6 +167,62 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [hasMore, loading]);
 
+  /**
+   * REBUILD CATALOG
+   * Fetches ALL purchases to create a new summary document.
+   */
+  const rebuildCatalog = useCallback(async () => {
+    if (!currentHomeId) return;
+    setLoading(true);
+    try {
+      const purcRef = collection(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'purchases');
+      const snapshot = await getDocs(query(purcRef, orderBy('date', 'desc')));
+
+      const allPurchases = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Purchase));
+
+      const productMap: Record<string, Purchase[]> = {};
+      allPurchases.forEach(p => {
+        const key = p.productName?.trim()?.toLowerCase() || 'unknown';
+        if (!productMap[key]) productMap[key] = [];
+        productMap[key].push(p);
+      });
+
+      const { getPerItemPrice } = await import('./trackerModel');
+
+      const catalogItems: CatalogProduct[] = Object.keys(productMap).map(key => {
+        const history = productMap[key];
+        const latest = history[0];
+        const best = history.reduce((min, curr) =>
+          (curr.normalizedPrice || Infinity) < (min.normalizedPrice || Infinity) ? curr : min
+        , history[0]);
+
+        const bestCtx = getPerItemPrice(best);
+
+        return {
+          id: key,
+          name: latest.productName,
+          genericName: latest.genericName || 'Unclassified',
+          category: latest.category || 'General',
+          bestPrice: bestCtx.price,
+          bestUnitLabel: bestCtx.label,
+          bestStore: best.store,
+          bestDate: best.date,
+          bestPurchaseId: best.id,
+          variantCount: history.length,
+          lastNormalizedPrice: best.normalizedPrice
+        };
+      });
+
+      const summaryRef = doc(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'summaries', 'tracker');
+      await setDoc(summaryRef, { products: catalogItems, updatedAt: new Date() });
+
+    } catch (e) {
+      console.error("Rebuild Catalog Error:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentHomeId]);
+
   // Derived Products (Note: This will only reflect products in the loaded purchases)
   const products = useMemo(() => {
     const productMap: Record<string, Product> = {};
@@ -150,9 +252,11 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
       } else {
         await addDoc(ref, { ...payload, timestamp: new Date() });
       }
+      // Post-save: Trigger rebuild to ensure summary is correct (simple approach)
+      rebuildCatalog();
       return true;
     } catch (e) { console.error("Tracker Save Error:", e); return false; }
-  }, [currentHomeId, chefUser]);
+  }, [currentHomeId, chefUser, rebuildCatalog]);
 
   const savePurchasesBatch = useCallback(async (items: Partial<Purchase>[]) => {
     if (!currentHomeId || !chefUser || items.length === 0) return false;
@@ -164,19 +268,21 @@ export const TrackerProvider: React.FC<{ children: React.ReactNode }> = ({ child
         batch.set(doc(ref), { ...cleanItem, timestamp: new Date(), userId: chefUser.uid });
       });
       await batch.commit();
+      rebuildCatalog();
       return true;
     } catch (e) { console.error("Batch error", e); return false; }
-  }, [currentHomeId, chefUser]);
+  }, [currentHomeId, chefUser, rebuildCatalog]);
 
-  const deletePurchase = useCallback((id: string) => {
+  const deletePurchase = useCallback(async (id: string) => {
       if (!currentHomeId) return Promise.reject("No Home");
-      return deleteDoc(doc(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'purchases', id));
-  }, [currentHomeId]);
+      await deleteDoc(doc(trackerDb, 'artifacts', CHEF_APP_ID, 'homes', currentHomeId, 'purchases', id));
+      rebuildCatalog();
+  }, [currentHomeId, rebuildCatalog]);
 
   const contextValue = useMemo(() => ({
-    products, purchases, loading, error, hasMore,
-    loadMorePurchases, savePurchase, savePurchasesBatch, deletePurchase
-  }), [products, purchases, loading, error, hasMore, loadMorePurchases, savePurchase, savePurchasesBatch, deletePurchase]);
+    products, catalog, purchases, loading, error, hasMore,
+    loadMorePurchases, savePurchase, savePurchasesBatch, deletePurchase, rebuildCatalog
+  }), [products, catalog, purchases, loading, error, hasMore, loadMorePurchases, savePurchase, savePurchasesBatch, deletePurchase, rebuildCatalog]);
 
   return (
     <TrackerContext.Provider value={contextValue}>

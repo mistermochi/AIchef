@@ -1,33 +1,18 @@
 
 import React, { useState, useMemo, useDeferredValue } from 'react';
 import { Search, Database, ShoppingCart, Check, ChevronRight, Store, ArrowLeft, Tag, Package, Loader2 } from 'lucide-react';
-import { Purchase } from '../../../entities/tracker/model/types';
-import { getPerItemPrice } from '../../../entities/tracker/model/trackerModel';
+import { CatalogProduct } from '../../../entities/tracker/model/TrackerContext';
 import { CATEGORY_EMOJIS } from '../../../shared/config/app';
 import { fmtCurrency } from '../../../shared/lib/format';
 import { fmtDate } from '../../../shared/lib/date';
-import { Timestamp } from 'firebase/firestore';
 import { Input, EmptyState, Button, Badge } from '../../../shared/ui';
 import { useCartContext } from '../../../features/shopping-cart/model/CartContext';
 
 // --- Types for the Catalog Tree ---
 
-interface ProductSummary {
-  id: string; // normalized key
-  name: string; // display name
-  genericName: string;
-  category: string;
-  bestPrice: number;
-  bestUnitLabel: string;
-  bestStore: string;
-  bestDate: Timestamp | Date | string | null | undefined;
-  bestPurchaseId: string;
-  variantCount: number; // how many purchases history
-}
-
 interface GenericGroup {
   name: string;
-  products: ProductSummary[];
+  products: CatalogProduct[];
   minPrice: number;
   productCount: number;
 }
@@ -35,9 +20,9 @@ interface GenericGroup {
 // --- Component ---
 
 export const PriceCatalogList: React.FC<{ 
-  purchases: Purchase[], 
+  catalog: CatalogProduct[],
   onOpenDetail: (pid: string, productName: string) => void 
-}> = ({ purchases, onOpenDetail }) => {
+}> = ({ catalog, onOpenDetail }) => {
   const { cart, addToCart, removeFromCart } = useCartContext();
   
   // Navigation State
@@ -45,57 +30,21 @@ export const PriceCatalogList: React.FC<{
   const deferredSearch = useDeferredValue(search); // Defer search term for heavy filtering
 
   // Performance: Defer the dataset update to prevent blocking UI during large data transitions or initial load
-  const deferredPurchases = useDeferredValue(purchases);
-  const isStale = deferredPurchases !== purchases;
+  const deferredCatalog = useDeferredValue(catalog);
+  const isStale = deferredCatalog !== catalog;
 
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedGeneric, setSelectedGeneric] = useState<string | null>(null);
 
   // --- Data Processing ---
-  const { tree, flatList, categories } = useMemo<{
+  const { tree, categories } = useMemo<{
     tree: Record<string, Record<string, GenericGroup>>;
-    flatList: ProductSummary[];
     categories: string[];
   }>(() => {
-    // 1. Group raw purchases by unique product (Normalized Name)
-    const groupedByProduct: Record<string, Purchase[]> = {};
-    deferredPurchases.forEach(p => {
-      const key = p.productName?.trim()?.toLowerCase() || 'unknown';
-      if (!groupedByProduct[key]) groupedByProduct[key] = [];
-      groupedByProduct[key].push(p);
-    });
-
-    // 2. Create Product Summaries
-    const allProducts: ProductSummary[] = Object.keys(groupedByProduct).map(key => {
-      const history = groupedByProduct[key];
-      // history is sorted by date desc from parent (index 0 is latest)
-      const latest = history[0];
-      
-      // Find best price
-      const best = history.reduce((min, curr) => 
-        (curr.normalizedPrice || Infinity) < (min.normalizedPrice || Infinity) ? curr : min
-      , history[0]);
-
-      const bestCtx = getPerItemPrice(best);
-
-      return {
-        id: key,
-        name: latest.productName,
-        genericName: latest.genericName || 'Unclassified',
-        category: latest.category || 'General',
-        bestPrice: bestCtx.price,
-        bestUnitLabel: bestCtx.label,
-        bestStore: best.store,
-        bestDate: best.date,
-        bestPurchaseId: best.id,
-        variantCount: history.length
-      };
-    });
-
-    // 3. Build Tree: Category -> Generic -> Products
+    // Build Tree: Category -> Generic -> Products
     const treeData: Record<string, Record<string, GenericGroup>> = {};
     
-    allProducts.forEach(prod => {
+    deferredCatalog.forEach(prod => {
       const cat = prod.category;
       const gen = prod.genericName;
 
@@ -117,19 +66,19 @@ export const PriceCatalogList: React.FC<{
 
     const sortedCategories = Object.keys(treeData).sort();
 
-    return { tree: treeData, flatList: allProducts, categories: sortedCategories };
-  }, [deferredPurchases]);
+    return { tree: treeData, categories: sortedCategories };
+  }, [deferredCatalog]);
 
   // --- Filtering for Search (Uses Deferred Value) ---
   const searchResults = useMemo(() => {
     if (!deferredSearch.trim()) return [];
     const q = deferredSearch.toLowerCase();
-    return flatList.filter(p => 
+    return deferredCatalog.filter(p =>
       p.name.toLowerCase().includes(q) || 
       p.category.toLowerCase().includes(q) ||
       p.genericName.toLowerCase().includes(q)
     ).sort((a,b) => a.name.localeCompare(b.name));
-  }, [deferredSearch, flatList]);
+  }, [deferredSearch, deferredCatalog]);
 
   // --- Handlers ---
   const handleBack = () => {
@@ -137,7 +86,7 @@ export const PriceCatalogList: React.FC<{
     else if (selectedCategory) setSelectedCategory(null);
   };
 
-  const toggleCart = (e: React.MouseEvent, prod: ProductSummary) => {
+  const toggleCart = (e: React.MouseEvent, prod: CatalogProduct) => {
     e.stopPropagation();
     const isInCart = cart.some(i => i.title === prod.name);
     if (isInCart) {
@@ -340,7 +289,7 @@ export const PriceCatalogList: React.FC<{
 // --- Sub-Component: Product Row (Leaf Node) ---
 
 const ProductRow: React.FC<{ 
-  product: ProductSummary, 
+  product: CatalogProduct,
   isInCart: boolean, 
   onToggleCart: (e: React.MouseEvent) => void,
   onClick: () => void
