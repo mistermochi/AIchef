@@ -30,7 +30,7 @@ export type TrackerModal =
  * @returns {Object} { state, actions, refs, computed }
  */
 export function useTracker() {
-  const { products, purchases, loading, error, savePurchase, savePurchasesBatch, deletePurchase, loadMorePurchases, hasMore } = useTrackerContext();
+  const { products, catalog, purchases, loading, error, savePurchase, savePurchasesBatch, deletePurchase, loadMorePurchases, hasMore } = useTrackerContext();
   const { isAIEnabled, reportError, profile } = useAuthContext();
   const { savedRecipes, setActiveRecipe } = useRecipeContext();
 
@@ -184,7 +184,7 @@ export function useTracker() {
 
   return {
     state: {
-      activeTab, modal, loading, error, products, purchases,
+      activeTab, modal, loading, error, products, catalog, purchases,
       pendingScanFile, isAIEnabled, hasMore,
       dealResults, dealSources, searchingDeals, dealError,
       isSaving, isFormValid, triggerSubmit

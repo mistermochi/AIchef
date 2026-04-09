@@ -77,7 +77,7 @@ export const TrackerPage: React.FC = () => {
           <p className="font-bold text-sm uppercase tracking-widest">Loading Market Data...</p>
         </div>
       ) : state.activeTab === 'catalog' ? (
-        <PriceCatalogList purchases={state.purchases} onOpenDetail={(pid, productName) => actions.setModal({ type: 'detail', pid, productName })} />
+        <PriceCatalogList catalog={state.catalog} onOpenDetail={(pid, productName) => actions.setModal({ type: 'detail', pid, productName })} />
       ) : (
         <PriceHistoryList 
           purchases={state.purchases} 
