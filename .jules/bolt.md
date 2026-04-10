@@ -9,3 +9,7 @@
 ## 2025-05-24 - [Repository Stability & Callback Memoization]
 **Learning:** Unstable function references from hooks like `useRecipeRepository` were propagating through `RecipeContext`, invalidating its `useMemo` on every render. This forced app-wide re-renders and caused `useInfiniteScroll` to recreate its `IntersectionObserver` continuously, negating the benefits of centralized pagination logic.
 **Action:** Wrap all repository action functions in `useCallback`. Move static hook configuration (e.g., `INITIAL_LIMIT`) to module scope to keep the hook's internal state transitions clean and stable.
+
+## 2025-05-25 - [IntersectionObserver Stability & Side Effects]
+**Learning:** Stabilizing an `IntersectionObserver` using the "latest ref" pattern significantly reduces teardown/setup churn during scrolling. However, one must be careful to keep side effects (like `onLoadMore` triggers) outside of `setState` functional updaters to avoid duplicate calls in React's render/reconciliation phase.
+**Action:** Use refs to track the latest values of dependencies for async callbacks inside stable `useEffect` hooks. Always ensure that any logic triggering external side-effects within these callbacks happens directly in the callback scope, not inside a state updater function.
