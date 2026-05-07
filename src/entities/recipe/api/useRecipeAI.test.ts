@@ -1,11 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
 
-// Mock everything that might cause ESM issues BEFORE importing anything that uses them
-jest.mock("@google/genai", () => ({
-  GoogleGenAI: jest.fn(),
-  Type: { OBJECT: 'OBJECT', ARRAY: 'ARRAY', STRING: 'STRING', NUMBER: 'NUMBER' }
-}));
-
 import { useRecipeAI } from './useRecipeAI';
 import { useAuthContext } from '../../../entities/user/model/AuthContext';
 import { getAIService } from '../../../shared/api/aiServiceFactory';
@@ -29,7 +23,7 @@ describe('useRecipeAI hook', () => {
       isAIEnabled: true,
       reportError: mockReportError,
       getProfileContext: mockGetProfileContext,
-      profile: { aiProvider: 'gemini' }
+      profile: { aiProvider: 'mistral' }
     });
     (getAIService as jest.Mock).mockReturnValue(mockAI);
   });
