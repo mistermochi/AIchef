@@ -1,11 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
 
-// Mock AI client to avoid ESM issues
-jest.mock("@google/genai", () => ({
-  GoogleGenAI: jest.fn(),
-  Type: { OBJECT: 'OBJECT', ARRAY: 'ARRAY', STRING: 'STRING', NUMBER: 'NUMBER' }
-}));
-
 import { useTracker } from './useTracker';
 import { useTrackerContext } from '../../../entities/tracker/model/TrackerContext';
 import { useAuthContext } from '../../../entities/user/model/AuthContext';

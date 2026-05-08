@@ -17,12 +17,12 @@ ChefAI strictly follows a separation of concerns between UI and Logic.
 - Describe the **purpose**, **parameters**, **return values**, and **interactions** with other components.
 - Use `{@link ...}` to reference related components or hooks.
 
-## 3. Working with Gemini AI
+## 3. Working with AI Services
 
-- Use the `geminiService.ts` for all AI interactions.
+- Use the `AIService` abstraction via `getAIService` factory for all AI interactions.
 - Respect the existing error handling patterns for AI status (healthy, quota_error, auth_error, etc.) using `mapAIError`.
-- When adding new AI features, define the response schema in `constants/schemas.ts` and the prompt in `constants/prompts.ts`.
-- **AI Quota Management:** Always use low-cost methods (like `countTokens`) for health checks. Avoid triggering full inference for connectivity tests.
+- When adding new AI features, define the response schema in `src/shared/config/jsonschemas.ts` and the prompt in `src/shared/config/prompts.ts`.
+- **AI Connectivity Tests:** Use lightweight endpoints (like `client.models.list()` for Mistral) for health checks. Avoid triggering full chat completions for connectivity tests.
 
 ## 4. UI Development
 
