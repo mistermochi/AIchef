@@ -1,6 +1,5 @@
 
 export * from './button';
-export { ConfirmButton } from './button';
 export * from './Surface';
 export * from './Headers';
 export * from './input';
