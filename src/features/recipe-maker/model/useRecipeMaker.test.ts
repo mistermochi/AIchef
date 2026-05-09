@@ -1,11 +1,4 @@
 import { renderHook, act } from '@testing-library/react';
-
-// Mock AI client to avoid ESM issues
-jest.mock("@google/genai", () => ({
-  GoogleGenAI: jest.fn(),
-  Type: { OBJECT: 'OBJECT', ARRAY: 'ARRAY', STRING: 'STRING', NUMBER: 'NUMBER' }
-}));
-
 import { useCookingSession } from './useRecipeMaker';
 
 // Mock dependencies

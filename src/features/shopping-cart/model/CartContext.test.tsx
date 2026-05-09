@@ -1,11 +1,4 @@
 import React from 'react';
-
-// Mock AI client to avoid ESM issues
-jest.mock("@google/genai", () => ({
-  GoogleGenAI: jest.fn(),
-  Type: { OBJECT: 'OBJECT', ARRAY: 'ARRAY', STRING: 'STRING', NUMBER: 'NUMBER' }
-}));
-
 import { renderHook, act } from '@testing-library/react';
 import { CartProvider, useCartContext } from './CartContext';
 import { Recipe } from '../../../entities/recipe/model/types';

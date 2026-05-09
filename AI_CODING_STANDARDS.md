@@ -41,14 +41,14 @@ We strictly separate UI from Business Logic.
 *   **Build:** Vite.
 *   **Styling:** Tailwind CSS. Use `dark:` prefix for dark mode.
 *   **Icons:** `lucide-react`.
-*   **AI SDK:** `@google/genai` (Google GenAI SDK v1+).
+*   **AI SDK:** `@mistralai/mistralai` (Mistral AI SDK).
 *   **Backend:** Firebase v12 (Firestore, Auth).
 
-## 4. Google GenAI SDK Rules
-*   **Import:** `import { GoogleGenAI } from "@google/genai";`
-*   **Init:** `const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });`
-*   **Prohibited:** Do not use `GoogleGenerativeAI` or `generative-ai` legacy packages.
-*   **Models:** Use `gemini-3-pro-preview` for logic/reasoning, `gemini-flash-lite-latest` for simple tasks.
+## 4. AI Service Rules
+*   **Integration:** Use the `AIService` interface and `getAIService` factory.
+*   **Mistral SDK:** Use the standard `@mistralai/mistralai` client via `mistralService.ts`.
+*   **Models:** Defaults to `mistral-large-2512` for high-quality structured output.
+*   **Structured Output:** Leverage `responseFormat: { type: 'json_schema', ... }` for reliable JSON parsing.
 
 ## 5. Coding Conventions
 *   **Files:** Treat the current directory as root. Do not use `src/` prefix in file paths.
