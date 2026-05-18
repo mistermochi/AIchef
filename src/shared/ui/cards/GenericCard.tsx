@@ -5,10 +5,10 @@ import { cn } from "@/shared/lib/utils";
 import { useHaptics } from "../../lib/hooks/useHaptics";
 
 /**
- * @component Card
+ * @component MediaCard
  * @description A generic card component with a hover effect and active state.
  */
-export const Card: React.FC<React.HTMLAttributes<HTMLDivElement> & { onClick?: () => void }> = ({ children, className = '', onClick, style, ...props }) => (
+export const MediaCard: React.FC<React.HTMLAttributes<HTMLDivElement> & { onClick?: () => void }> = ({ children, className = '', onClick, style, ...props }) => (
   <div className={className} style={style} {...props}>
     <BaseCard noPadding className="group cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all active:scale-[0.98] h-full" onClick={onClick}>
        {children}
@@ -75,40 +75,40 @@ export const CardFloatingAction: React.FC<{
 };
 
 /**
- * @component CardContent
+ * @component MediaCardContent
  * @description The main content area of a card.
  */
-export const CardContent: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+export const MediaCardContent: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="p-4 flex flex-col flex-1 gap-3 min-w-0">
     {children}
   </div>
 );
 
 /**
- * @component CardTitle
+ * @component MediaCardTitle
  * @description A styled title component for cards.
  */
-export const CardTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+export const MediaCardTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <h3 className="font-bold text-lg text-foreground google-sans line-clamp-1 group-hover:text-primary transition-colors">
     {children}
   </h3>
 );
 
 /**
- * @component CardDescription
+ * @component MediaCardDescription
  * @description A styled description component for cards with line-clamping.
  */
-export const CardDescription: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+export const MediaCardDescription: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
     {children}
   </p>
 );
 
 /**
- * @component CardFooter
+ * @component MediaCardFooter
  * @description The footer area of a card, usually containing actions or metadata.
  */
-export const CardFooter: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+export const MediaCardFooter: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="mt-auto px-4 pb-4 pt-3 border-t border-border relative">
     {children}
   </div>
