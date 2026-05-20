@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Check, Trash2, Plus } from 'lucide-react';
 import { useHaptics } from '../lib/hooks/useHaptics';
 import { cn } from "@/shared/lib/utils";
+import { formatQty } from '../lib/helpers';
 
 // --- TYPEWRITER ---
 export const Typewriter: React.FC<{ text: string; speed?: number; className?: string; animate?: boolean }> = ({ text, speed = 15, className = '', animate = true }) => {
@@ -62,9 +63,7 @@ export const CountUp: React.FC<{ value: number; duration?: number; className?: s
   }, [value, duration]);
 
   // Format to remove trailing decimals if integer, else fixed to 2
-  const formatted = Number.isInteger(displayValue) 
-    ? displayValue.toString() 
-    : displayValue.toFixed(2);
+  const formatted = formatQty(displayValue);
 
   return <span className={className}>{formatted}</span>;
 });
@@ -330,7 +329,7 @@ export const CheckableIngredient: React.FC<{
          "text-xs font-bold font-mono",
          displayChecked ? 'text-muted-foreground' : 'text-primary'
        )}>
-          {Number(displayQty.toFixed(2))} <span className="font-normal lowercase">{unit}</span>
+          {formatQty(displayQty)} <span className="font-normal lowercase">{unit}</span>
        </span>
     </div>
   );
@@ -357,7 +356,7 @@ export const CheckableIngredient: React.FC<{
 export const IngredientRow: React.FC<{ name: string; quantity: number; unit: string }> = React.memo(({ name, quantity, unit }) => {
   const actions = (
     <span className="text-xs font-bold font-mono text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-      {Number(quantity.toFixed(2))} {unit}
+      {formatQty(quantity)} {unit}
     </span>
   );
   return <BaseRow actions={actions}><p className="text-sm font-medium text-foreground">{name}</p></BaseRow>;
