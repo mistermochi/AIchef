@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Play, CheckCircle2, XCircle, Terminal, RotateCcw } from 'lucide-react';
 import { PageLayout, ViewHeader, SectionCard, Button } from '../../../shared/ui';
+import { formatQty } from '../../../shared/lib/helpers';
 import { TestResult } from '../../../shared/lib/testRunner';
 import { runMathTests, runParserTests, runShoppingTests } from '../../../tests/unitTests';
 import { runCartIntegration } from '../../../tests/integrationTests';
@@ -99,7 +100,7 @@ export const DiagnosticsPage: React.FC = () => {
                                 </div>
                             </div>
                             <div className="text-xs font-mono text-content-tertiary">
-                                {test.duration.toFixed(2)}ms
+                                {formatQty(test.duration)}ms
                             </div>
                         </div>
                     ))}
