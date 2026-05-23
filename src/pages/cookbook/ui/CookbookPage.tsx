@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, CookingPot, Loader2, Plus, PlusCircle, Key, ExternalLink, Info, Check, ShoppingCart, Bot } from 'lucide-react';
 import { Recipe } from '../../../entities/recipe/model/types';
-import { ViewHeader, Input, EmptyState, PageLayout, GridList, Button, Modal, ModalHeader, ModalContent, PromptInput, Card, CardMedia, CardContent, CardTitle, CardDescription, CardFooter, CardFloatingAction } from '../../../shared/ui';
+import { ViewHeader, Input, EmptyState, PageLayout, GridList, Button, Modal, ModalHeader, ModalContent, PromptInput, MediaCard, MediaCardMedia, MediaCardContent, MediaCardTitle, MediaCardDescription, MediaCardFooter, MediaCardFloatingAction } from '../../../shared/ui';
 import { RecipeSkeleton, IngredientBadges } from '../../../entities/recipe/ui/RecipeCard';
 import { GlobalFAB } from '../../../shared/ui/layout/GlobalFAB';
 import { useRecipeContext } from '../../../entities/recipe/model/RecipeContext';
@@ -113,32 +113,32 @@ export const CookbookPage: React.FC = () => {
               const isInCart = shoppingCart.some(item => item.recipeId === recipe.id);
               
               return (
-                <Card 
+                <MediaCard
                   key={recipe.id}
                   onClick={() => handleCardClick(recipe)}
                   className="animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both h-full"
                   style={{ animationDelay: `${(idx % 12) * 40}ms` }}
                 >
-                  <CardMedia src={recipe.coverImage} fallbackEmoji={recipe.emoji}>
-                    <CardFloatingAction 
+                  <MediaCardMedia src={recipe.coverImage} fallbackEmoji={recipe.emoji}>
+                    <MediaCardFloatingAction
                       onClick={(e) => handleCartClick(e, recipe)}
                       active={isInCart}
                       ariaLabel={isInCart ? "Remove from shopping list" : "Add to shopping list"}
                       icon={isInCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
                     />
-                  </CardMedia>
+                  </MediaCardMedia>
                   
-                  <CardContent>
+                  <MediaCardContent>
                     <div className="space-y-1">
-                      <CardTitle>{recipe.title}</CardTitle>
-                      <CardDescription>{recipe.summary}</CardDescription>
+                      <MediaCardTitle>{recipe.title}</MediaCardTitle>
+                      <MediaCardDescription>{recipe.summary}</MediaCardDescription>
                     </div>
-                  </CardContent>
+                  </MediaCardContent>
 
-                  <CardFooter>
+                  <MediaCardFooter>
                     <IngredientBadges ingredients={recipe.ingredients} limit={3} />
-                  </CardFooter>
-                </Card>
+                  </MediaCardFooter>
+                </MediaCard>
               );
             })}
           </GridList>
