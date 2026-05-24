@@ -1,4 +1,6 @@
 
+import { formatQty } from './helpers';
+
 export const parseFuzzyNumber = (str: string): number => {
   if (!str) return 0;
   const cleanStr = str.trim();
@@ -85,9 +87,8 @@ export const evaluateArithmetic = (expression: string): string | null => {
     const result = new Function(`return (${sanitized})`)();
 
     if (typeof result === 'number' && isFinite(result)) {
-        // Round to 2 decimal places
-        // We use Number.EPSILON to ensure precision when rounding
-        return (Math.round((result + Number.EPSILON) * 100) / 100).toString();
+        // Round to 2 decimal places using standardized utility
+        return formatQty(result).toString();
     }
   } catch (e) {
     // Math error or syntax error: fail silently as per requirements
