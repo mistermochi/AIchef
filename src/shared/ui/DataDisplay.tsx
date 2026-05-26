@@ -352,16 +352,6 @@ export const CheckableIngredient: React.FC<{
   );
 });
 
-// 4. SIMPLE ROW (Orchestrator Mode)
-export const IngredientRow: React.FC<{ name: string; quantity: number; unit: string }> = React.memo(({ name, quantity, unit }) => {
-  const actions = (
-    <span className="text-xs font-bold font-mono text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-      {formatQty(quantity)} {unit}
-    </span>
-  );
-  return <BaseRow actions={actions}><p className="text-sm font-medium text-foreground">{name}</p></BaseRow>;
-});
-
 // --- EMPTY STATE ---
 export interface EmptyStateProps {
   icon: React.ReactNode;
