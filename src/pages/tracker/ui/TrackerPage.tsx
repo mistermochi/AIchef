@@ -1,8 +1,7 @@
 
 import React, { useState } from 'react';
 import { History, LayoutGrid, Trash2, Save, Sparkles, TrendingDown, Calendar, Search, ExternalLink, AlertTriangle, Camera, Plus, BookOpen } from 'lucide-react';
-import { PageLayout, ViewHeader, Button, ActionBar, HeaderAction, HeaderActionSeparator, Modal, ModalHeader, ModalContent, Badge, SectionCard, BaseCard, ConfirmButton } from '../../../shared/ui';
-import { GlobalFAB } from '../../../shared/ui/layout/GlobalFAB';
+import { PageLayout, ViewHeader, Button, ActionBar, HeaderAction, HeaderActionSeparator, Modal, ModalHeader, ModalContent, Badge, SectionCard, BaseCard, ConfirmButton, GlobalFAB } from '../../../shared/ui';
 import { PriceEntryForm } from '../../../features/tracker/ui/PriceEntryForm';
 import { PriceHistoryList } from '../../../features/tracker/ui/PriceHistoryList';
 import { PriceCatalogList } from '../../../features/tracker/ui/PriceCatalogList';
