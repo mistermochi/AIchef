@@ -2,9 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, CookingPot, Loader2, Plus, PlusCircle, Key, ExternalLink, Info, Check, ShoppingCart, Bot } from 'lucide-react';
 import { Recipe } from '../../../entities/recipe/model/types';
-import { ViewHeader, Input, EmptyState, PageLayout, GridList, Button, Modal, ModalHeader, ModalContent, PromptInput, MediaCard, MediaCardMedia, MediaCardContent, MediaCardTitle, MediaCardDescription, MediaCardFooter, MediaCardFloatingAction } from '../../../shared/ui';
+import { ViewHeader, Input, EmptyState, PageLayout, GridList, Button, Modal, ModalHeader, ModalContent, PromptInput, MediaCard, MediaCardMedia, MediaCardContent, MediaCardTitle, MediaCardDescription, MediaCardFooter, MediaCardFloatingAction, GlobalFAB } from '../../../shared/ui';
 import { RecipeSkeleton, IngredientBadges } from '../../../entities/recipe/ui/RecipeCard';
-import { GlobalFAB } from '../../../shared/ui/layout/GlobalFAB';
 import { useRecipeContext } from '../../../entities/recipe/model/RecipeContext';
 import { useCartContext } from '../../../features/shopping-cart/model/CartContext';
 import { useAuthContext } from '../../../entities/user/model/AuthContext';

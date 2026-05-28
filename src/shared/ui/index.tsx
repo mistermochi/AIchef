@@ -13,3 +13,4 @@ export * from './label';
 export * from './badge';
 export * from './breadcrumb';
 export * from './ErrorBoundary';
+export * from './layout/GlobalFAB';
