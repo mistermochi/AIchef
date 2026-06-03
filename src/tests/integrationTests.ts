@@ -28,8 +28,3 @@ export const runCartIntegration = async (cartContext: CartContextType) => {
   return ctx.results;
 };
 
-export const runOrchestratorLogic = async () => {
-    const ctx = new TestContext();
-    // Add logic tests for specific complex hooks if needed
-    return ctx.results;
-}

@@ -6,11 +6,6 @@ export type TestResult = {
   duration: number;
 };
 
-export type TestSuite = {
-  name: string;
-  tests: (() => Promise<TestResult>)[];
-};
-
 export class TestContext {
   results: TestResult[] = [];
 
@@ -38,19 +33,4 @@ export const expect = (actual: any) => ({
     const isEq = JSON.stringify(actual) === JSON.stringify(expected);
     if (!isEq) throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
   },
-  toBeTruthy: () => {
-    if (!actual) throw new Error(`Expected value to be truthy`);
-  },
-  toBeGreaterThan: (expected: number) => {
-    if (actual <= expected) throw new Error(`Expected ${actual} to be greater than ${expected}`);
-  },
-  toContain: (item: any) => {
-    if (Array.isArray(actual)) {
-       if (!actual.includes(item)) throw new Error(`Array did not contain ${item}`);
-    } else if (typeof actual === 'string') {
-       if (!actual.includes(item)) throw new Error(`String did not contain substring "${item}"`);
-    } else {
-       throw new Error(`toContain only works on Arrays and Strings`);
-    }
-  }
 });
