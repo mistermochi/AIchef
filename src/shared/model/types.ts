@@ -77,7 +77,7 @@ export interface OnlineDeal {
   imageUrl: string;
 }
 
-export type View = 'home' | 'cookbook' | 'profile' | 'shopping' | 'genie' | 'tracker' | 'test' | 'plan';
+export type View = 'cookbook' | 'profile' | 'shopping' | 'genie' | 'tracker' | 'test' | 'plan';
 
 // --- User Profile ---
 

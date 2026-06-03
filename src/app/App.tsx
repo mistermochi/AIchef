@@ -46,7 +46,6 @@ export default function ChefAIApp() {
   
   const getBreadcrumb = () => {
     const views: Record<string, string> = {
-      home: 'New recipe',
       genie: 'Kitchen Genie',
       cookbook: 'Cookbook',
       shopping: 'Shopping List',
@@ -90,7 +89,7 @@ export default function ChefAIApp() {
             <ErrorBoundary>
               <Suspense fallback={<LoadingFallback />}>
                 {view === 'genie' && <GeniePage />}
-                {(view === 'cookbook' || view === 'home') && <CookbookPage />}
+                {view === 'cookbook' && <CookbookPage />}
                 {view === 'shopping' && <ShoppingPage />}
                 {view === 'tracker' && <TrackerPage />}
                 {view === 'profile' && <ProfilePage />}
