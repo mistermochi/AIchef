@@ -7,7 +7,7 @@ import { mapAIError } from '../../../shared/lib/ai';
 
 /**
  * @hook useRecipeAI
- * @description A high-level hook that connects the UI to the Gemini AI services for recipe-related tasks.
+ * @description A high-level hook that connects the UI to the AI services for recipe-related tasks.
  * It manages loading states, handles AI-specific errors, and provides functions for processing, refining, and generating recipe ideas.
  *
  * Interactions:

@@ -48,7 +48,7 @@ export function useDataMigration() {
       });
 
       const uniqueNames = Array.from(uniqueNamesMap.keys());
-      const BATCH_SIZE = 40; // Gemini limit per prompt roughly
+      const BATCH_SIZE = 40; // AI limit per prompt roughly
       let processedCount = 0;
 
       // Process in chunks

@@ -52,7 +52,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
  * @component CartProvider
  * @description Manages the shopping cart and cooking orchestration state.
  * It uses local storage to persist the cart and checked items across sessions.
- * It also coordinates with Gemini AI to generate orchestration plans for multiple recipes.
+ * It also coordinates with AI to generate orchestration plans for multiple recipes.
  */
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAIEnabled, profile } = useAuthContext();

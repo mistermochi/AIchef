@@ -26,7 +26,7 @@ import { Recipe } from '../../../shared/model/types';
  * - Product Catalog: Aggregated view of best prices per product.
  * - Purchase History: Chronological list of all recorded purchases.
  * - Detail Modal: Shows price trends, related recipes, and AI-driven online deal comparisons.
- * - Receipt Scanning: Integrated with Gemini AI for OCR-based data entry.
+ * - Receipt Scanning: Integrated with AI for OCR-based data entry.
  */
 export const TrackerPage: React.FC = () => {
   const { state, actions, refs, computed } = useTracker();
