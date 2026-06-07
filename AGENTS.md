@@ -48,7 +48,7 @@ ChefAI strictly follows a separation of concerns between UI and Logic.
 ## 7. Development Workflow & Safety
 
 1.  **Analyze**: Understand if a change affects a View, a Controller, or a Context.
-2.  **Verification**: Always run `npm run validate` (or `tsc --noEmit`) to ensure type safety.
+2.  **Verification**: Always run `npm run typecheck` (or `tsc --noEmit`) to ensure type safety.
 3.  **No Side Effects:** Do **NOT** commit lockfiles (`package-lock.json`), build artifacts (`dist/`), or environment files (`.env`) unless explicitly requested.
 4.  **Testing**: Add unit tests in `tests/unitTests.ts` for new utility functions. Use the in-app `TestDashboardView` to verify integration logic.
 5.  **Types:** Ensure `tsconfig.json` includes `"types": ["vite/client"]` for proper `import.meta.env` support.
