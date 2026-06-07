@@ -19,7 +19,7 @@ export type TrackerModal =
  * @hook useTracker
  * @description The main logic for the Tracker (Price Tracker) feature.
  * It manages the UI state (tabs, modals), handles file scanning for receipts,
- * interacts with the TrackerContext for data persistence, and uses Gemini AI for deal searching.
+ * interacts with the TrackerContext for data persistence, and uses AI for deal searching.
  *
  * Interactions:
  * - {@link useTrackerContext}: For fetching products and purchases, and performing CRUD operations.
