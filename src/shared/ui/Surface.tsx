@@ -5,7 +5,6 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  DialogFooter,
 } from "@/shared/ui/dialog"
 import { X } from 'lucide-react';
 
@@ -91,15 +90,6 @@ export const ModalContent: React.FC<{
   <div className={cn("flex-1 overflow-y-auto custom-scrollbar bg-muted/30 flex flex-col", noPadding ? '' : 'p-4 md:p-8', className)}>
     {children}
   </div>
-);
-
-export const ModalFooter: React.FC<{
-  children: React.ReactNode;
-  className?: string;
-}> = ({ children, className = '' }) => (
-  <DialogFooter className={cn("p-4 bg-background border-t border-border shrink-0 sm:justify-start", className)}>
-    {children}
-  </DialogFooter>
 );
 
 export const PageLayout: React.FC<{ 
