@@ -108,7 +108,6 @@ export const PROMPTS = {
   GENIE_INPUT: (ingredients: string) => `Ingredients: ${ingredients}`,
   REFINE_RECIPE: (recipe: string, goal: string) => `Recipe: ${recipe}. Goal: ${goal}`,
   ORCHESTRATE: (recipes: string) => `Recipes: ${recipes}`,
-  DEAL_SEARCH: (productName: string) => `Find 6 buying options for "${productName}".`,
   BATCH_CLASSIFY: (items: string) => `Map these products to generic names: ${items}`,
   PLAN_WEEK: (recipes: string) => `My Cookbook: ${recipes}. Create a varied 7-day meal plan.`
 };

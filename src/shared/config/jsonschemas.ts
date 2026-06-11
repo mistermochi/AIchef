@@ -91,27 +91,6 @@ export const JSON_SCHEMAS = {
     required: ["plan"],
     additionalProperties: false
   },
-  DEALS: {
-    type: "object",
-    properties: {
-      items: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            title: { type: "string" },
-            store: { type: "string" },
-            price: { type: "string" },
-            url: { type: "string" },
-            desc: { type: "string" },
-            imageUrl: { type: "string" }
-          },
-          additionalProperties: false
-        }
-      }
-    },
-    additionalProperties: false
-  },
   RECEIPT_EXTRACTION: {
     type: "object",
     description: "Extracted receipt data including store, date, and items.",
