@@ -29,8 +29,4 @@ export const expect = (actual: any) => ({
   toBe: (expected: any) => {
     if (actual !== expected) throw new Error(`Expected ${expected} but got ${actual}`);
   },
-  toEqual: (expected: any) => {
-    const isEq = JSON.stringify(actual) === JSON.stringify(expected);
-    if (!isEq) throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
-  },
 });
